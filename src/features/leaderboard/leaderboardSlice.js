@@ -3,7 +3,7 @@ import { getLeaderboard } from "../../services/api";
 
 const initialState = {
   gender: "male",
-  data: [],
+  data: [],      // always the leaders array
   loading: false,
   error: null,
 };
@@ -12,8 +12,10 @@ export const fetchLeaderboard = createAsyncThunk(
   "leaderboard/fetchLeaderboard",
   async (gender, { rejectWithValue }) => {
     try {
-      const data = await getLeaderboard(gender);
-      return data;
+      const response = await getLeaderboard(gender);
+
+      // Normalize: ensure always an array
+      return response.leaders || [];
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -36,7 +38,9 @@ const leaderboardSlice = createSlice({
       })
       .addCase(fetchLeaderboard.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = action.payload;
+
+        // payload is already an array from the thunk fix
+        state.data = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(fetchLeaderboard.rejected, (state, action) => {
         state.loading = false;
