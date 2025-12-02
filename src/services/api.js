@@ -39,9 +39,55 @@ export async function getLeaderboard(gender) {
   return handleResponse(response);
 }
 
+export async function searchUsers(query, token) {
+  const response = await fetch(
+    `${base}/api/users/search?query=${encodeURIComponent(query)}`,
+    {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    }
+  );
+  return handleResponse(response);
+}
+
+export async function getMatchHistory(userId, token) {
+  const response = await fetch(`${base}/api/matches/user/${userId}`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  return handleResponse(response);
+}
+
+export async function getMatchDetail(matchId, token) {
+  const response = await fetch(`${base}/api/matches/${matchId}`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  return handleResponse(response);
+}
+
+export async function createMatch(payload, token) {
+  const response = await fetch(`${base}/api/matches/create`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+}
+
 export default {
   signup,
   login,
   getCurrentUser,
   getLeaderboard,
+  searchUsers,
+  getMatchHistory,
+  getMatchDetail,
+  createMatch,
 };

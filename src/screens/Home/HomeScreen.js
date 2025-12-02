@@ -1,70 +1,76 @@
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
 import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
-import GenderToggle from "../../components/GenderToggle";
-import LeaderboardCard from "../../components/LeaderboardCard";
-import { setGender, fetchLeaderboard } from "../../features/leaderboard/leaderboardSlice";
+import { useMemo } from "react";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 function HomeScreen() {
-  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.user);
-  const { gender, data, loading, error } = useSelector((state) => state.leaderboard);
 
-  useEffect(() => {
-    dispatch(fetchLeaderboard(gender));
-  }, [dispatch, gender]);
-
-  const handleGenderChange = (newGender) => {
-    dispatch(setGender(newGender));
-    dispatch(fetchLeaderboard(newGender));
-  };
+  const initials = useMemo(() => {
+    if (user?.username) {
+      return user.username
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+    }
+    return "";
+  }, [user]);
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
-      <Stack spacing={4}>
-        <Stack spacing={1}>
-          <Typography variant="h4" fontWeight={700}>
-            {user ? `Welcome, ${user.username}` : "Welcome"}
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            {user ? `Elo: ${user.elo}` : "Loading your profile..."}
-          </Typography>
-        </Stack>
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Stack spacing={3} alignItems="stretch">
+        <Typography variant="h5" fontWeight={700} textAlign="center">
+          Profile
+        </Typography>
+
+        <Card variant="outlined">
+          <CardContent>
+            <Stack spacing={2} alignItems="center" textAlign="center">
+              <Avatar sx={{ width: 72, height: 72, fontSize: 28 }} src={user?.avatar}>
+                {initials}
+              </Avatar>
+              <Box>
+                <Typography variant="h6" fontWeight={700}>
+                  {user?.username || "Loading user..."}
+                </Typography>
+                <Typography color="text.secondary">
+                  {user?.gender ? `Gender: ${user.gender}` : ""}
+                </Typography>
+                <Typography color="text.secondary">
+                  {user?.elo ? `Elo rating: ${user.elo}` : ""}
+                </Typography>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
 
         <Stack spacing={2}>
-          <Stack direction={{ xs: "column", sm: "row" }} alignItems={{ sm: "center" }} justifyContent="space-between" spacing={2}>
-            <Typography variant="h5" fontWeight={700}>
-              Leaderboard
-            </Typography>
-            <GenderToggle value={gender} onChange={handleGenderChange} />
-          </Stack>
-
-          {error && <Alert severity="error">{error}</Alert>}
-
-          {loading ? (
-            <Stack alignItems="center" py={4}>
-              <CircularProgress />
-            </Stack>
-          ) : (
-            <Stack spacing={2}>
-              {data.map((entry, index) => (
-                <LeaderboardCard
-                  key={entry.id || `${entry.username}-${index}`}
-                  username={entry.username}
-                  elo={entry.elo}
-                  gender={entry.gender}
-                  rank={entry.rank ?? index + 1}
-                />
-              ))}
-              {!data.length && !error && (
-                <Typography color="text.secondary">No entries yet.</Typography>
-              )}
-            </Stack>
-          )}
+          <Button
+            variant="contained"
+            fullWidth
+            size="large"
+            onClick={() => navigate("/matches")}
+          >
+            View Match History
+          </Button>
+          <Button
+            variant="outlined"
+            fullWidth
+            size="large"
+            onClick={() => navigate("/leaderboard")}
+          >
+            Go to Leaderboard
+          </Button>
         </Stack>
       </Stack>
     </Container>
