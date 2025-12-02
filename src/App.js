@@ -5,18 +5,32 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
+import Box from "@mui/material/Box";
 import LoginScreen from "./screens/Auth/LoginScreen";
 import SignupScreen from "./screens/Auth/SignupScreen";
 import HomeScreen from "./screens/Home/HomeScreen";
+import MatchHistoryScreen from "./screens/Matches/MatchHistoryScreen";
+import MatchDetailScreen from "./screens/Matches/MatchDetailScreen";
+import LeaderboardScreen from "./screens/Leaderboard/LeaderboardScreen";
+import SettingsPlaceholderScreen from "./screens/Settings/SettingsPlaceholderScreen";
+import BottomNav from "./components/BottomNav";
 import { fetchCurrentUser } from "./features/user/userSlice";
 
-function ProtectedRoute({ children }) {
+function ProtectedLayout() {
   const token = useSelector((state) => state.auth.accessToken);
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  return children;
+  return (
+    <>
+      <Box pb={10}>
+        <Outlet />
+      </Box>
+      <BottomNav />
+    </>
+  );
 }
 
 function App() {
@@ -35,14 +49,13 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/signup" element={<SignupScreen />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <HomeScreen />
-            </ProtectedRoute>
-          }
-        />
+        <Route element={<ProtectedLayout />}>
+          <Route path="/" element={<HomeScreen />} />
+          <Route path="/matches" element={<MatchHistoryScreen />} />
+          <Route path="/matches/:match_id" element={<MatchDetailScreen />} />
+          <Route path="/leaderboard" element={<LeaderboardScreen />} />
+          <Route path="/settings" element={<SettingsPlaceholderScreen />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
