@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
   Outlet,
+  useNavigate,
 } from "react-router-dom";
 import Box from "@mui/material/Box";
 import LoginScreen from "./screens/Auth/LoginScreen";
@@ -15,11 +16,25 @@ import MatchHistoryScreen from "./screens/Matches/MatchHistoryScreen";
 import MatchDetailScreen from "./screens/Matches/MatchDetailScreen";
 import LeaderboardScreen from "./screens/Leaderboard/LeaderboardScreen";
 import SettingsPlaceholderScreen from "./screens/Settings/SettingsPlaceholderScreen";
+import SplashScreen from "./screens/SplashScreen";
 import BottomNav from "./components/BottomNav";
-import { fetchCurrentUser } from "./features/user/userSlice";
+import { clearAuth } from "./features/auth/authSlice";
+import { clearUser, fetchCurrentUser } from "./features/user/userSlice";
 
 function ProtectedLayout() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const token = useSelector((state) => state.auth.accessToken);
+  const { error } = useSelector((state) => state.user);
+
+  useEffect(() => {
+    if (token && error) {
+      dispatch(clearAuth());
+      dispatch(clearUser());
+      navigate("/login", { replace: true });
+    }
+  }, [dispatch, error, navigate, token]);
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
@@ -47,10 +62,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<SplashScreen />} />
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/signup" element={<SignupScreen />} />
         <Route element={<ProtectedLayout />}>
-          <Route path="/" element={<HomeScreen />} />
+          <Route path="/home" element={<HomeScreen />} />
           <Route path="/matches" element={<MatchHistoryScreen />} />
           <Route path="/matches/:match_id" element={<MatchDetailScreen />} />
           <Route path="/leaderboard" element={<LeaderboardScreen />} />

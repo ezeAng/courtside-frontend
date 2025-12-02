@@ -1,7 +1,12 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { login as loginRequest, signup as signupRequest } from "../../services/api";
+import {
+  clearStoredToken,
+  getStoredToken,
+  setStoredToken,
+} from "../../services/storage";
 
-const tokenFromStorage = localStorage.getItem("accessToken");
+const tokenFromStorage = getStoredToken();
 
 const initialState = {
   accessToken: tokenFromStorage || null,
@@ -14,11 +19,9 @@ export const signup = createAsyncThunk(
   async ({ email, password, username, gender }, { rejectWithValue }) => {
     try {
       const data = await signupRequest(email, password, username, gender);
-      const token = data.access_token;
-      localStorage.setItem("accessToken", token);
-      return token;
+      return data.message;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || "Signup failed");
     }
   }
 );
@@ -28,11 +31,14 @@ export const login = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const data = await loginRequest(email, password);
-      const token = data.access_token;
-      localStorage.setItem("accessToken", token);
+      const token = data?.session?.access_token;
+      if (!token) {
+        throw new Error("Incorrect email or password");
+      }
+      setStoredToken(token);
       return token;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || "Login failed");
     }
   }
 );
@@ -43,12 +49,12 @@ const authSlice = createSlice({
   reducers: {
     setToken: (state, action) => {
       state.accessToken = action.payload;
-      localStorage.setItem("accessToken", action.payload);
+      setStoredToken(action.payload);
     },
     clearAuth: (state) => {
       state.accessToken = null;
       state.error = null;
-      localStorage.removeItem("accessToken");
+      clearStoredToken();
     },
   },
   extraReducers: (builder) => {
@@ -59,7 +65,7 @@ const authSlice = createSlice({
       })
       .addCase(signup.fulfilled, (state, action) => {
         state.loading = false;
-        state.accessToken = action.payload;
+        state.error = null;
       })
       .addCase(signup.rejected, (state, action) => {
         state.loading = false;

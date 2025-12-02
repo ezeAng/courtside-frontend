@@ -10,7 +10,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
-import { login } from "../../features/auth/authSlice";
+import { clearAuth, login } from "../../features/auth/authSlice";
 import { fetchCurrentUser } from "../../features/user/userSlice";
 
 function LoginScreen() {
@@ -25,15 +25,20 @@ function LoginScreen() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitError(null);
-    const result = await dispatch(login({ email, password }));
-    if (login.fulfilled.match(result)) {
-      const token = result.payload;
-      await dispatch(fetchCurrentUser(token));
-      navigate("/");
-    } else if (result.payload) {
-      setSubmitError(result.payload);
-    } else if (result.error) {
-      setSubmitError(result.error.message);
+    const loginResult = await dispatch(login({ email, password }));
+    if (login.fulfilled.match(loginResult)) {
+      const token = loginResult.payload;
+      const userResult = await dispatch(fetchCurrentUser(token));
+      if (fetchCurrentUser.fulfilled.match(userResult)) {
+        navigate("/home");
+      } else {
+        setSubmitError("Unable to load profile. Please log in again.");
+        dispatch(clearAuth());
+      }
+    } else if (loginResult.payload) {
+      setSubmitError(loginResult.payload || "Incorrect email or password");
+    } else if (loginResult.error) {
+      setSubmitError(loginResult.error.message || "Incorrect email or password");
     }
   };
 

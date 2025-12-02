@@ -12,7 +12,6 @@ import MenuItem from "@mui/material/MenuItem";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import { signup } from "../../features/auth/authSlice";
-import { fetchCurrentUser } from "../../features/user/userSlice";
 
 function SignupScreen() {
   const dispatch = useDispatch();
@@ -24,17 +23,18 @@ function SignupScreen() {
   const [username, setUsername] = useState("");
   const [gender, setGender] = useState("male");
   const [submitError, setSubmitError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitError(null);
+    setSuccessMessage(null);
     const result = await dispatch(
       signup({ email, password, username, gender })
     );
     if (signup.fulfilled.match(result)) {
-      const token = result.payload;
-      await dispatch(fetchCurrentUser(token));
-      navigate("/");
+      setSuccessMessage("Signup successful. Please log in to continue.");
+      navigate("/login");
     } else if (result.payload) {
       setSubmitError(result.payload);
     } else if (result.error) {
@@ -58,6 +58,9 @@ function SignupScreen() {
 
             {(submitError || error) && (
               <Alert severity="error">{submitError || error}</Alert>
+            )}
+            {successMessage && (
+              <Alert severity="success">{successMessage}</Alert>
             )}
 
             <TextField

@@ -7,10 +7,13 @@ import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { clearAuth } from "../../features/auth/authSlice";
+import { clearUser } from "../../features/user/userSlice";
 
 function HomeScreen() {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.user);
 
@@ -70,6 +73,19 @@ function HomeScreen() {
             onClick={() => navigate("/leaderboard")}
           >
             Go to Leaderboard
+          </Button>
+          <Button
+            variant="text"
+            color="error"
+            fullWidth
+            size="large"
+            onClick={() => {
+              dispatch(clearAuth());
+              dispatch(clearUser());
+              navigate("/login", { replace: true });
+            }}
+          >
+            Log out
           </Button>
         </Stack>
       </Stack>

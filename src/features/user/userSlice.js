@@ -40,6 +40,7 @@ const userSlice = createSlice({
       })
       .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.loading = false;
+        state.user = null;
         state.error = action.payload || "Failed to load user";
       });
   },
