@@ -9,7 +9,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const navItems = [
-  { label: "Home", value: "/", icon: <HomeIcon /> },
+  { label: "Home", value: "/home", icon: <HomeIcon /> },
   { label: "Matches", value: "/matches", icon: <SportsMartialArtsIcon /> },
   { label: "Leaderboard", value: "/leaderboard", icon: <EmojiEventsIcon /> },
   { label: "Settings", value: "/settings", icon: <SettingsIcon /> },
@@ -23,7 +23,7 @@ function BottomNav() {
     const match = [...navItems]
       .sort((a, b) => b.value.length - a.value.length)
       .find((item) => location.pathname.startsWith(item.value));
-    return match ? match.value : "/";
+    return match ? match.value : "/home";
   }, [location.pathname]);
 
   return (

@@ -3,11 +3,15 @@ const base = process.env.REACT_APP_BACKEND_URL;
 async function handleResponse(response) {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const message = errorData.message || response.statusText;
+    const message = errorData.error || errorData.message || response.statusText;
     throw new Error(message);
   }
   return response.json();
 }
+
+const withAuth = (token) => ({
+  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+});
 
 export async function signup(email, password, username, gender) {
   const response = await fetch(`${base}/api/auth/signup`, {
@@ -29,13 +33,15 @@ export async function login(email, password) {
 
 export async function getCurrentUser(token) {
   const response = await fetch(`${base}/api/users/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: withAuth(token),
   });
   return handleResponse(response);
 }
 
-export async function getLeaderboard(gender) {
-  const response = await fetch(`${base}/api/leaderboard/${gender}`);
+export async function getLeaderboard(gender, token) {
+  const response = await fetch(`${base}/api/leaderboard/${gender}`, {
+    headers: withAuth(token),
+  });
   return handleResponse(response);
 }
 
@@ -43,9 +49,7 @@ export async function searchUsers(query, token) {
   const response = await fetch(
     `${base}/api/users/search?query=${encodeURIComponent(query)}`,
     {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers: withAuth(token),
     }
   );
   return handleResponse(response);
@@ -53,18 +57,14 @@ export async function searchUsers(query, token) {
 
 export async function getMatchHistory(userId, token) {
   const response = await fetch(`${base}/api/matches/user/${userId}`, {
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: withAuth(token),
   });
   return handleResponse(response);
 }
 
 export async function getMatchDetail(matchId, token) {
   const response = await fetch(`${base}/api/matches/${matchId}`, {
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: withAuth(token),
   });
   return handleResponse(response);
 }
@@ -74,7 +74,7 @@ export async function createMatch(payload, token) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...withAuth(token),
     },
     body: JSON.stringify(payload),
   });
