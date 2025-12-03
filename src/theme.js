@@ -2,45 +2,81 @@ import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
   palette: {
-    mode: "dark",
+    mode: "light",
     primary: {
-      main: "#0A5C38", // Courtside dark green (court color)
+      main: "#0FB177", // vibrant courtside teal/green
+      contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#B5FF6B", // neon-lime accent
+      main: "#9AEF6F", // lively lime accent
+      contrastText: "#0F1F1C",
     },
     background: {
-      default: "#0E0F0F",
-      paper: "#131414",
+      default: "#F6F9FB",
+      paper: "#FFFFFF",
     },
     text: {
-      primary: "#FFFFFF",
-      secondary: "#BFC4C8",
-    }
+      primary: "#0F1F1C",
+      secondary: "#4A6C63",
+    },
   },
   shape: {
-    borderRadius: 16,
+    borderRadius: 18,
   },
   typography: {
     fontFamily: "'Inter', sans-serif",
     h1: { fontWeight: 700 },
     h2: { fontWeight: 700 },
     h3: { fontWeight: 600 },
-    button: { textTransform: "none" },
+    button: { fontWeight: 600, textTransform: "none" },
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundColor: "#F6F9FB",
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 14,
+          borderRadius: 16,
           paddingLeft: 20,
           paddingRight: 20,
           paddingTop: 10,
           paddingBottom: 10,
-        }
-      }
+          boxShadow: "0px 12px 30px rgba(15, 177, 119, 0.25)",
+        },
+      },
     },
-  }
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 22,
+          boxShadow: "0px 18px 50px rgba(15, 177, 119, 0.10)",
+          border: "1px solid #E5F2EB",
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 22,
+          boxShadow: "0px 18px 50px rgba(15, 177, 119, 0.12)",
+          border: "1px solid #E5F2EB",
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          borderRadius: 18,
+          boxShadow: "0px 16px 36px rgba(15, 177, 119, 0.18)",
+        },
+      },
+    },
+  },
 });
 
 export default theme;
