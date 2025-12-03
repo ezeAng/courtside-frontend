@@ -10,6 +10,7 @@ import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { AVATARS } from "../../constants/avatars";
 import { clearAuth } from "../../features/auth/authSlice";
 import { clearUser } from "../../features/user/userSlice";
 
@@ -17,6 +18,13 @@ function HomeScreen() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.user);
+
+  const avatarIcon = useMemo(() => {
+    if (user?.avatar === undefined || user?.avatar === null) {
+      return "";
+    }
+    return AVATARS[user.avatar] || "";
+  }, [user]);
 
   const initials = useMemo(() => {
     if (user?.username) {
@@ -53,8 +61,8 @@ function HomeScreen() {
         <Card variant="outlined">
           <CardContent>
             <Stack spacing={2} alignItems="center" textAlign="center">
-              <Avatar sx={{ width: 72, height: 72, fontSize: 28 }} src={user?.avatar}>
-                {initials}
+              <Avatar sx={{ width: 72, height: 72, fontSize: 32 }}>
+                {avatarIcon || initials}
               </Avatar>
               <Box>
                 <Typography variant="h6" fontWeight={700}>
