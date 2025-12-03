@@ -38,6 +38,18 @@ export async function getCurrentUser(token) {
   return handleResponse(response);
 }
 
+export async function updateUser(payload, token) {
+  const response = await fetch(`${base}/api/users/update`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...withAuth(token),
+    },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+}
+
 export async function getLeaderboard(gender, token) {
   const response = await fetch(`${base}/api/leaderboard/${gender}`, {
     headers: withAuth(token),
@@ -85,6 +97,7 @@ export default {
   signup,
   login,
   getCurrentUser,
+  updateUser,
   getLeaderboard,
   searchUsers,
   getMatchHistory,

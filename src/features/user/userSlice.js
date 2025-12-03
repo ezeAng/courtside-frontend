@@ -1,10 +1,12 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { getCurrentUser } from "../../services/api";
+import { getCurrentUser, updateUser } from "../../services/api";
 
 const initialState = {
   user: null,
   loading: false,
   error: null,
+  updateLoading: false,
+  updateError: null,
 };
 
 export const fetchCurrentUser = createAsyncThunk(
@@ -19,6 +21,22 @@ export const fetchCurrentUser = createAsyncThunk(
   }
 );
 
+export const updateUserProfile = createAsyncThunk(
+  "user/updateUserProfile",
+  async (payload, { getState, rejectWithValue }) => {
+    try {
+      const token = getState().auth.accessToken;
+      if (!token) {
+        throw new Error("User not authenticated");
+      }
+      const data = await updateUser(payload, token);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState,
@@ -26,6 +44,8 @@ const userSlice = createSlice({
     clearUser: (state) => {
       state.user = null;
       state.error = null;
+      state.updateLoading = false;
+      state.updateError = null;
     },
   },
   extraReducers: (builder) => {
@@ -42,6 +62,18 @@ const userSlice = createSlice({
         state.loading = false;
         state.user = null;
         state.error = action.payload || "Failed to load user";
+      })
+      .addCase(updateUserProfile.pending, (state) => {
+        state.updateLoading = true;
+        state.updateError = null;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.updateLoading = false;
+        state.user = action.payload;
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.updateLoading = false;
+        state.updateError = action.payload || "Failed to update user";
       });
   },
 });
