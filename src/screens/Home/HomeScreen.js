@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
 import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -29,6 +30,19 @@ function HomeScreen() {
     return "";
   }, [user]);
 
+  const tier = useMemo(() => {
+    if (user?.elo === undefined || user?.elo === null) {
+      return null;
+    }
+
+    if (user.elo < 800) return { label: "Wood", color: "default" };
+    if (user.elo < 1000) return { label: "Bronze", color: "warning" };
+    if (user.elo < 1200) return { label: "Silver", color: "info" };
+    if (user.elo < 1400) return { label: "Gold", color: "warning" };
+    if (user.elo < 1600) return { label: "Platinum", color: "primary" };
+    return { label: "Diamond", color: "success" };
+  }, [user]);
+
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Stack spacing={3} alignItems="stretch">
@@ -52,6 +66,12 @@ function HomeScreen() {
                 <Typography color="text.secondary">
                   {user?.elo ? `Elo rating: ${user.elo}` : ""}
                 </Typography>
+                {tier && (
+                  <Stack direction="row" spacing={1} justifyContent="center" mt={1}>
+                    <Typography color="text.secondary">Tier:</Typography>
+                    <Chip label={tier.label} color={tier.color} size="small" />
+                  </Stack>
+                )}
               </Box>
             </Stack>
           </CardContent>
