@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { getLeaderboard } from "../../services/api";
 
 const initialState = {
-  gender: "male",
+  gender: "mixed",
   data: [],      // always the leaders array
   loading: false,
   error: null,

@@ -18,6 +18,9 @@ function GenderToggle({ value, onChange }) {
         fullWidth
         onChange={handleChange}
       >
+        <ToggleButton value="mixed" sx={{ fontWeight: 600 }}>
+          Global
+        </ToggleButton>
         <ToggleButton value="male" sx={{ fontWeight: 600 }}>
           Male
         </ToggleButton>
