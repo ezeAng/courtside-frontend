@@ -22,7 +22,6 @@ function SinglesForm({ onRecorded, onClose }) {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState(null);
-  console.log(currentUser)
   const userId = currentUser?.auth_id;
 
   const isValid = useMemo(() => opponentId && score && winnerTeam, [opponentId, score, winnerTeam]);

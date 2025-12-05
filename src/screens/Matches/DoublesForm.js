@@ -36,15 +36,25 @@ function DoublesForm({ onRecorded, onClose }) {
     const loadUsers = async () => {
       try {
         setLoadingUsers(true);
-        const results = await getOtherUsers(token);
-        console.log(results)
-        setUsers(results);
+        const res = await getOtherUsers(token);
+        console.log("API response:", res);
+
+        // FIX: extract the array correctly
+        const list = Array.isArray(res)
+          ? res
+          : Array.isArray(res.results)
+          ? res.results
+          : [];
+
+        setUsers(list);
       } catch (err) {
         setError(err.message);
+        setUsers([]);
       } finally {
         setLoadingUsers(false);
       }
     };
+
 
     if (token) {
       loadUsers();
