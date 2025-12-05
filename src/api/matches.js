@@ -1,7 +1,7 @@
 const base = process.env.REACT_APP_BACKEND_URL;
 
 export async function getPendingMatches(token) {
-  const res = await fetch(`${base}/matches/pending`, {
+  const res = await fetch(`${base}/api/matches/pending`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to load pending matches");
