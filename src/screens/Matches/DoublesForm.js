@@ -37,6 +37,7 @@ function DoublesForm({ onRecorded, onClose }) {
       try {
         setLoadingUsers(true);
         const results = await getOtherUsers(token);
+        console.log(results)
         setUsers(results);
       } catch (err) {
         setError(err.message);
@@ -55,9 +56,9 @@ function DoublesForm({ onRecorded, onClose }) {
     setError(null);
     if (!partnerId || !opponent1Id || !opponent2Id || !userId) return;
 
-    const partner = users.find((user) => String(user.user_id) === String(partnerId));
-    const opponent1 = users.find((user) => String(user.user_id) === String(opponent1Id));
-    const opponent2 = users.find((user) => String(user.user_id) === String(opponent2Id));
+    const partner = users.find((user) => String(user.auth_id) === String(partnerId));
+    const opponent1 = users.find((user) => String(user.auth_id) === String(opponent1Id));
+    const opponent2 = users.find((user) => String(user.auth_id) === String(opponent2Id));
 
     if (!partner || !opponent1 || !opponent2) {
       setError("Please select valid players for all positions");
@@ -98,7 +99,7 @@ function DoublesForm({ onRecorded, onClose }) {
       disabled={loadingUsers}
     >
       {users.map((user) => (
-        <MenuItem key={user.user_id || user.id} value={user.user_id || user.id}>
+        <MenuItem key={user.auth_id || user.user_id} value={user.auth_id || user.user_id}>
           {user.username}
         </MenuItem>
       ))}

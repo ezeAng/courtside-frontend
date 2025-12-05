@@ -9,7 +9,7 @@ export async function getPendingMatches(token) {
 }
 
 export async function confirmMatch(matchId, token) {
-  const res = await fetch(`${base}/matches/${matchId}/confirm`, {
+  const res = await fetch(`${base}/api/matches/${matchId}/confirm`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });

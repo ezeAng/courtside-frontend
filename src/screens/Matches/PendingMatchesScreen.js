@@ -89,7 +89,7 @@ export default function PendingMatchesScreen() {
       ) : (
         incoming.map((m) => (
           <Paper
-            key={m.id}
+            key={m.match_id}
             variant="outlined"
             sx={{ p: 2, borderRadius: 2 }}
           >
@@ -105,14 +105,14 @@ export default function PendingMatchesScreen() {
                 <Button
                   variant="contained"
                   color="success"
-                  onClick={() => handleConfirm(m.id)}
+                  onClick={() => handleConfirm(m.match_id)}
                 >
                   Confirm
                 </Button>
                 <Button
                   variant="contained"
                   color="error"
-                  onClick={() => handleReject(m.id)}
+                  onClick={() => handleReject(m.match_id)}
                 >
                   Reject
                 </Button>
@@ -136,7 +136,7 @@ export default function PendingMatchesScreen() {
       ) : (
         outgoing.map((m) => (
           <Paper
-            key={m.id}
+            key={m.match_id}
             variant="outlined"
             sx={{ p: 2, borderRadius: 2 }}
           >

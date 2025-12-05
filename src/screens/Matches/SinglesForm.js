@@ -22,8 +22,8 @@ function SinglesForm({ onRecorded, onClose }) {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState(null);
-
-  const userId = currentUser?.user_id;
+  console.log(currentUser)
+  const userId = currentUser?.auth_id;
 
   const isValid = useMemo(() => opponentId && score && winnerTeam, [opponentId, score, winnerTeam]);
 
@@ -32,7 +32,8 @@ function SinglesForm({ onRecorded, onClose }) {
       try {
         setLoadingUsers(true);
         const results = await getOtherUsers(token);
-        setUsers(results);
+        setUsers(results?.results || []);
+
       } catch (err) {
         setError(err.message);
       } finally {
@@ -48,21 +49,23 @@ function SinglesForm({ onRecorded, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    console.log(opponentId)
+    console.log(userId)
     if (!opponentId || !userId) return;
 
-    const opponent = users.find((user) => String(user.user_id) === String(opponentId));
+    const opponent = users.find((user) => String(user.auth_id) === String(opponentId));
 
     if (!opponent) {
       setError("Please select a valid opponent");
       return;
     }
-
+    console.log(opponent)
     try {
       await dispatch(
         recordMatch({
           match_type: "singles",
           players_team_A: [userId],
-          players_team_B: [opponent.user_id || opponent.id],
+          players_team_B: [opponent.auth_id || opponent.id],
           score,
           winner_team: winnerTeam,
         })
@@ -87,7 +90,7 @@ function SinglesForm({ onRecorded, onClose }) {
           disabled={loadingUsers}
         >
           {users.map((user) => (
-            <MenuItem key={user.user_id || user.id} value={user.user_id || user.id}>
+            <MenuItem key={user.auth_id} value={user.auth_id}>
               {user.username}
             </MenuItem>
           ))}
