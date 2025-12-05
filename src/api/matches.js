@@ -18,7 +18,7 @@ export async function confirmMatch(matchId, token) {
 }
 
 export async function rejectMatch(matchId, token) {
-  const res = await fetch(`${base}/matches/${matchId}/reject`, {
+  const res = await fetch(`${base}/api/matches/${matchId}/reject`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
