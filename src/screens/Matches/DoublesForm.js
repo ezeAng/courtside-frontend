@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import Autocomplete from "@mui/material/Autocomplete";
 import Button from "@mui/material/Button";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Radio from "@mui/material/Radio";
@@ -16,9 +16,9 @@ function DoublesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.accessToken);
   const currentUser = useSelector((state) => state.user.user);
-  const [partner, setPartner] = useState(null);
-  const [opponent1, setOpponent1] = useState(null);
-  const [opponent2, setOpponent2] = useState(null);
+  const [partnerId, setPartnerId] = useState("");
+  const [opponent1Id, setOpponent1Id] = useState("");
+  const [opponent2Id, setOpponent2Id] = useState("");
   const [score, setScore] = useState("");
   const [winnerTeam, setWinnerTeam] = useState("A");
   const [users, setUsers] = useState([]);
@@ -28,8 +28,8 @@ function DoublesForm({ onRecorded, onClose }) {
   const userId = currentUser?.user_id;
 
   const isValid = useMemo(
-    () => partner && opponent1 && opponent2 && score && winnerTeam,
-    [partner, opponent1, opponent2, score, winnerTeam]
+    () => partnerId && opponent1Id && opponent2Id && score && winnerTeam,
+    [partnerId, opponent1Id, opponent2Id, score, winnerTeam]
   );
 
   useEffect(() => {
@@ -50,25 +50,26 @@ function DoublesForm({ onRecorded, onClose }) {
     }
   }, [token]);
 
-  const partnerOptions = useMemo(
-    () => users.filter((user) => user.user_id !== opponent1?.user_id && user.user_id !== opponent2?.user_id),
-    [opponent1?.user_id, opponent2?.user_id, users]
-  );
-
-  const opponent1Options = useMemo(
-    () => users.filter((user) => user.user_id !== partner?.user_id && user.user_id !== opponent2?.user_id),
-    [opponent2?.user_id, partner?.user_id, users]
-  );
-
-  const opponent2Options = useMemo(
-    () => users.filter((user) => user.user_id !== partner?.user_id && user.user_id !== opponent1?.user_id),
-    [opponent1?.user_id, partner?.user_id, users]
-  );
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (!partner || !opponent1 || !opponent2 || !userId) return;
+    if (!partnerId || !opponent1Id || !opponent2Id || !userId) return;
+
+    const partner = users.find((user) => String(user.user_id) === String(partnerId));
+    const opponent1 = users.find((user) => String(user.user_id) === String(opponent1Id));
+    const opponent2 = users.find((user) => String(user.user_id) === String(opponent2Id));
+
+    if (!partner || !opponent1 || !opponent2) {
+      setError("Please select valid players for all positions");
+      return;
+    }
+
+    const uniqueIds = new Set([partner.user_id, opponent1.user_id, opponent2.user_id]);
+
+    if (uniqueIds.size < 3) {
+      setError("Please select three distinct players");
+      return;
+    }
 
     try {
       await dispatch(
@@ -87,28 +88,30 @@ function DoublesForm({ onRecorded, onClose }) {
     }
   };
 
-  const createAutocomplete = (label, valueKey, value, setValue) => (
-    <Autocomplete
-      options={{
-        partner: partnerOptions,
-        opponent1: opponent1Options,
-        opponent2: opponent2Options,
-      }[valueKey]}
-      getOptionLabel={(option) => option.username || ""}
-      loading={loadingUsers}
+  const createPlayerSelect = (label, value, setValue) => (
+    <TextField
+      select
+      label={label}
       value={value}
-      onChange={(e, newValue) => setValue(newValue)}
-      renderInput={(params) => <TextField {...params} label={label} required />}
-    />
+      onChange={(e) => setValue(e.target.value)}
+      required
+      disabled={loadingUsers}
+    >
+      {users.map((user) => (
+        <MenuItem key={user.user_id || user.id} value={user.user_id || user.id}>
+          {user.username}
+        </MenuItem>
+      ))}
+    </TextField>
   );
 
   return (
     <form onSubmit={handleSubmit}>
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
-        {createAutocomplete("Partner", "partner", partner, setPartner)}
-        {createAutocomplete("Opponent 1", "opponent1", opponent1, setOpponent1)}
-        {createAutocomplete("Opponent 2", "opponent2", opponent2, setOpponent2)}
+        {createPlayerSelect("Partner", partnerId, setPartnerId)}
+        {createPlayerSelect("Opponent 1", opponent1Id, setOpponent1Id)}
+        {createPlayerSelect("Opponent 2", opponent2Id, setOpponent2Id)}
         <TextField
           label="Score"
           placeholder="21-15, 21-18"
