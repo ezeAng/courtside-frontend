@@ -11,6 +11,7 @@ import FormLabel from "@mui/material/FormLabel";
 import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
 import { getOtherUsers } from "../../services/api";
+import ScoreSetsInput from "./ScoreSetsInput";
 
 function DoublesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
@@ -19,7 +20,7 @@ function DoublesForm({ onRecorded, onClose }) {
   const [partnerId, setPartnerId] = useState("");
   const [opponent1Id, setOpponent1Id] = useState("");
   const [opponent2Id, setOpponent2Id] = useState("");
-  const [score, setScore] = useState("");
+  const [sets, setSets] = useState([{ your: "", opponent: "" }]);
   const [winnerTeam, setWinnerTeam] = useState("A");
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -28,8 +29,15 @@ function DoublesForm({ onRecorded, onClose }) {
   const userId = currentUser?.auth_id;
 
   const isValid = useMemo(
-    () => partnerId && opponent1Id && opponent2Id && score && winnerTeam,
-    [partnerId, opponent1Id, opponent2Id, score, winnerTeam]
+    () =>
+      partnerId &&
+      opponent1Id &&
+      opponent2Id &&
+      winnerTeam &&
+      sets.length >= 1 &&
+      sets.length <= 3 &&
+      sets.every((set) => set.your !== "" && set.opponent !== ""),
+    [opponent1Id, opponent2Id, partnerId, sets, winnerTeam]
   );
 
   useEffect(() => {
@@ -37,7 +45,6 @@ function DoublesForm({ onRecorded, onClose }) {
       try {
         setLoadingUsers(true);
         const res = await getOtherUsers(token);
-        console.log("API response:", res);
 
         // FIX: extract the array correctly
         const list = Array.isArray(res)
@@ -83,12 +90,16 @@ function DoublesForm({ onRecorded, onClose }) {
     }
 
     try {
+      const formattedScore = sets
+        .map((set) => `${Number(set.your)}-${Number(set.opponent)}`)
+        .join(", ");
+
       await dispatch(
         recordMatch({
           match_type: "doubles",
           players_team_A: [userId, partner.auth_id || partner.id],
           players_team_B: [opponent1.auth_id || opponent1.id, opponent2.auth_id || opponent2.id],
-          score,
+          score: formattedScore,
           winner_team: winnerTeam,
         })
       ).unwrap();
@@ -123,13 +134,7 @@ function DoublesForm({ onRecorded, onClose }) {
         {createPlayerSelect("Partner", partnerId, setPartnerId)}
         {createPlayerSelect("Opponent 1", opponent1Id, setOpponent1Id)}
         {createPlayerSelect("Opponent 2", opponent2Id, setOpponent2Id)}
-        <TextField
-          label="Score"
-          placeholder="21-15, 21-18"
-          value={score}
-          onChange={(e) => setScore(e.target.value)}
-          required
-        />
+        <ScoreSetsInput sets={sets} onChange={setSets} />
         <Stack spacing={1}>
           <FormLabel>Winner</FormLabel>
           <RadioGroup

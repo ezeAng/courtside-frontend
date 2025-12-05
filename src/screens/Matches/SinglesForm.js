@@ -11,20 +11,29 @@ import FormLabel from "@mui/material/FormLabel";
 import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
 import { getOtherUsers } from "../../services/api";
+import ScoreSetsInput from "./ScoreSetsInput";
 
 function SinglesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.accessToken);
   const currentUser = useSelector((state) => state.user.user);
   const [opponentId, setOpponentId] = useState("");
-  const [score, setScore] = useState("");
+  const [sets, setSets] = useState([{ your: "", opponent: "" }]);
   const [winnerTeam, setWinnerTeam] = useState("A");
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState(null);
   const userId = currentUser?.auth_id;
 
-  const isValid = useMemo(() => opponentId && score && winnerTeam, [opponentId, score, winnerTeam]);
+  const isValid = useMemo(
+    () =>
+      opponentId &&
+      winnerTeam &&
+      sets.length >= 1 &&
+      sets.length <= 3 &&
+      sets.every((set) => set.your !== "" && set.opponent !== ""),
+    [opponentId, sets, winnerTeam]
+  );
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -48,8 +57,6 @@ function SinglesForm({ onRecorded, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    console.log(opponentId)
-    console.log(userId)
     if (!opponentId || !userId) return;
 
     const opponent = users.find((user) => String(user.auth_id) === String(opponentId));
@@ -58,14 +65,17 @@ function SinglesForm({ onRecorded, onClose }) {
       setError("Please select a valid opponent");
       return;
     }
-    console.log(opponent)
     try {
+      const formattedScore = sets
+        .map((set) => `${Number(set.your)}-${Number(set.opponent)}`)
+        .join(", ");
+
       await dispatch(
         recordMatch({
           match_type: "singles",
           players_team_A: [userId],
           players_team_B: [opponent.auth_id || opponent.id],
-          score,
+          score: formattedScore,
           winner_team: winnerTeam,
         })
       ).unwrap();
@@ -94,13 +104,7 @@ function SinglesForm({ onRecorded, onClose }) {
             </MenuItem>
           ))}
         </TextField>
-        <TextField
-          label="Score"
-          placeholder="21-15, 21-18"
-          value={score}
-          onChange={(e) => setScore(e.target.value)}
-          required
-        />
+        <ScoreSetsInput sets={sets} onChange={setSets} />
         <Stack spacing={1}>
           <FormLabel>Winner</FormLabel>
           <RadioGroup
