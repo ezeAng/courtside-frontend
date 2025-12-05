@@ -67,6 +67,13 @@ export async function searchUsers(query, token) {
   return handleResponse(response);
 }
 
+export async function getOtherUsers(token) {
+  const response = await fetch(`${base}/api/users/others`, {
+    headers: withAuth(token),
+  });
+  return handleResponse(response);
+}
+
 export async function getMatchHistory(userId, token) {
   const response = await fetch(`${base}/api/matches/user/${userId}`, {
     headers: withAuth(token),
@@ -100,6 +107,7 @@ export default {
   updateUser,
   getLeaderboard,
   searchUsers,
+  getOtherUsers,
   getMatchHistory,
   getMatchDetail,
   createMatch,

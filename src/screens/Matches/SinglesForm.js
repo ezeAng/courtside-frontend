@@ -10,7 +10,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
-import { searchUsers } from "../../services/api";
+import { getOtherUsers } from "../../services/api";
 
 function SinglesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
@@ -19,9 +19,8 @@ function SinglesForm({ onRecorded, onClose }) {
   const [opponent, setOpponent] = useState(null);
   const [score, setScore] = useState("");
   const [winnerTeam, setWinnerTeam] = useState("A");
-  const [searchValue, setSearchValue] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [loadingSearch, setLoadingSearch] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState(null);
 
   const userId = currentUser?.user_id;
@@ -29,27 +28,22 @@ function SinglesForm({ onRecorded, onClose }) {
   const isValid = useMemo(() => opponent && score && winnerTeam, [opponent, score, winnerTeam]);
 
   useEffect(() => {
-    const handler = setTimeout(async () => {
-      if (searchValue.trim().length < 2) {
-        setSearchResults([]);
-        setLoadingSearch(false);
-        return;
-      }
+    const loadUsers = async () => {
       try {
-        setLoadingSearch(true);
-        const results = await searchUsers(searchValue, token);
-        setSearchResults(results);
+        setLoadingUsers(true);
+        const results = await getOtherUsers(token);
+        setUsers(results);
       } catch (err) {
         setError(err.message);
       } finally {
-        setLoadingSearch(false);
+        setLoadingUsers(false);
       }
-    }, 300);
-
-    return () => {
-      clearTimeout(handler);
     };
-  }, [searchValue, token]);
+
+    if (token) {
+      loadUsers();
+    }
+  }, [token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,13 +72,11 @@ function SinglesForm({ onRecorded, onClose }) {
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
         <Autocomplete
-          options={searchResults}
+          options={users}
           getOptionLabel={(option) => option.username || ""}
-          loading={loadingSearch}
+          loading={loadingUsers}
           value={opponent}
           onChange={(e, value) => setOpponent(value)}
-          inputValue={searchValue}
-          onInputChange={(e, value) => setSearchValue(value)}
           renderInput={(params) => <TextField {...params} label="Opponent" required />}
         />
         <TextField
