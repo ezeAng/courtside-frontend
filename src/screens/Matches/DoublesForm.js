@@ -10,7 +10,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
-import { searchUsers } from "../../services/api";
+import { getOtherUsers } from "../../services/api";
 
 function DoublesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
@@ -21,9 +21,8 @@ function DoublesForm({ onRecorded, onClose }) {
   const [opponent2, setOpponent2] = useState(null);
   const [score, setScore] = useState("");
   const [winnerTeam, setWinnerTeam] = useState("A");
-  const [searchValue, setSearchValue] = useState({ partner: "", opponent1: "", opponent2: "" });
-  const [searchResults, setSearchResults] = useState({ partner: [], opponent1: [], opponent2: [] });
-  const [loadingSearch, setLoadingSearch] = useState({ partner: false, opponent1: false, opponent2: false });
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState(null);
 
   const userId = currentUser?.user_id;
@@ -34,30 +33,37 @@ function DoublesForm({ onRecorded, onClose }) {
   );
 
   useEffect(() => {
-    const timers = {};
-    ["partner", "opponent1", "opponent2"].forEach((key) => {
-      if (searchValue[key].trim().length < 2) {
-        setSearchResults((prev) => ({ ...prev, [key]: [] }));
-        setLoadingSearch((prev) => ({ ...prev, [key]: false }));
-        return;
+    const loadUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const results = await getOtherUsers(token);
+        setUsers(results);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoadingUsers(false);
       }
-      setLoadingSearch((prev) => ({ ...prev, [key]: true }));
-      timers[key] = setTimeout(async () => {
-        try {
-          const results = await searchUsers(searchValue[key], token);
-          setSearchResults((prev) => ({ ...prev, [key]: results }));
-        } catch (err) {
-          setError(err.message);
-        } finally {
-          setLoadingSearch((prev) => ({ ...prev, [key]: false }));
-        }
-      }, 300);
-    });
-
-    return () => {
-      Object.values(timers).forEach((timer) => clearTimeout(timer));
     };
-  }, [searchValue, token]);
+
+    if (token) {
+      loadUsers();
+    }
+  }, [token]);
+
+  const partnerOptions = useMemo(
+    () => users.filter((user) => user.user_id !== opponent1?.user_id && user.user_id !== opponent2?.user_id),
+    [opponent1?.user_id, opponent2?.user_id, users]
+  );
+
+  const opponent1Options = useMemo(
+    () => users.filter((user) => user.user_id !== partner?.user_id && user.user_id !== opponent2?.user_id),
+    [opponent2?.user_id, partner?.user_id, users]
+  );
+
+  const opponent2Options = useMemo(
+    () => users.filter((user) => user.user_id !== partner?.user_id && user.user_id !== opponent1?.user_id),
+    [opponent1?.user_id, partner?.user_id, users]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,15 +89,15 @@ function DoublesForm({ onRecorded, onClose }) {
 
   const createAutocomplete = (label, valueKey, value, setValue) => (
     <Autocomplete
-      options={searchResults[valueKey]}
+      options={{
+        partner: partnerOptions,
+        opponent1: opponent1Options,
+        opponent2: opponent2Options,
+      }[valueKey]}
       getOptionLabel={(option) => option.username || ""}
-      loading={loadingSearch[valueKey]}
+      loading={loadingUsers}
       value={value}
       onChange={(e, newValue) => setValue(newValue)}
-      inputValue={searchValue[valueKey]}
-      onInputChange={(e, newValue) =>
-        setSearchValue((prev) => ({ ...prev, [valueKey]: newValue }))
-      }
       renderInput={(params) => <TextField {...params} label={label} required />}
     />
   );
