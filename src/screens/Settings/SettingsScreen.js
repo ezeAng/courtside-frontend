@@ -8,17 +8,20 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
-import Grid from '@mui/material/Grid';
+import Grid from "@mui/material/Grid";
 
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import MenuItem from "@mui/material/MenuItem";
 import { AVATARS } from "../../constants/avatars";
-import { updateUserProfile } from "../../features/user/userSlice";
+import { clearAuth } from "../../features/auth/authSlice";
+import { clearUser, updateUserProfile } from "../../features/user/userSlice";
+import { useNavigate } from "react-router-dom";
 
 function SettingsScreen() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user, updateLoading, updateError } = useSelector((state) => state.user);
 
   const [username, setUsername] = useState(user?.username || "");
@@ -93,13 +96,22 @@ function SettingsScreen() {
               <Typography variant="subtitle1" fontWeight={600}>
                 Choose an avatar
               </Typography>
-              <Grid container spacing={1} columns={5}>
+              <Grid container spacing={2} columns={10}>
                 {AVATARS.map((icon, index) => (
-                  <Grid xs={1} key={icon}>
+                  <Grid item xs={2} key={icon}>
                     <Button
                       variant={avatar === index ? "contained" : "outlined"}
                       onClick={() => setAvatar(index)}
-                      sx={{ width: "100%", minWidth: 0, p: 0 }}
+                      sx={{
+                        width: "100%",
+                        minWidth: 0,
+                        p: 0,
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        aspectRatio: "1 / 1",
+                        borderColor: avatar === index ? undefined : "divider",
+                        boxShadow: avatar === index ? 2 : "none",
+                      }}
                       aria-label={`Select avatar ${index + 1}`}
                     >
                       <Box
@@ -108,8 +120,8 @@ function SettingsScreen() {
                           alignItems: "center",
                           justifyContent: "center",
                           width: "100%",
-                          py: 1,
-                          fontSize: 24,
+                          height: "100%",
+                          fontSize: 28,
                         }}
                       >
                         {icon}
@@ -130,6 +142,19 @@ function SettingsScreen() {
               }
             >
               {updateLoading ? "Saving..." : "Save Changes"}
+            </Button>
+            <Button
+              variant="text"
+              color="error"
+              fullWidth
+              size="large"
+              onClick={() => {
+                dispatch(clearAuth());
+                dispatch(clearUser());
+                navigate("/login", { replace: true });
+              }}
+            >
+              Log out
             </Button>
           </Stack>
         </CardContent>
