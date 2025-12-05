@@ -17,7 +17,7 @@ function MatchHistoryScreen() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const userId = useSelector((state) => state.user.user?.auth_id);
-  const { matches, loading } = useSelector((state) => state.matches.matches);
+  const { matches, loading } = useSelector((state) => state.matches);
   const [openModal, setOpenModal] = useState(false);
   useEffect(() => {
     if (userId) {
