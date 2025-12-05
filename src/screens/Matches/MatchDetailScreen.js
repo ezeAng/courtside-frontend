@@ -25,7 +25,7 @@ function TeamCard({ title, players, isWinner }) {
             {title}
           </Typography>
           {players?.map((player) => (
-            <Stack key={player.user_id || player.id} direction="row" justifyContent="space-between">
+            <Stack key={player.auth_id || player.id} direction="row" justifyContent="space-between">
               <Typography>{player.username}</Typography>
               <Typography color="text.secondary">Elo: {player.elo}</Typography>
             </Stack>

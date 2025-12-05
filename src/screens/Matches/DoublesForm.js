@@ -25,7 +25,7 @@ function DoublesForm({ onRecorded, onClose }) {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState(null);
 
-  const userId = currentUser?.user_id;
+  const userId = currentUser?.auth_id;
 
   const isValid = useMemo(
     () => partnerId && opponent1Id && opponent2Id && score && winnerTeam,
@@ -65,7 +65,7 @@ function DoublesForm({ onRecorded, onClose }) {
       return;
     }
 
-    const uniqueIds = new Set([partner.user_id, opponent1.user_id, opponent2.user_id]);
+    const uniqueIds = new Set([partner.auth_id, opponent1.auth_id, opponent2.auth_id]);
 
     if (uniqueIds.size < 3) {
       setError("Please select three distinct players");
@@ -76,8 +76,8 @@ function DoublesForm({ onRecorded, onClose }) {
       await dispatch(
         recordMatch({
           match_type: "doubles",
-          players_team_A: [userId, partner.user_id || partner.id],
-          players_team_B: [opponent1.user_id || opponent1.id, opponent2.user_id || opponent2.id],
+          players_team_A: [userId, partner.auth_id || partner.id],
+          players_team_B: [opponent1.auth_id || opponent1.id, opponent2.auth_id || opponent2.id],
           score,
           winner_team: winnerTeam,
         })
@@ -99,7 +99,7 @@ function DoublesForm({ onRecorded, onClose }) {
       disabled={loadingUsers}
     >
       {users.map((user) => (
-        <MenuItem key={user.auth_id || user.user_id} value={user.auth_id || user.user_id}>
+        <MenuItem key={user.auth_id || user.auth_id} value={user.auth_id || user.auth_id}>
           {user.username}
         </MenuItem>
       ))}

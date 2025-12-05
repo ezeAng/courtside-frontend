@@ -16,15 +16,14 @@ import { fetchMatchHistory } from "../../features/matches/matchSlice";
 function MatchHistoryScreen() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const userId = useSelector((state) => state.user.user?.user_id);
-  const { matches, loading } = useSelector((state) => state.matches);
+  const userId = useSelector((state) => state.user.user?.auth_id);
+  const { matches, loading } = useSelector((state) => state.matches.matches);
   const [openModal, setOpenModal] = useState(false);
-
   useEffect(() => {
     if (userId) {
       dispatch(fetchMatchHistory(userId));
     }
-  }, [dispatch, userId]);
+  }, []);
 
   const handleRecorded = () => {
     setOpenModal(false);
@@ -68,10 +67,10 @@ function MatchHistoryScreen() {
                         Score: {match.score}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Team A: {formatPlayers(match.players_team_A)}
+                        Team A: {formatPlayers(match.players?.team_A)}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Team B: {formatPlayers(match.players_team_B)}
+                        Team B: {formatPlayers(match.players?.team_B)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {match.played_at
