@@ -11,9 +11,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 const navItems = [
   { label: "Home", value: "/home", icon: <HomeIcon /> },
+  { label: "Leaderboard", value: "/leaderboard", icon: <EmojiEventsIcon /> },
   { label: "Matches", value: "/matches", icon: <SportsMartialArtsIcon /> },
   { label: "Pending", value: "/matches/pending", icon: <PendingActionsIcon /> },
-  { label: "Leaderboard", value: "/leaderboard", icon: <EmojiEventsIcon /> },
   { label: "Settings", value: "/settings", icon: <SettingsIcon /> },
 ];
 
