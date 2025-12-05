@@ -64,7 +64,7 @@ const matchSlice = createSlice({
       })
       .addCase(fetchMatchHistory.fulfilled, (state, action) => {
         state.loading = false;
-        state.matches = action.payload || [];
+        state.matches = action.payload?.matches || action.payload || [];
       })
       .addCase(fetchMatchHistory.rejected, (state, action) => {
         state.loading = false;
@@ -76,7 +76,7 @@ const matchSlice = createSlice({
       })
       .addCase(fetchMatchDetail.fulfilled, (state, action) => {
         state.loading = false;
-        state.matchDetail = action.payload;
+        state.matchDetail = action.payload?.match || action.payload;
       })
       .addCase(fetchMatchDetail.rejected, (state, action) => {
         state.loading = false;
@@ -88,8 +88,9 @@ const matchSlice = createSlice({
       })
       .addCase(recordMatch.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload) {
-          state.matches = [action.payload, ...state.matches];
+        const newMatch = action.payload?.match || action.payload;
+        if (newMatch) {
+          state.matches = [newMatch, ...(state.matches || [])];
         }
       })
       .addCase(recordMatch.rejected, (state, action) => {
