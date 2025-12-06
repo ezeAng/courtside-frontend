@@ -12,6 +12,7 @@ import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
 import { getOtherUsers } from "../../services/api";
 import ScoreSetsInput from "./ScoreSetsInput";
+import { areSetsWithinRange, doesWinnerAlignWithScores } from "./scoreValidation";
 
 function DoublesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
@@ -34,9 +35,7 @@ function DoublesForm({ onRecorded, onClose }) {
       opponent1Id &&
       opponent2Id &&
       winnerTeam &&
-      sets.length >= 1 &&
-      sets.length <= 3 &&
-      sets.every((set) => set.your !== "" && set.opponent !== ""),
+      areSetsWithinRange(sets),
     [opponent1Id, opponent2Id, partnerId, sets, winnerTeam]
   );
 
@@ -71,8 +70,14 @@ function DoublesForm({ onRecorded, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-      console.log(partnerId, opponent1Id, opponent2Id, userId)
     if (!partnerId || !opponent1Id || !opponent2Id || !userId) return;
+
+    const uniqueIds = new Set([userId, partnerId, opponent1Id, opponent2Id].map(String));
+
+    if (uniqueIds.size < 4) {
+      setError("Each player must be unique");
+      return;
+    }
 
     const partner = users.find((user) => String(user.auth_id) === String(partnerId));
     const opponent1 = users.find((user) => String(user.auth_id) === String(opponent1Id));
@@ -83,14 +88,17 @@ function DoublesForm({ onRecorded, onClose }) {
       return;
     }
 
-    const uniqueIds = new Set([partner.auth_id, opponent1.auth_id, opponent2.auth_id]);
-
-    if (uniqueIds.size < 3) {
-      setError("Please select three distinct players");
-      return;
-    }
-
     try {
+      if (!areSetsWithinRange(sets)) {
+        setError("Scores must be between 0 and 30 for each set");
+        return;
+      }
+
+      if (!doesWinnerAlignWithScores(sets, winnerTeam)) {
+        setError("Winner selection must match the set results");
+        return;
+      }
+
       const formattedScore = sets
         .map((set) => `${Number(set.your)}-${Number(set.opponent)}`)
         .join(", ");

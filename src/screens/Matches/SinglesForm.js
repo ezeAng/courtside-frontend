@@ -12,6 +12,7 @@ import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
 import { getOtherUsers } from "../../services/api";
 import ScoreSetsInput from "./ScoreSetsInput";
+import { areSetsWithinRange, doesWinnerAlignWithScores } from "./scoreValidation";
 
 function SinglesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
@@ -26,12 +27,7 @@ function SinglesForm({ onRecorded, onClose }) {
   const userId = currentUser?.auth_id;
 
   const isValid = useMemo(
-    () =>
-      opponentId &&
-      winnerTeam &&
-      sets.length >= 1 &&
-      sets.length <= 3 &&
-      sets.every((set) => set.your !== "" && set.opponent !== ""),
+    () => opponentId && winnerTeam && areSetsWithinRange(sets),
     [opponentId, sets, winnerTeam]
   );
 
@@ -59,10 +55,25 @@ function SinglesForm({ onRecorded, onClose }) {
     setError(null);
     if (!opponentId || !userId) return;
 
+    if (String(opponentId) === String(userId)) {
+      setError("You cannot select yourself as the opponent");
+      return;
+    }
+
     const opponent = users.find((user) => String(user.auth_id) === String(opponentId));
 
     if (!opponent) {
       setError("Please select a valid opponent");
+      return;
+    }
+
+    if (!areSetsWithinRange(sets)) {
+      setError("Scores must be between 0 and 30 for each set");
+      return;
+    }
+
+    if (!doesWinnerAlignWithScores(sets, winnerTeam)) {
+      setError("Winner selection must match the set results");
       return;
     }
     try {
