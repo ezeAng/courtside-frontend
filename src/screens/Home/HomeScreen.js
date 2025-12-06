@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { AVATARS } from "../../constants/avatars";
-import { getH2H, getRecentActivity } from "../../services/api";
+import { getH2H, getHomeStats, getRecentActivity } from "../../services/api";
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -19,6 +19,7 @@ function HomeScreen() {
   const token = useSelector((state) => state.auth.accessToken);
   const [recentMatches, setRecentMatches] = useState([]);
   const [rivals, setRivals] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -27,12 +28,14 @@ function HomeScreen() {
       try {
         setLoading(true);
         setError(null);
-        const [recent, rivalsData] = await Promise.all([
+        const [recent, rivalsData, statsData] = await Promise.all([
           getRecentActivity(token),
           getH2H(token),
+          getHomeStats(token),
         ]);
         setRecentMatches(recent?.matches || []);
         setRivals(rivalsData?.rivals || []);
+        setStats(statsData?.stats || null);
       } catch (err) {
         setError(err.message || "Failed to load activity");
       } finally {
@@ -119,6 +122,30 @@ function HomeScreen() {
                 )}
               </Box>
             </Stack>
+          </CardContent>
+        </Card>
+
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="h6" fontWeight={700} mb={2}>
+              Overview
+            </Typography>
+            {loading && !stats && (
+              <Typography color="text.secondary">Loading stats...</Typography>
+            )}
+            {!loading && !stats && (
+              <Typography color="text.secondary">No stats available.</Typography>
+            )}
+            {stats && (
+              <Stack spacing={1}>
+                <Typography>ELO: {stats.current_elo}</Typography>
+                <Typography>Rank: #{stats.rank}</Typography>
+                <Typography>Matches this week: {stats.matches_this_week}</Typography>
+                <Typography>
+                  Win Rate (Last 10): {Math.round(stats.win_rate_last_10 * 100)}%
+                </Typography>
+              </Stack>
+            )}
           </CardContent>
         </Card>
 

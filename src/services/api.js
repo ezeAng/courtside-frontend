@@ -116,6 +116,14 @@ export async function getH2H(token) {
   return handleResponse(response);
 }
 
+export async function getHomeStats(token) {
+  const response = await fetch(`${base}/api/users/home-stats`, {
+    method: "GET",
+    headers: withAuth(token),
+  });
+  return handleResponse(response);
+}
+
 export default {
   signup,
   login,
@@ -129,4 +137,5 @@ export default {
   createMatch,
   getRecentActivity,
   getH2H,
+  getHomeStats,
 };
