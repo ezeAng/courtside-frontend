@@ -40,8 +40,31 @@ export default function PlayerCardModal({ token, onClose }) {
   };
 
   const borderColor = tierColors[card.tier] || "#FFFFFF";
-  const profileImage = card.profile_image_url || "/default_avatar.png";
-  const normalizedProfileImage = profileImage.replace(/^http:\/\//i, "https://");
+  const normalizedProfileImage = (() => {
+    const profileImage = card.profile_image_url;
+
+    if (!profileImage) return "/default_avatar.png";
+
+    // Allow fully qualified URLs anywhere on the internet, including http.
+    if (/^https?:\/\//i.test(profileImage) || /^\/\//.test(profileImage)) {
+      return profileImage;
+    }
+
+    // If the URL is otherwise absolute (e.g., data: or other protocol), use it directly.
+    try {
+      const url = new URL(profileImage);
+      if (url.protocol) return profileImage;
+    } catch (err) {
+      // Not an absolute URL; fall back to backend + relative path handling below.
+    }
+
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || "";
+    const normalizedPath = profileImage.startsWith("/")
+      ? profileImage
+      : `/${profileImage}`;
+
+    return `${backendUrl}${normalizedPath}` || "/default_avatar.png";
+  })();
   const bioText = card.bio || "This player has not added a bio yet.";
 
   async function getCardCanvas() {
