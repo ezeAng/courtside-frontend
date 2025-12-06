@@ -174,9 +174,11 @@ function HomeScreen() {
               </Typography>
             )}
             <Stack spacing={2} mt={2}>
-              {recentMatches.map((match) => (
+              {recentMatches.map((match, index) => (
                 <Box
-                  key={match.match_id}
+                  key=
+                    {match.match_id ||
+                    `${match.winner_username}-${match.loser_username}-${match.created_at}-${index}`}
                   sx={{
                     border: "1px solid",
                     borderColor: "divider",
@@ -230,11 +232,14 @@ function HomeScreen() {
               </Typography>
             )}
             <Stack spacing={2}>
-              {topRivals.map((rival) => {
+              {topRivals.map((rival, index) => {
                 const totalMatches = (rival?.wins || 0) + (rival?.losses || 0);
                 return (
                   <Box
-                    key={rival.opponent_auth_id}
+                    key={
+                      rival.opponent_auth_id ||
+                      `${rival.opponent_username || "rival"}-${index}`
+                    }
                     sx={{
                       border: "1px solid",
                       borderColor: "divider",
