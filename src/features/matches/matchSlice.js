@@ -18,7 +18,6 @@ export const fetchMatchHistory = createAsyncThunk(
     try {
       const token = getState().auth.accessToken;
       const data = await getMatchHistory(userId, token);
-      console.log(data)
       return data;
     } catch (error) {
       return rejectWithValue(error.message);

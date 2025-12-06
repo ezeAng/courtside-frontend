@@ -12,7 +12,6 @@ import { setGender, fetchLeaderboard } from "../../features/leaderboard/leaderbo
 function LeaderboardScreen() {
   const dispatch = useDispatch();
   const { gender, data, loading, error } = useSelector((state) => state.leaderboard);
-  console.log("Leaderboard data:", data);
 
   useEffect(() => {
     dispatch(fetchLeaderboard(gender));

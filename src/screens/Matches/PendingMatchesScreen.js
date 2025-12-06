@@ -22,7 +22,6 @@ export default function PendingMatchesScreen() {
       setError(null);
       const token = getStoredToken();
       const data = await getPendingMatches(token);
-      console.log(data)
       setIncoming(data.incoming || []);
       setOutgoing(data.outgoing || []);
     } catch (err) {
