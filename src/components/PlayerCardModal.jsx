@@ -45,8 +45,17 @@ export default function PlayerCardModal({ token, onClose }) {
 
     if (!profileImage) return "/default_avatar.png";
 
-    if (/^https?:\/\//i.test(profileImage)) {
-      return profileImage.replace(/^http:\/\//i, "https://");
+    // Allow fully qualified URLs anywhere on the internet, including http.
+    if (/^https?:\/\//i.test(profileImage) || /^\/\//.test(profileImage)) {
+      return profileImage;
+    }
+
+    // If the URL is otherwise absolute (e.g., data: or other protocol), use it directly.
+    try {
+      const url = new URL(profileImage);
+      if (url.protocol) return profileImage;
+    } catch (err) {
+      // Not an absolute URL; fall back to backend + relative path handling below.
     }
 
     const backendUrl = process.env.REACT_APP_BACKEND_URL || "";
