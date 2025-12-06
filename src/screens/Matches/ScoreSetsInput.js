@@ -36,14 +36,16 @@ function ScoreSetsInput({ sets, onChange, yourLabel = "Your Score", opponentLabe
         Sets
       </Typography>
       {sets.map((set, index) => (
-        <Grid
-          container
-          columnSpacing={2}
-          rowSpacing={2}
-          columns={2}
-          alignItems="center"
+        <div
           key={index}
-          sx={{ position: "relative" }}
+          style={{
+            width: "100%",
+            position: "relative",
+            marginBottom: "12px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
         >
           {sets.length > MIN_SETS && (
             <IconButton
@@ -55,45 +57,59 @@ function ScoreSetsInput({ sets, onChange, yourLabel = "Your Score", opponentLabe
               <RemoveCircleOutlineIcon />
             </IconButton>
           )}
-          <Grid item xs={1}>
-            <TextField
-              select
-              label={`${yourLabel} (Set ${index + 1})`}
-              value={set.your}
-              onChange={(e) => handleSetChange(index, "your", e.target.value)}
-              required
-              fullWidth
-            >
-              <MenuItem value="">
-                <em>Select score</em>
-              </MenuItem>
-              {SCORE_OPTIONS.map((score) => (
-                <MenuItem key={score} value={score}>
-                  {score}
+
+          {/* Input row */}
+          <div
+            style={{
+              display: "flex",
+              width: "100%",
+              gap: "12px",
+            }}
+          >
+            {/* Your Score */}
+            <div style={{ flex: 1 }}>
+              <TextField
+                select
+                label={`${yourLabel} (Set ${index + 1})`}
+                value={set.your}
+                onChange={(e) => handleSetChange(index, "your", e.target.value)}
+                required
+                fullWidth
+              >
+                <MenuItem value="">
+                  <em>Select score</em>
                 </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={1}>
-            <TextField
-              select
-              label={`${opponentLabel} (Set ${index + 1})`}
-              value={set.opponent}
-              onChange={(e) => handleSetChange(index, "opponent", e.target.value)}
-              required
-              fullWidth
-            >
-              <MenuItem value="">
-                <em>Select score</em>
-              </MenuItem>
-              {SCORE_OPTIONS.map((score) => (
-                <MenuItem key={score} value={score}>
-                  {score}
+                {SCORE_OPTIONS.map((score) => (
+                  <MenuItem key={score} value={score}>
+                    {score}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </div>
+
+            {/* Opponent Score */}
+            <div style={{ flex: 1 }}>
+              <TextField
+                select
+                label={`${opponentLabel} (Set ${index + 1})`}
+                value={set.opponent}
+                onChange={(e) => handleSetChange(index, "opponent", e.target.value)}
+                required
+                fullWidth
+              >
+                <MenuItem value="">
+                  <em>Select score</em>
                 </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-        </Grid>
+                {SCORE_OPTIONS.map((score) => (
+                  <MenuItem key={score} value={score}>
+                    {score}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </div>
+          </div>
+        </div>
+
       ))}
       <Button
         variant="outlined"
