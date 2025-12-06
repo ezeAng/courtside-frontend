@@ -12,6 +12,7 @@ import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
 import { getOtherUsers } from "../../services/api";
 import ScoreSetsInput from "./ScoreSetsInput";
+import { formatSetsScore } from "./scoreFormatting";
 import { areSetsWithinRange, doesWinnerAlignWithScores } from "./scoreValidation";
 
 function DoublesForm({ onRecorded, onClose }) {
@@ -99,9 +100,7 @@ function DoublesForm({ onRecorded, onClose }) {
         return;
       }
 
-      const formattedScore = sets
-        .map((set) => `${Number(set.your)}-${Number(set.opponent)}`)
-        .join(", ");
+      const formattedScore = formatSetsScore(sets);
 
       await dispatch(
         recordMatch({
