@@ -7,10 +7,13 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import Divider from "@mui/material/Divider";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useNavigate } from "react-router-dom";
 import { confirmMatch, getPendingMatches, rejectMatch } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
 
 export default function PendingMatchesScreen() {
+  const navigate = useNavigate();
   const [incoming, setIncoming] = useState([]);
   const [outgoing, setOutgoing] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -159,9 +162,18 @@ export default function PendingMatchesScreen() {
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
       <Stack spacing={3}>
-        <Typography variant="h5" fontWeight={700}>
-          Pending Matches
-        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate("/matches")}
+            variant="text"
+          >
+            Back
+          </Button>
+          <Typography variant="h5" fontWeight={700}>
+            Pending Matches
+          </Typography>
+        </Stack>
 
         {renderIncoming()}
 
