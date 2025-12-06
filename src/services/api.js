@@ -124,6 +124,15 @@ export async function getHomeStats(token) {
   return handleResponse(response);
 }
 
+export async function getPlayerCardData(token) {
+  const response = await fetch(`${base}/api/users/card-data`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return handleResponse(response);
+}
+
 export default {
   signup,
   login,
@@ -138,4 +147,5 @@ export default {
   getRecentActivity,
   getH2H,
   getHomeStats,
+  getPlayerCardData,
 };

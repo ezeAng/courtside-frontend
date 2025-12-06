@@ -12,6 +12,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { AVATARS } from "../../constants/avatars";
 import { getH2H, getHomeStats, getRecentActivity } from "../../services/api";
+import PlayerCardModal from "../../components/PlayerCardModal";
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ function HomeScreen() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showCard, setShowCard] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -268,6 +270,14 @@ function HomeScreen() {
             variant="contained"
             fullWidth
             size="large"
+            onClick={() => setShowCard(true)}
+          >
+            View Player Card
+          </Button>
+          <Button
+            variant="contained"
+            fullWidth
+            size="large"
             onClick={() => navigate("/matches")}
           >
             View Match History
@@ -281,6 +291,9 @@ function HomeScreen() {
             Go to Leaderboard
           </Button>
         </Stack>
+        {showCard && (
+          <PlayerCardModal token={token} onClose={() => setShowCard(false)} />
+        )}
       </Stack>
     </Container>
   );
