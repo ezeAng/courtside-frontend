@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { getCurrentUser, updateUser } from "../../services/api";
+import { getCurrentUser, updateProfile } from "../../services/api";
 
 const initialState = {
   user: null,
@@ -29,7 +29,7 @@ export const updateUserProfile = createAsyncThunk(
       if (!token) {
         throw new Error("User not authenticated");
       }
-      const data = await updateUser(payload, token);
+      const data = await updateProfile(token, payload);
       return data;
     } catch (error) {
       return rejectWithValue(error.message);
