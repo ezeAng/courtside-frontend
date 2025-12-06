@@ -287,22 +287,6 @@ function HomeScreen() {
           >
             View Player Card
           </Button>
-          <Button
-            variant="contained"
-            fullWidth
-            size="large"
-            onClick={() => navigate("/matches")}
-          >
-            View Match History
-          </Button>
-          <Button
-            variant="outlined"
-            fullWidth
-            size="large"
-            onClick={() => navigate("/leaderboard")}
-          >
-            Go to Leaderboard
-          </Button>
         </Stack>
         {showCard && (
           <PlayerCardModal token={token} onClose={() => setShowCard(false)} />
