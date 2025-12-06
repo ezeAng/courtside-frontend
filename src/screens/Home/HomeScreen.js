@@ -7,14 +7,43 @@ import Chip from "@mui/material/Chip";
 import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { AVATARS } from "../../constants/avatars";
+import { getH2H, getRecentActivity } from "../../services/api";
 
 function HomeScreen() {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.user);
+  const token = useSelector((state) => state.auth.accessToken);
+  const [recentMatches, setRecentMatches] = useState([]);
+  const [rivals, setRivals] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        const [recent, rivalsData] = await Promise.all([
+          getRecentActivity(token),
+          getH2H(token),
+        ]);
+        setRecentMatches(recent?.matches || []);
+        setRivals(rivalsData?.rivals || []);
+      } catch (err) {
+        setError(err.message || "Failed to load activity");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (token) {
+      load();
+    }
+  }, [token]);
 
   const avatarIcon = useMemo(() => {
     if (user?.avatar === undefined || user?.avatar === null) {
@@ -48,6 +77,17 @@ function HomeScreen() {
     return { label: "Diamond", color: "success" };
   }, [user]);
 
+  const topRivals = useMemo(() => {
+    return [...rivals]
+      .sort((a, b) => b.wins + b.losses - (a.wins + a.losses))
+      .slice(0, 5);
+  }, [rivals]);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleString();
+  };
+
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Stack spacing={3} alignItems="stretch">
@@ -78,6 +118,120 @@ function HomeScreen() {
                   </Stack>
                 )}
               </Box>
+            </Stack>
+          </CardContent>
+        </Card>
+
+        <Card variant="outlined">
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="h6" fontWeight={700}>
+                Recent Activity
+              </Typography>
+              {loading && (
+                <Typography color="text.secondary" variant="body2">
+                  Loading...
+                </Typography>
+              )}
+            </Stack>
+            {error && (
+              <Typography color="error" variant="body2" mt={1}>
+                {error}
+              </Typography>
+            )}
+            {!loading && !error && recentMatches.length === 0 && (
+              <Typography color="text.secondary" mt={2}>
+                No recent matches yet.
+              </Typography>
+            )}
+            <Stack spacing={2} mt={2}>
+              {recentMatches.map((match) => (
+                <Box
+                  key={match.match_id}
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    p: 2,
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    spacing={2}
+                  >
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        {match.winner_username} vs {match.loser_username}
+                      </Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        {match.gender} · {match.category}
+                      </Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        {formatDate(match.created_at)}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={match.scores}
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+          </CardContent>
+        </Card>
+
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="h6" fontWeight={700} mb={2}>
+              H2H Rivals
+            </Typography>
+            {error && (
+              <Typography color="error" variant="body2" mb={1}>
+                {error}
+              </Typography>
+            )}
+            {!loading && !error && topRivals.length === 0 && (
+              <Typography color="text.secondary">
+                No head-to-head data yet.
+              </Typography>
+            )}
+            <Stack spacing={2}>
+              {topRivals.map((rival) => {
+                const totalMatches = (rival?.wins || 0) + (rival?.losses || 0);
+                return (
+                  <Box
+                    key={rival.opponent_auth_id}
+                    sx={{
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 2,
+                      p: 2,
+                    }}
+                  >
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          {rival.opponent_username}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {totalMatches} matches
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={`W ${rival.wins} - L ${rival.losses}`}
+                        color="secondary"
+                        variant="outlined"
+                        size="small"
+                      />
+                    </Stack>
+                  </Box>
+                );
+              })}
             </Stack>
           </CardContent>
         </Card>
