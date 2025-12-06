@@ -36,8 +36,26 @@ function ScoreSetsInput({ sets, onChange, yourLabel = "Your Score", opponentLabe
         Sets
       </Typography>
       {sets.map((set, index) => (
-        <Grid container spacing={2} alignItems="center" key={index}>
-          <Grid item xs={5}>
+        <Grid
+          container
+          columnSpacing={2}
+          rowSpacing={2}
+          columns={2}
+          alignItems="center"
+          key={index}
+          sx={{ position: "relative" }}
+        >
+          {sets.length > MIN_SETS && (
+            <IconButton
+              aria-label="Remove set"
+              color="error"
+              onClick={() => removeSet(index)}
+              sx={{ position: "absolute", top: -8, right: -8 }}
+            >
+              <RemoveCircleOutlineIcon />
+            </IconButton>
+          )}
+          <Grid item xs={1}>
             <TextField
               select
               label={`${yourLabel} (Set ${index + 1})`}
@@ -56,7 +74,7 @@ function ScoreSetsInput({ sets, onChange, yourLabel = "Your Score", opponentLabe
               ))}
             </TextField>
           </Grid>
-          <Grid item xs={5}>
+          <Grid item xs={1}>
             <TextField
               select
               label={`${opponentLabel} (Set ${index + 1})`}
@@ -74,13 +92,6 @@ function ScoreSetsInput({ sets, onChange, yourLabel = "Your Score", opponentLabe
                 </MenuItem>
               ))}
             </TextField>
-          </Grid>
-          <Grid item>
-            {sets.length > MIN_SETS && (
-              <IconButton aria-label="Remove set" color="error" onClick={() => removeSet(index)}>
-                <RemoveCircleOutlineIcon />
-              </IconButton>
-            )}
           </Grid>
         </Grid>
       ))}
