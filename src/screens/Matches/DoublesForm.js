@@ -71,6 +71,7 @@ function DoublesForm({ onRecorded, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+      console.log(partnerId, opponent1Id, opponent2Id, userId)
     if (!partnerId || !opponent1Id || !opponent2Id || !userId) return;
 
     const partner = users.find((user) => String(user.auth_id) === String(partnerId));

@@ -142,16 +142,16 @@ function HomeScreen() {
               <Stack spacing={1}>
                 <Typography>ELO: {stats.current_elo}</Typography>
                 <Typography>Rank: #{stats.rank}</Typography>
-                <Typography>Matches this week: {stats.matches_this_week}</Typography>
+                {/* <Typography>Matches this week: {stats.matches_this_week}</Typography> */}
                 <Typography>
-                  Win Rate (Last 10): {Math.round(stats.win_rate_last_10 * 100)}%
+                  Win Rate (Last 10): {Math.round(stats.win_rate_last_10)}%
                 </Typography>
               </Stack>
             )}
           </CardContent>
         </Card>
 
-        <Card variant="outlined">
+        {/* <Card variant="outlined">
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="h6" fontWeight={700}>
@@ -214,7 +214,7 @@ function HomeScreen() {
               ))}
             </Stack>
           </CardContent>
-        </Card>
+        </Card> */}
 
         <Card variant="outlined">
           <CardContent>

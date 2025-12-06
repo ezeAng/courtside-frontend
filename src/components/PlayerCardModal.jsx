@@ -90,71 +90,141 @@ export default function PlayerCardModal({ token, onClose }) {
           Close
         </button>
 
+      <div
+        id="player-card"
+        ref={cardRef}
+        style={{
+          width: "390px",
+          height: "560px",
+          padding: "14px",
+          background: "#f7e27c", // Pokémon yellow
+          borderRadius: "12px",
+          border: `8px solid ${borderColor}`,
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+          fontFamily: "'Verdana', sans-serif",
+          position: "relative",
+        }}
+      >
+        {/* ---- TOP HEADER (like Pokémon name + HP) ---- */}
         <div
-          id="player-card"
-          ref={cardRef}
           style={{
-            width: "400px",
-            height: "600px",
-            padding: "20px",
-            background: "#ffffff",
-            borderRadius: "16px",
-            border: `10px solid ${borderColor}`,
             display: "flex",
-            flexDirection: "column",
+            justifyContent: "space-between",
+            width: "100%",
+            fontSize: "22px",
+            fontWeight: "700",
+            marginBottom: "4px",
+          }}
+        >
+          <span style={{ fontSize: "18px", fontWeight: "600" }}>Player Card</span>
+
+          <span style={{ color: "#cc0000", fontWeight: "700" }}>
+            {card.elo} ELO
+          </span>
+        </div>
+
+        {/* ---- IMAGE AREA ---- */}
+        <div
+          style={{
+            width: "100%",
+            height: "230px",
+            background: "#fff5ce",
+            border: "4px solid #d4b84f",
+            borderRadius: "6px",
+            display: "flex",
+            justifyContent: "center",
             alignItems: "center",
-            boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
-            gap: "8px",
+            marginBottom: "8px",
+            overflow: "hidden",
           }}
         >
           <img
             src={profileImage}
             alt="profile"
             style={{
-              width: "150px",
-              height: "150px",
-              borderRadius: "12px",
+              width: "100%",
+              height: "100%",
               objectFit: "cover",
-              marginBottom: "12px",
-              border: "4px solid #f0f0f0",
             }}
             onError={(e) => {
               e.currentTarget.onerror = null;
               e.currentTarget.src = "/default_avatar.png";
             }}
           />
+        </div>
 
-          <h2 style={{ margin: 0 }}>{card.username}</h2>
-          <p style={{ margin: 0 }}>ELO: {card.elo}</p>
-          <p style={{ margin: 0 }}>Tier: {card.tier}</p>
+        {/* ---- NAME + TIER ---- */}
+        <div style={{ textAlign: "center", marginBottom: "6px" }}>
+          <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700" }}>
+            {card.username}
+          </h2>
+          <p style={{ margin: 0, fontSize: "14px" }}>Tier: {card.tier}</p>
+        </div>
 
-          <div style={{ display: "flex", margin: "8px 0" }}>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <span key={i} style={{ fontSize: "24px" }}>
-                {i <= (card.star_rating || 0) ? "⭐" : "☆"}
-              </span>
-            ))}
-          </div>
+        {/* ---- STAR RATING ---- */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: "8px",
+          }}
+        >
+          {[1, 2, 3, 4, 5].map((i) => (
+            <span key={i} style={{ fontSize: "22px" }}>
+              {i <= (card.star_rating || 0) ? "⭐" : "☆"}
+            </span>
+          ))}
+        </div>
 
-          <p style={{ margin: 0 }}>Region: {card.region || "Unknown"}</p>
-          <p style={{ margin: 0 }}>
+        {/* ---- STATS BOX (styled like attack box) ---- */}
+        <div
+          style={{
+            width: "100%",
+            background: "#fffce4",
+            border: "2px solid #c9b04a",
+            borderRadius: "6px",
+            padding: "10px",
+            fontSize: "14px",
+            lineHeight: "1.2",
+            marginBottom: "8px",
+          }}
+        >
+          <p style={{ margin: "4px 0" }}>Region: {card.region || "Unknown"}</p>
+          <p style={{ margin: "4px 0" }}>
             Win Rate (Last 10): {Math.round((card.win_rate_last_10 || 0) * 100)}%
           </p>
-
-          {card.best_match && (
-            <div style={{ marginTop: "12px", textAlign: "center" }}>
-              <p style={{ margin: "4px 0" }}>Best Match:</p>
-              <p style={{ margin: "4px 0" }}>
-                {card.best_match.winner_username} vs {card.best_match.loser_username}
-              </p>
-              <p style={{ margin: "4px 0" }}>Scores: {card.best_match.scores}</p>
-            </div>
-          )}
-
-          <p style={{ marginTop: "12px", fontStyle: "italic", textAlign: "center" }}>
+          {/* ---- FLAVOR TEXT ---- */}
+          <p
+            style={{
+              marginTop: "4px",
+              fontStyle: "italic",
+              fontSize: "12px",
+              textAlign: "center",
+              padding: "0 4px",
+              color: "#333",
+            }}
+          >
             {bioText}
           </p>
+          {card.best_match && (
+            <div style={{ marginTop: "6px" }}>
+              {/* <strong style={{ display: "block", marginBottom: "2px" }}>
+                Best Match:
+              </strong>
+              <p style={{ margin: "0" }}>
+                {card.best_match.winner_username} vs{" "}
+                {card.best_match.loser_username}
+              </p> */}
+              {/* <p style={{ margin: "0" }}>Scores: {card.best_match.scores}</p> */}
+            </div>
+          )}
         </div>
+
+        
+      </div>
+
 
         <div className="modal-actions">
           <button onClick={handleDownload} className="primary">
