@@ -100,6 +100,22 @@ export async function createMatch(payload, token) {
   return handleResponse(response);
 }
 
+export async function getRecentActivity(token) {
+  const response = await fetch(`${base}/api/matches/recent`, {
+    method: "GET",
+    headers: withAuth(token),
+  });
+  return handleResponse(response);
+}
+
+export async function getH2H(token) {
+  const response = await fetch(`${base}/api/matches/h2h`, {
+    method: "GET",
+    headers: withAuth(token),
+  });
+  return handleResponse(response);
+}
+
 export default {
   signup,
   login,
@@ -111,4 +127,6 @@ export default {
   getMatchHistory,
   getMatchDetail,
   createMatch,
+  getRecentActivity,
+  getH2H,
 };
