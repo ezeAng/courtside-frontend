@@ -104,13 +104,12 @@ function HomeScreen() {
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Stack spacing={3} alignItems="stretch">
-        <Typography variant="h5" fontWeight={700} textAlign="center">
-          Profile
-        </Typography>
-
         <Card variant="outlined">
           <CardContent>
             <Stack spacing={2} alignItems="center" textAlign="center">
+              <Typography variant="h5" fontWeight={700} textAlign="center">
+                Profile
+              </Typography>
               <Avatar sx={{ width: 72, height: 72, fontSize: 32 }}>
                 {avatarIcon || initials}
               </Avatar>
@@ -131,6 +130,14 @@ function HomeScreen() {
                   </Stack>
                 )}
               </Box>
+              <Button
+                variant="contained"
+                fullWidth
+                size="large"
+                onClick={() => setShowCard(true)}
+              >
+                View Player Card
+              </Button>
             </Stack>
           </CardContent>
         </Card>
@@ -278,16 +285,7 @@ function HomeScreen() {
           </CardContent>
         </Card>
 
-        <Stack spacing={2}>
-          <Button
-            variant="contained"
-            fullWidth
-            size="large"
-            onClick={() => setShowCard(true)}
-          >
-            View Player Card
-          </Button>
-        </Stack>
+        
         {showCard && (
           <PlayerCardModal token={token} onClose={() => setShowCard(false)} />
         )}
