@@ -16,13 +16,18 @@ import Typography from "@mui/material/Typography";
 import MenuItem from "@mui/material/MenuItem";
 import { AVATARS } from "../../constants/avatars";
 import { clearAuth } from "../../features/auth/authSlice";
-import { clearUser, updateUserProfile } from "../../features/user/userSlice";
+import {
+  clearUser,
+  fetchCurrentUser,
+  updateUserProfile,
+} from "../../features/user/userSlice";
 import { useNavigate } from "react-router-dom";
 
 function SettingsScreen() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user, updateLoading, updateError } = useSelector((state) => state.user);
+  const token = useSelector((state) => state.auth.accessToken);
 
   const [username, setUsername] = useState(user?.username || "");
   const [gender, setGender] = useState(user?.gender || "male");
@@ -63,6 +68,7 @@ function SettingsScreen() {
     };
     const result = await dispatch(updateUserProfile(payload));
     if (updateUserProfile.fulfilled.match(result)) {
+      dispatch(fetchCurrentUser(token));
       setSuccessMessage("Profile updated successfully.");
     }
   };

@@ -8,14 +8,16 @@ import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { AVATARS } from "../../constants/avatars";
 import { getH2H, getHomeStats, getRecentActivity } from "../../services/api";
 import PlayerCardModal from "../../components/PlayerCardModal";
+import { fetchCurrentUser } from "../../features/user/userSlice";
 
 function HomeScreen() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.auth.accessToken);
   const [recentMatches, setRecentMatches] = useState([]);
@@ -49,6 +51,12 @@ function HomeScreen() {
       load();
     }
   }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      dispatch(fetchCurrentUser(token));
+    }
+  }, [dispatch, token]);
 
   const avatarIcon = useMemo(() => {
     if (user?.avatar === undefined || user?.avatar === null) {
