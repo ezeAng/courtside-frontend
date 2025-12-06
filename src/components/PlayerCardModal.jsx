@@ -41,11 +41,21 @@ export default function PlayerCardModal({ token, onClose }) {
 
   const borderColor = tierColors[card.tier] || "#FFFFFF";
   const profileImage = card.profile_image_url || "/default_avatar.png";
+  const normalizedProfileImage = profileImage.replace(/^http:\/\//i, "https://");
   const bioText = card.bio || "This player has not added a bio yet.";
 
   async function getCardCanvas() {
     if (!cardRef.current) return null;
-    const canvas = await html2canvas(cardRef.current, { scale: 2 });
+    const html2canvasOptions = {
+      scale: 2,
+      useCORS: true,
+    };
+
+    if (process.env.REACT_APP_HTML2CANVAS_PROXY) {
+      html2canvasOptions.proxy = process.env.REACT_APP_HTML2CANVAS_PROXY;
+    }
+
+    const canvas = await html2canvas(cardRef.current, html2canvasOptions);
     return canvas;
   }
 
@@ -141,7 +151,8 @@ export default function PlayerCardModal({ token, onClose }) {
             }}
           >
             <img
-              src={profileImage}
+              crossOrigin="anonymous"
+              src={normalizedProfileImage}
               alt="profile"
               style={{
                 width: "100%",
