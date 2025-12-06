@@ -41,6 +41,12 @@ function SettingsScreen() {
   const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
+    if (token && !user) {
+      dispatch(fetchCurrentUser(token));
+    }
+  }, [dispatch, token, user]);
+
+  useEffect(() => {
     if (user) {
       setUsername(user.username || "");
       setGender(user.gender || "male");
