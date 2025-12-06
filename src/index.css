@@ -31,7 +31,13 @@ code {
   border-radius: 12px;
   text-align: center;
   max-width: 90vw;
+  max-height: 90vh;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
 }
 
 .modal-close {
