@@ -1,19 +1,25 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
+import Badge from "@mui/material/Badge";
 import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import InboxIcon from "@mui/icons-material/Inbox";
+import { useNavigate } from "react-router-dom";
 import RecordMatchModal from "./RecordMatchModal";
 import { fetchMatchHistory } from "../../features/matches/matchSlice";
+import { getPendingMatches } from "../../api/matches";
+import { getStoredToken } from "../../services/storage";
 
 function TeamCard({ title, players, isWinner }) {
   return (
@@ -43,15 +49,33 @@ function TeamCard({ title, players, isWinner }) {
 
 function MatchHistoryScreen() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const userId = useSelector((state) => state.user.user?.auth_id);
   const { matches, loading } = useSelector((state) => state.matches);
   const [openModal, setOpenModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
   useEffect(() => {
     if (userId) {
       dispatch(fetchMatchHistory(userId));
     }
   }, [dispatch, userId]);
+
+  useEffect(() => {
+    async function loadPendingCount() {
+      const token = getStoredToken();
+      if (!token) return;
+
+      try {
+        const data = await getPendingMatches(token);
+        setPendingCount(data.incoming?.length || 0);
+      } catch (err) {
+        console.error("Failed to load pending matches", err);
+      }
+    }
+
+    loadPendingCount();
+  }, []);
 
   const handleRecorded = () => {
     setOpenModal(false);
@@ -122,9 +146,21 @@ function MatchHistoryScreen() {
           <Typography variant="h5" fontWeight={700}>
             Match History
           </Typography>
-          <Button variant="contained" onClick={() => setOpenModal(true)}>
-            Record Match
-          </Button>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <IconButton onClick={() => navigate("/matches/pending")}> 
+              <Badge
+                color="error"
+                badgeContent={pendingCount}
+                overlap="circular"
+                showZero
+              >
+                <InboxIcon />
+              </Badge>
+            </IconButton>
+            <Button variant="contained" onClick={() => setOpenModal(true)}>
+              Record Match
+            </Button>
+          </Stack>
         </Stack>
 
         {loading ? (
