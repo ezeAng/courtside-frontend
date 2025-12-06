@@ -27,6 +27,7 @@ function SettingsScreen() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user, updateLoading, updateError } = useSelector((state) => state.user);
+
   const token = useSelector((state) => state.auth.accessToken);
 
   const [username, setUsername] = useState(user?.username || "");
