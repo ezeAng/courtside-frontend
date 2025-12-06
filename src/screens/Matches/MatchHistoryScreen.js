@@ -141,6 +141,8 @@ function MatchHistoryScreen() {
               >
                 <ListItemText
                   primary={`${match.match_type === "doubles" ? "Doubles" : "Singles"} • Winner: Team ${match.winner_team}`}
+                  primaryTypographyProps={{ component: "span" }}
+                  secondaryTypographyProps={{ component: "div" }}
                   secondary={
                     <Stack spacing={0.5}>
                       <Typography variant="body2" color="text.primary">
