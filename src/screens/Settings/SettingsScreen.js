@@ -27,6 +27,12 @@ function SettingsScreen() {
   const [username, setUsername] = useState(user?.username || "");
   const [gender, setGender] = useState(user?.gender || "male");
   const [avatar, setAvatar] = useState(user?.avatar ?? 0);
+  const [region, setRegion] = useState(user?.region || "");
+  const [address, setAddress] = useState(user?.address || "");
+  const [bio, setBio] = useState(user?.bio || "");
+  const [profileImageUrl, setProfileImageUrl] = useState(
+    user?.profile_image_url || null
+  );
   const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
@@ -34,6 +40,10 @@ function SettingsScreen() {
       setUsername(user.username || "");
       setGender(user.gender || "male");
       setAvatar(user.avatar ?? 0);
+      setRegion(user.region || "");
+      setAddress(user.address || "");
+      setBio(user.bio || "");
+      setProfileImageUrl(user.profile_image_url || null);
     }
   }, [user]);
 
@@ -46,6 +56,10 @@ function SettingsScreen() {
       username,
       gender,
       avatar,
+      region,
+      address,
+      bio,
+      profile_image_url: profileImageUrl || null,
     };
     const result = await dispatch(updateUserProfile(payload));
     if (updateUserProfile.fulfilled.match(result)) {
@@ -91,6 +105,48 @@ function SettingsScreen() {
               <MenuItem value="male">Male</MenuItem>
               <MenuItem value="female">Female</MenuItem>
             </TextField>
+
+            <TextField
+              select
+              label="Region"
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              fullWidth
+            >
+              <MenuItem value="">Select region</MenuItem>
+              <MenuItem value="N">North</MenuItem>
+              <MenuItem value="NE">Northeast</MenuItem>
+              <MenuItem value="E">East</MenuItem>
+              <MenuItem value="SE">Southeast</MenuItem>
+              <MenuItem value="S">South</MenuItem>
+              <MenuItem value="SW">Southwest</MenuItem>
+              <MenuItem value="W">West</MenuItem>
+              <MenuItem value="NW">Northwest</MenuItem>
+            </TextField>
+
+            <TextField
+              label="Address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              fullWidth
+            />
+
+            <TextField
+              label="Bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              multiline
+              minRows={3}
+              fullWidth
+            />
+
+            <TextField
+              label="Profile Image URL"
+              value={profileImageUrl ?? ""}
+              onChange={(e) => setProfileImageUrl(e.target.value || null)}
+              fullWidth
+              placeholder="Optional"
+            />
 
             <Stack spacing={1}>
               <Typography variant="subtitle1" fontWeight={600}>
