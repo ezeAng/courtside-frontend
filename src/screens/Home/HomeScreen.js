@@ -14,6 +14,7 @@ import { AVATARS } from "../../constants/avatars";
 import { getH2H, getHomeStats, getRecentActivity } from "../../services/api";
 import PlayerCardModal from "../../components/PlayerCardModal";
 import { fetchCurrentUser } from "../../features/user/userSlice";
+import EloStockChart from "../../components/EloStockChart";
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -101,6 +102,10 @@ function HomeScreen() {
     return new Date(dateString).toLocaleString();
   };
 
+  const handleRecordMatch = () => {
+    navigate("/matches");
+  };
+
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Stack spacing={3} alignItems="stretch">
@@ -165,6 +170,8 @@ function HomeScreen() {
             )}
           </CardContent>
         </Card>
+
+        <EloStockChart token={token} onRecordMatch={handleRecordMatch} />
 
         {/* <Card variant="outlined">
           <CardContent>
