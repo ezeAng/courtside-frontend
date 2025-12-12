@@ -124,17 +124,6 @@ export async function getHomeStats(token) {
   return handleResponse(response);
 }
 
-export async function getEloStock(range, token) {
-  const response = await fetch(
-    `${base}/api/users/elo-history?range=${encodeURIComponent(range || "90d")}`,
-    {
-      method: "GET",
-      headers: withAuth(token),
-    }
-  );
-  return handleResponse(response);
-}
-
 export async function getPlayerCardData(token) {
   const response = await fetch(`${base}/api/users/card-data`, {
     method: "GET",
@@ -159,5 +148,4 @@ export default {
   getH2H,
   getHomeStats,
   getPlayerCardData,
-  getEloStock,
 };
