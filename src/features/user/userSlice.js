@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { getCurrentUser, updateProfile } from "../../services/api";
+import { getCurrentUser, updateProfile, uploadAvatar } from "../../services/api";
 
 const initialState = {
   user: null,
@@ -7,6 +7,8 @@ const initialState = {
   error: null,
   updateLoading: false,
   updateError: null,
+  avatarUploading: false,
+  avatarError: null,
 };
 
 export const fetchCurrentUser = createAsyncThunk(
@@ -37,6 +39,31 @@ export const updateUserProfile = createAsyncThunk(
   }
 );
 
+export const uploadUserAvatar = createAsyncThunk(
+  "user/uploadUserAvatar",
+  async (file, { getState, rejectWithValue }) => {
+    try {
+      const token = getState().auth.accessToken;
+      if (!token) {
+        throw new Error("User not authenticated");
+      }
+
+      const response = await uploadAvatar(token, file);
+      const profile = response?.user || response?.profile || response;
+      const profileImageUrl =
+        response?.profileImageUrl ||
+        response?.profile_image_url ||
+        response?.url ||
+        profile?.profile_image_url ||
+        null;
+
+      return { profile, profileImageUrl };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState,
@@ -46,6 +73,8 @@ const userSlice = createSlice({
       state.error = null;
       state.updateLoading = false;
       state.updateError = null;
+      state.avatarUploading = false;
+      state.avatarError = null;
     },
   },
   extraReducers: (builder) => {
@@ -74,6 +103,25 @@ const userSlice = createSlice({
       .addCase(updateUserProfile.rejected, (state, action) => {
         state.updateLoading = false;
         state.updateError = action.payload || "Failed to update user";
+      })
+      .addCase(uploadUserAvatar.pending, (state) => {
+        state.avatarUploading = true;
+        state.avatarError = null;
+      })
+      .addCase(uploadUserAvatar.fulfilled, (state, action) => {
+        state.avatarUploading = false;
+        if (action.payload?.profile) {
+          state.user = action.payload.profile;
+        } else if (state.user && action.payload?.profileImageUrl) {
+          state.user = {
+            ...state.user,
+            profile_image_url: action.payload.profileImageUrl,
+          };
+        }
+      })
+      .addCase(uploadUserAvatar.rejected, (state, action) => {
+        state.avatarUploading = false;
+        state.avatarError = action.payload || "Failed to upload avatar";
       });
   },
 });

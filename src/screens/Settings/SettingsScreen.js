@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Alert from "@mui/material/Alert";
-import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -33,6 +32,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { useNavigate } from "react-router-dom";
 import { AVATARS } from "../../constants/avatars";
 import PlayerCardModal from "../../components/PlayerCardModal";
+import ProfileAvatar from "../../components/ProfileAvatar";
 import { clearAuth } from "../../features/auth/authSlice";
 import {
   clearUser,
@@ -43,7 +43,9 @@ import {
 function SettingsScreen() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, updateLoading, updateError } = useSelector((state) => state.user);
+  const { user, updateLoading, updateError, avatarError } = useSelector(
+    (state) => state.user
+  );
 
   const token = useSelector((state) => state.auth.accessToken);
 
@@ -53,9 +55,6 @@ function SettingsScreen() {
   const [region, setRegion] = useState(user?.region || "");
   const [address, setAddress] = useState(user?.address || "");
   const [bio, setBio] = useState(user?.bio || "");
-  const [profileImageUrl, setProfileImageUrl] = useState(
-    user?.profile_image_url || null
-  );
   const [successMessage, setSuccessMessage] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [showCard, setShowCard] = useState(false);
@@ -74,7 +73,6 @@ function SettingsScreen() {
       setRegion(user.region || "");
       setAddress(user.address || "");
       setBio(user.bio || "");
-      setProfileImageUrl(user.profile_image_url || null);
     }
   }, [user]);
 
@@ -102,7 +100,7 @@ function SettingsScreen() {
       region,
       address,
       bio,
-      profile_image_url: profileImageUrl || null,
+      profile_image_url: user?.profile_image_url || null,
     };
     const result = await dispatch(updateUserProfile(payload));
     if (updateUserProfile.fulfilled.match(result)) {
@@ -136,9 +134,7 @@ function SettingsScreen() {
         <Card variant="outlined">
           <CardContent>
             <Stack spacing={2} alignItems="center" textAlign="center">
-              <Avatar sx={{ width: 80, height: 80, fontSize: 34 }}>
-                {selectedAvatar || initials}
-              </Avatar>
+              <ProfileAvatar user={user} size={80} editable />
               <Box>
                 <Typography variant="h6" fontWeight={700}>
                   {user?.username || "Loading user..."}
@@ -235,13 +231,12 @@ function SettingsScreen() {
         <DialogContent>
           <Stack spacing={3} component="form" onSubmit={handleSubmit} sx={{ pt: 1 }}>
             {updateError && <Alert severity="error">{updateError}</Alert>}
+            {avatarError && <Alert severity="error">{avatarError}</Alert>}
 
             <Stack spacing={1} alignItems="center" textAlign="center">
-              <Avatar sx={{ width: 72, height: 72, fontSize: 32 }}>
-                {selectedAvatar || initials}
-              </Avatar>
+              <ProfileAvatar user={user} size={72} editable />
               <Typography color="text.secondary">
-                Update your profile details and choose a new avatar.
+                Tap your avatar to upload a new profile photo.
               </Typography>
             </Stack>
 
@@ -296,14 +291,6 @@ function SettingsScreen() {
               multiline
               minRows={3}
               fullWidth
-            />
-
-            <TextField
-              label="Profile Image URL"
-              value={profileImageUrl ?? ""}
-              onChange={(e) => setProfileImageUrl(e.target.value || null)}
-              fullWidth
-              placeholder="Optional"
             />
 
             <Stack spacing={1}>

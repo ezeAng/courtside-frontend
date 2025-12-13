@@ -1,4 +1,3 @@
-import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -14,8 +13,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getH2H, getHomeStats, getRecentActivity } from "../../services/api";
 import { fetchCurrentUser } from "../../features/user/userSlice";
-import { AVATARS } from "../../constants/avatars";
 import EloStockChart from "../../components/home/EloStockChart";
+import ProfileAvatar from "../../components/ProfileAvatar";
+import { normalizeProfileImage } from "../../utils/profileImage";
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -110,21 +110,6 @@ function HomeScreen() {
     return Math.round(stats.win_rate_last_10 ?? 0);
   }, [stats]);
 
-  const selectedAvatar = useMemo(() => {
-    if (user?.avatar === undefined || user?.avatar === null) return "";
-    return AVATARS[user.avatar] || "";
-  }, [user]);
-
-  const initials = useMemo(() => {
-    if (!user?.username) return "";
-    return user.username
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-  }, [user]);
-
   const topHeroStats = useMemo(
     () => [
       {
@@ -160,9 +145,9 @@ function HomeScreen() {
             sx={{
               height: "40vh",
               minHeight: 280,
-              backgroundImage: user?.profile_image_url
-                ? `url(${user.profile_image_url})`
-                : "linear-gradient(135deg, #e5e7eb, #f8fafc)",
+              backgroundImage: `url(${normalizeProfileImage(
+                user?.profile_image_url
+              )})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               position: "relative",
@@ -189,18 +174,16 @@ function HomeScreen() {
               alignItems="center"
               sx={{ position: "relative", zIndex: 2 }}
             >
-              <Avatar
+              <ProfileAvatar
+                user={user}
+                size={96}
                 sx={{
-                  width: 96,
-                  height: 96,
-                  fontSize: 40,
                   bgcolor: "#fff",
                   color: "text.primary",
                   boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+                  border: "2px solid rgba(255,255,255,0.9)",
                 }}
-              >
-                {selectedAvatar || initials || "?"}
-              </Avatar>
+              />
 
               <Box>
                 <Typography variant="h5" fontWeight={800} color="#fff">

@@ -1,5 +1,6 @@
 // src/components/PlayerCard.js
 import { forwardRef } from "react";
+import { normalizeProfileImage } from "../utils/profileImage";
 
 /* -------------------- STYLE LOGIC -------------------- */
 
@@ -76,13 +77,6 @@ function getTierBorder(tier, accent) {
         glow: "none",
       };
   }
-}
-
-function normalizeProfileImage(profileImage) {
-  if (!profileImage) return "/default_avatar.png";
-  if (/^https?:\/\//i.test(profileImage)) return profileImage;
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || "";
-  return `${backendUrl}${profileImage.startsWith("/") ? profileImage : `/${profileImage}`}`;
 }
 
 /* -------------------- COMPONENT -------------------- */

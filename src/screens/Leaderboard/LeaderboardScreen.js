@@ -26,6 +26,7 @@ import WomanIcon from "@mui/icons-material/Woman";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 import { setGender, fetchLeaderboard } from "../../features/leaderboard/leaderboardSlice";
+import { normalizeProfileImage } from "../../utils/profileImage";
 
 function LeaderboardScreen() {
   const dispatch = useDispatch();
@@ -194,7 +195,10 @@ function LeaderboardScreen() {
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={2} alignItems="center">
-                        <Avatar>
+                        <Avatar
+                          src={normalizeProfileImage(entry.profile_image_url)}
+                          imgProps={{ referrerPolicy: "no-referrer" }}
+                        >
                           {entry.username?.charAt(0).toUpperCase() || "P"}
                         </Avatar>
                         <Box>
@@ -233,7 +237,11 @@ function LeaderboardScreen() {
         <DialogContent>
           {selectedPlayer && (
             <Stack spacing={2} alignItems="center" py={1}>
-              <Avatar sx={{ width: 72, height: 72 }}>
+              <Avatar
+                sx={{ width: 72, height: 72 }}
+                src={normalizeProfileImage(selectedPlayer.profile_image_url)}
+                imgProps={{ referrerPolicy: "no-referrer" }}
+              >
                 {selectedPlayer.username?.charAt(0).toUpperCase() || "P"}
               </Avatar>
               <Stack spacing={0.5} alignItems="center">
