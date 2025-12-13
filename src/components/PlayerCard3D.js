@@ -1,214 +1,127 @@
 import { useRef, useState } from "react";
 import PlayerCard from "./PlayerCard";
 
-function getCardTheme(elo) {
-  if (elo >= 1000) {
-    return {
-      rarity: "diamond",
-      background: "linear-gradient(135deg, #dff6ff, #b8ecff)",
-    };
-  }
-
-  return {
-    rarity: "bronze",
-    background: "linear-gradient(135deg, #f7e27c, #e2b75c)",
-  };
-}
-function getFoilStyle(rarity, glareX = 50, glareY = 50) {
-  if (rarity === "diamond") {
-    return {
-      backgroundImage: `
-        linear-gradient(
-          115deg,
-          rgba(255,255,255,0.05),
-          rgba(0,220,255,0.35),
-          rgba(180,120,255,0.35),
-          rgba(255,255,255,0.05)
-        ),
-        repeating-linear-gradient(
-          45deg,
-          rgba(255,255,255,0.06) 0px,
-          rgba(255,255,255,0.06) 1px,
-          transparent 1px,
-          transparent 3px
-        )
-      `,
-      backgroundSize: "200% 200%, 4px 4px",
-      backgroundPosition: `${glareX}% ${glareY}%, center`,
-    };
-  }
-
-  // Bronze shimmer
+/* ---------------------------------------------
+   Neutral sheen material (NO rainbow)
+---------------------------------------------- */
+function getSheen(glareX = 50, glareY = 50) {
   return {
     backgroundImage: `
+      /* Primary soft sheen */
       linear-gradient(
         120deg,
-        rgba(255,255,255,0.08),
-        rgba(255,215,0,0.25),
-        rgba(255,255,255,0.08)
+        rgba(255,255,255,0.25),
+        rgba(255,255,255,0.05),
+        rgba(255,255,255,0.25)
       ),
-      repeating-linear-gradient(
-        60deg,
-        rgba(255,255,255,0.05) 0px,
-        rgba(255,255,255,0.05) 1px,
+
+      /* Fine grain texture */
+      repeating-radial-gradient(
+        circle,
+        rgba(255,255,255,0.03) 0px,
+        rgba(255,255,255,0.03) 1px,
         transparent 1px,
-        transparent 4px
+        transparent 3px
       )
     `,
-    backgroundSize: "180% 180%, 6px 6px",
+    backgroundSize: "200% 200%, 6px 6px",
     backgroundPosition: `${glareX}% ${glareY}%, center`,
   };
 }
 
-
 export default function PlayerCard3D({ card }) {
-  const containerRef = useRef(null);
-  const [transform, setTransform] = useState({});
-  const [glare, setGlare] = useState({});
-  const [foil, setFoil] = useState({});
+  const ref = useRef(null);
+  const [tilt, setTilt] = useState({});
+  const [sheen, setSheen] = useState({});
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
 
-  const { rarity, background } = getCardTheme(card.elo);
+  function update(clientX, clientY) {
+    const r = ref.current.getBoundingClientRect();
+    const x = clientX - r.left;
+    const y = clientY - r.top;
 
-  function updateTilt(clientX, clientY) {
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    const rx = -(y - r.height / 2) / 20;
+    const ry = (x - r.width / 2) / 20;
 
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+    const gx = (x / r.width) * 100;
+    const gy = (y / r.height) * 100;
 
-    const rotateX = -(y - centerY) / 20;
-    const rotateY = (x - centerX) / 20;
+    setRotation({ x: rx, y: ry });
 
-    const glareX = (x / rect.width) * 100;
-    const glareY = (y / rect.height) * 100;
-
-
-    setTransform({
+    setTilt({
       transform: `
-        rotateX(${rotateX}deg)
-        rotateY(${rotateY}deg)
-        scale(1.04)
+        rotateX(${rx}deg)
+        rotateY(${ry}deg)
+        scale(1.03)
       `,
     });
 
-    setGlare({
-      background: `
-        radial-gradient(
-          circle at ${x}px ${y}px,
-          rgba(255,255,255,0.35),
-          transparent 60%
-        )
-      `,
-    });
-
-    if (rarity === "diamond") {
-      setFoil(
-        getFoilStyle(rarity, glareX, glareY)
-      );
-
-    } else {
-      setFoil({
-        background: `
-          linear-gradient(
-            120deg,
-            rgba(255,255,255,0.12),
-            rgba(255,215,0,0.25),
-            rgba(255,255,255,0.12)
-          )
-        `,
-      });
-    }
-  }
-
-  function handleMouseMove(e) {
-    updateTilt(e.clientX, e.clientY);
-  }
-
-  function handleTouchMove(e) {
-    const touch = e.touches[0];
-    if (!touch) return;
-    updateTilt(touch.clientX, touch.clientY);
+    setSheen(getSheen(gx, gy));
   }
 
   function reset() {
-    setTransform({
-      transform: "rotateX(0) rotateY(0) scale(1)",
-    });
-    setGlare({});
-    setFoil({});
+    setTilt({ transform: "rotateX(0) rotateY(0) scale(1)" });
+    setSheen({});
+    setRotation({ x: 0, y: 0 });
   }
 
   return (
-    <div
-      style={{
-        perspective: "1200px",
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
+    <div style={{ perspective: "1200px" }}>
       <div
-        ref={containerRef}
-        onMouseMove={handleMouseMove}
+        ref={ref}
+        onMouseMove={(e) => update(e.clientX, e.clientY)}
         onMouseLeave={reset}
-        onTouchMove={handleTouchMove}
+        onTouchMove={(e) => {
+          const t = e.touches[0];
+          if (t) update(t.clientX, t.clientY);
+        }}
         onTouchEnd={reset}
         style={{
+          position: "relative",
           transformStyle: "preserve-3d",
           transition: "transform 0.12s ease-out",
-          position: "relative",
-          ...transform,
+          ...tilt,
         }}
       >
-        {/* Card */}
-        <div style={{ transform: "translateZ(30px)" }}>
-          <PlayerCard card={card} backgroundColor={background} />
-        </div>
+        {/* CARD BASE */}
+        <PlayerCard card={card} />
 
-        {/* Foil layer */}
+        {/* SHEEN LAYER (inside card, clipped) */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            borderRadius: "12px",
+            borderRadius: "14px",
             pointerEvents: "none",
-            mixBlendMode: "overlay",
-            opacity: rarity === "diamond" ? 0.85 : 0.45,
-            transition: "background-position 0.1s linear",
-            ...foil,
+            mixBlendMode: "soft-light",
+            opacity: 0.6,
+            zIndex: 2,
+            ...sheen,
           }}
         />
 
+        {/* SPECULAR HIGHLIGHT */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            borderRadius: "12px",
+            borderRadius: "14px",
             pointerEvents: "none",
+            zIndex: 3,
             background: `
               linear-gradient(
                 120deg,
-                transparent 40%,
-                rgba(255,255,255,0.35),
-                transparent 60%
+                transparent 45%,
+                rgba(255,255,255,0.5),
+                transparent 55%
               )
             `,
             mixBlendMode: "soft-light",
-            opacity: rarity === "diamond" ? 0.6 : 0.3,
-            transform: `translateX(${transform ? "10px" : "0"})`,
-          }}
-        />
-
-
-        {/* Glare layer */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "12px",
-            pointerEvents: "none",
-            mixBlendMode: "soft-light",
-            ...glare,
+            opacity: 0.35,
+            transform: `
+              translateX(${rotation.y * 1.2}px)
+              rotateZ(${rotation.y * 0.25}deg)
+            `,
           }}
         />
       </div>

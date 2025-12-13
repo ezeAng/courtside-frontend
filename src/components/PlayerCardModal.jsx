@@ -21,12 +21,37 @@ export default function PlayerCardModal({ token, onClose }) {
 
   async function getCardCanvas() {
     if (!cardRef.current) return null;
-    return html2canvas(cardRef.current, {
+
+    const el = cardRef.current;
+
+    // Save current styles
+    const prevTransform = el.style.transform;
+    const prevTransition = el.style.transition;
+    const prevPointerEvents = el.style.pointerEvents;
+
+    // 🔒 Freeze the card
+    el.style.transform = "none";
+    el.style.transition = "none";
+    el.style.pointerEvents = "none";
+
+    // Give browser a frame to apply styles
+    await new Promise((r) => requestAnimationFrame(r));
+
+    const canvas = await html2canvas(el, {
       scale: 2,
       useCORS: true,
+      backgroundColor: null,
       proxy: process.env.REACT_APP_HTML2CANVAS_PROXY,
     });
+
+    // 🔓 Restore styles
+    el.style.transform = prevTransform;
+    el.style.transition = prevTransition;
+    el.style.pointerEvents = prevPointerEvents;
+
+    return canvas;
   }
+
 
   async function handleDownload() {
     const canvas = await getCardCanvas();
@@ -77,9 +102,17 @@ export default function PlayerCardModal({ token, onClose }) {
           Close
         </button>
 
-        <div ref={cardRef}>
+        <div
+          ref={cardRef}
+          style={{
+            display: "inline-block",
+            padding: "8px",        // safety margin
+            background: "transparent",
+          }}
+        >
           <PlayerCard3D card={card} />
         </div>
+
 
 
         <div className="modal-actions">

@@ -1,132 +1,251 @@
 // src/components/PlayerCard.js
 import { forwardRef } from "react";
 
-const tierColors = {
-  Bronze: "#CD7F32",
-  Silver: "#C0C0C0",
-  Gold: "#FFD700",
-  Platinum: "#E5E4E2",
-  Diamond: "#4BF0FF",
-};
+/* -------------------- STYLE LOGIC -------------------- */
+
+// ELO → base color
+function getEloBase(elo) {
+  if (elo >= 1200) {
+    return {
+      background: "linear-gradient(135deg, #2a003f, #14001f)",
+      accent: "#c77dff",
+    };
+  }
+  if (elo >= 1000) {
+    return {
+      background: "linear-gradient(135deg, #0b2a3f, #06131f)",
+      accent: "#4bf0ff",
+    };
+  }
+  if (elo >= 800) {
+    return {
+      background: "linear-gradient(135deg, #3f2f00, #1f1700)",
+      accent: "#ffd166",
+    };
+  }
+  return {
+    background: "linear-gradient(135deg, #2a1c0f, #140c05)",
+    accent: "#cd7f32",
+  };
+}
+
+// Win rate → glow
+function getWinRateGlow(winRate) {
+  if (winRate >= 0.75) return 0.9;
+  if (winRate >= 0.6) return 0.6;
+  if (winRate >= 0.4) return 0.35;
+  return 0.15;
+}
+
+// Tier → border
+function getTierBorder(tier, accent) {
+  switch (tier) {
+    case "Diamond":
+      return {
+        width: 8,
+        style: "solid",
+        color: accent,
+        glow: `0 0 18px ${accent}`,
+      };
+    case "Platinum":
+      return {
+        width: 7,
+        style: "solid",
+        color: "#e5e4e2",
+        glow: "0 0 14px rgba(229,228,226,0.8)",
+      };
+    case "Gold":
+      return {
+        width: 6,
+        style: "solid",
+        color: "#ffd700",
+        glow: "0 0 12px rgba(255,215,0,0.8)",
+      };
+    case "Silver":
+      return {
+        width: 5,
+        style: "solid",
+        color: "#c0c0c0",
+        glow: "0 0 8px rgba(192,192,192,0.6)",
+      };
+    default:
+      return {
+        width: 4,
+        style: "solid",
+        color: "#cd7f32",
+        glow: "none",
+      };
+  }
+}
 
 function normalizeProfileImage(profileImage) {
   if (!profileImage) return "/default_avatar.png";
-
-  if (/^https?:\/\//i.test(profileImage) || /^\/\//.test(profileImage)) {
-    return profileImage;
-  }
-
-  try {
-    const url = new URL(profileImage);
-    if (url.protocol) return profileImage;
-  } catch (_) {}
-
+  if (/^https?:\/\//i.test(profileImage)) return profileImage;
   const backendUrl = process.env.REACT_APP_BACKEND_URL || "";
-  const normalizedPath = profileImage.startsWith("/")
-    ? profileImage
-    : `/${profileImage}`;
-
-  return `${backendUrl}${normalizedPath}` || "/default_avatar.png";
+  return `${backendUrl}${profileImage.startsWith("/") ? profileImage : `/${profileImage}`}`;
 }
 
-const PlayerCard = forwardRef(({ card, backgroundColor }, ref) => {
-  const borderColor = tierColors[card.tier] || "#ffffff";
-  const profileImage = normalizeProfileImage(card.profile_image_url);
-  const bioText = card.bio || "This player has not added a bio yet.";
+/* -------------------- COMPONENT -------------------- */
+
+const PlayerCard = forwardRef(({ card }, ref) => {
+  const winRate = card.win_rate_last_10 || 0;
+  const stars = card.star_rating || 0;
+
+  const eloTheme = getEloBase(card.elo);
+  const glowStrength = getWinRateGlow(winRate);
+  const border = getTierBorder(card.tier, eloTheme.accent);
 
   return (
     <div
-      id="player-card"
       ref={ref}
       style={{
-        width: "100%",
-        height: "140%",
+        width: "320px",
         padding: "14px",
-        background: backgroundColor,
-        borderRadius: "12px",
-        border: `8px solid ${borderColor}`,
-        display: "flex",
-        flexDirection: "column",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+        borderRadius: "14px",
+        position: "relative",
+        overflow: "hidden",
+        color: "#f5f7fa",
         fontFamily: "'Verdana', sans-serif",
+
+        background: eloTheme.background,
+
+        border: `${border.width}px ${border.style} ${border.color}`,
+
+        boxShadow: `
+          ${border.glow},
+          0 0 ${20 + glowStrength * 40}px rgba(0,0,0,0.6),
+          0 12px 30px rgba(0,0,0,0.6)
+        `,
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: "22px",
-          fontWeight: 700,
-          marginBottom: "4px",
-        }}
-      >
-        <span style={{ fontSize: "18px" }}>Player Card</span>
-        <span style={{ color: "#cc0000" }}>{card.elo} ELO</span>
-      </div>
-
-      {/* Image */}
-      <div
-        style={{
-          width: "100%",
-          height: "230px",
-          background: "#fff5ce",
-          border: "4px solid #d4b84f",
-          borderRadius: "6px",
-          marginBottom: "8px",
-          overflow: "hidden",
-        }}
-      >
-        <img
-          crossOrigin="anonymous"
-          src={profileImage}
-          alt="profile"
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          onError={(e) => {
-            e.currentTarget.src = "/default_avatar.png";
+      {/* INNER ACCENT (stars / prestige) */}
+      {stars >= 3 && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 6,
+            borderRadius: "10px",
+            boxShadow:
+              stars === 5
+                ? `inset 0 0 18px ${eloTheme.accent}`
+                : `inset 0 0 10px rgba(255,255,255,0.25)`,
+            pointerEvents: "none",
           }}
         />
+      )}
+
+      {/* HEADER */}
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+        <span style={{ fontSize: 13, letterSpacing: 1, opacity: 0.8 }}>
+          PLAYER CARD
+        </span>
+        <span style={{ fontSize: 18, fontWeight: 700 }}>{card.elo} ELO</span>
       </div>
 
-      {/* Name */}
-      <div style={{ textAlign: "center", marginBottom: "6px" }}>
-        <h2 style={{ margin: 0, fontSize: "20px" }}>{card.username}</h2>
-        <p style={{ margin: 0, fontSize: "14px" }}>Tier: {card.tier}</p>
+      {/* IMAGE FRAME */}
+        <div
+          style={{
+            width: "97%",
+            margin: "auto",
+            height: "220px",
+            borderRadius: "12px",
+            marginBottom: "10px",
+            position: "relative",
+            background: "#000",
+
+            /* Outer frame */
+            boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.15)",
+          }}
+        >
+          {/* HARD MASK (this is the key layer) */}
+          <div
+            style={{
+              position: "absolute",
+              inset: "4px",          // 🔒 hard safety margin
+              borderRadius: "8px",
+              overflow: "hidden",
+              background: "#000",
+            }}
+          >
+            {/* IMAGE WRAPPER */}
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                overflow: "hidden",
+              }}
+            >
+              <img
+                src={normalizeProfileImage(card.profile_image_url)}
+                alt="profile"
+                crossOrigin="anonymous"
+                style={{
+                  width: "104%",        // 🔒 intentionally oversized
+                  height: "104%",
+                  objectFit: "cover",
+                  transform: "translate(-2%, -2%) translateZ(0)",
+                  backfaceVisibility: "hidden",
+                  willChange: "transform",
+                  display: "block",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+
+
+      {/* NAME */}
+      <div style={{ textAlign: "center", marginBottom: 8 }}>
+        <h2 style={{ margin: 0, fontSize: 20 }}>{card.username}</h2>
+        <p style={{ margin: 0, fontSize: 13, opacity: 0.8 }}>
+          Tier: {card.tier}
+        </p>
       </div>
 
-      {/* Stars */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px" }}>
+      {/* STARS */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
         {[1, 2, 3, 4, 5].map((i) => (
-          <span key={i} style={{ fontSize: "22px" }}>
-            {i <= (card.star_rating || 0) ? "⭐" : "☆"}
+          <span
+            key={i}
+            style={{
+              fontSize: 18,
+              opacity: i <= stars ? 1 : 0.3,
+              filter:
+                i <= stars ? `drop-shadow(0 0 4px ${eloTheme.accent})` : "none",
+            }}
+          >
+            {i <= stars ? "⭐" : "☆"}
           </span>
         ))}
       </div>
 
-      {/* Stats */}
+      {/* STATS PANEL */}
       <div
         style={{
-          background: "#fffce4",
-          border: "2px solid #c9b04a",
-          borderRadius: "6px",
+          background: "rgba(255,255,255,0.92)",
+          color: "#111",
+          borderRadius: "8px",
           padding: "10px",
-          fontSize: "14px",
+          fontSize: "13px",
         }}
       >
-        <p>Region: {card.region || "Unknown"}</p>
-        <p>
-          Win Rate (Last 10):{" "}
-          {Math.round((card.win_rate_last_10 || 0) * 100)}%
+        <p style={{ margin: "4px 0" }}>
+          <strong>Region:</strong> {card.region || "Unknown"}
+        </p>
+        <p style={{ margin: "4px 0" }}>
+          <strong>Win Rate:</strong> {Math.round(winRate * 100)}%
         </p>
         <p
           style={{
-            marginTop: "4px",
+            marginTop: "6px",
             fontStyle: "italic",
             fontSize: "12px",
             textAlign: "center",
+            opacity: 0.7,
           }}
         >
-          {bioText}
+          {card.bio || "No bio provided."}
         </p>
       </div>
     </div>
