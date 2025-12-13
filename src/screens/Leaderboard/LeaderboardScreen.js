@@ -178,13 +178,18 @@ function LeaderboardScreen() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data.map((entry, index) => (
+                {data.map((entry, index) => {
+                  const profileImage =
+                    entry.user?.profile_image_url || entry.profile_image_url;
+
+                  return (
                   <TableRow
                     key={entry.id || `${entry.username}-${index}`}
                     hover
                     onClick={() =>
                       setSelectedPlayer({
                         ...entry,
+                        profile_image_url: profileImage,
                         rank: entry.rank ?? index + 1,
                       })
                     }
@@ -196,7 +201,7 @@ function LeaderboardScreen() {
                     <TableCell>
                       <Stack direction="row" spacing={2} alignItems="center">
                         <Avatar
-                          src={normalizeProfileImage(entry.profile_image_url)}
+                          src={normalizeProfileImage(profileImage)}
                           imgProps={{ referrerPolicy: "no-referrer" }}
                         >
                           {entry.username?.charAt(0).toUpperCase() || "P"}
@@ -213,7 +218,8 @@ function LeaderboardScreen() {
                       <Typography fontWeight={700}>{entry.elo ?? "—"}</Typography>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
                 {!data.length && !error && (
                   <TableRow>
                     <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
