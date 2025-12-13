@@ -3,6 +3,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import Container from "@mui/material/Container";
+import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useState } from "react";
@@ -82,6 +83,25 @@ function HomeScreen() {
     navigate("/matches");
   };
 
+  const totalMatches = useMemo(() => {
+    if (!stats) return 0;
+    return stats.total_matches || stats.totalMatches || 0;
+  }, [stats]);
+
+  const overallWinRate = useMemo(() => {
+    if (!stats) return null;
+    const wins = stats.wins ?? 0;
+    const losses = stats.losses ?? 0;
+    const total = wins + losses;
+    if (!total) return null;
+    return Math.round((wins / total) * 100);
+  }, [stats]);
+
+  const winRateLast10 = useMemo(() => {
+    if (!stats) return 0;
+    return Math.round(stats.win_rate_last_10 ?? 0);
+  }, [stats]);
+
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Stack spacing={3} alignItems="stretch">
@@ -97,19 +117,78 @@ function HomeScreen() {
               <Typography color="text.secondary">No stats available.</Typography>
             )}
             {stats && (
-              <Stack spacing={1}>
-                <Typography>ELO: {stats.current_elo}</Typography>
-                <Typography>Rank: #{stats.rank}</Typography>
-                {/* <Typography>Matches this week: {stats.matches_this_week}</Typography> */}
-                <Typography>
-                  Win Rate (Last 10): {Math.round(stats.win_rate_last_10)}%
-                </Typography>
-                {tier && (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Typography color="text.secondary">Tier:</Typography>
-                    <Chip label={tier.label} color={tier.color} size="small" />
+              <Stack spacing={2}>
+                <Stack direction="row" spacing={2} flexWrap="wrap">
+                  <Box flex={1} minWidth={120}>
+                    <Typography color="text.secondary" variant="body2">
+                      Current ELO
+                    </Typography>
+                    <Typography variant="h6">{stats.current_elo}</Typography>
                   </Box>
-                )}
+                  <Box flex={1} minWidth={120}>
+                    <Typography color="text.secondary" variant="body2">
+                      Rank
+                    </Typography>
+                    <Typography variant="h6">#{stats.rank}</Typography>
+                  </Box>
+                  <Box flex={1} minWidth={120}>
+                    <Typography color="text.secondary" variant="body2">
+                      Record
+                    </Typography>
+                    <Typography variant="h6">
+                      {stats.wins ?? 0}W - {stats.losses ?? 0}L
+                    </Typography>
+                    {overallWinRate !== null && (
+                      <Typography color="text.secondary" variant="body2">
+                        {overallWinRate}% win rate overall
+                      </Typography>
+                    )}
+                  </Box>
+                  <Box flex={1} minWidth={120}>
+                    <Typography color="text.secondary" variant="body2">
+                      Total Matches
+                    </Typography>
+                    <Typography variant="h6">{totalMatches}</Typography>
+                    {totalMatches > 0 && (
+                      <Typography color="text.secondary" variant="body2">
+                        Win Rate (Last 10): {winRateLast10}%
+                      </Typography>
+                    )}
+                  </Box>
+                </Stack>
+
+                <Stack spacing={1}>
+                  <Stack direction="row" alignItems="center" gap={1}>
+                    <Typography color="text.secondary">Weekly activity</Typography>
+                    <Chip
+                      label={`${stats.weekly_activity?.matches_this_week || 0}/${
+                        stats.weekly_activity?.weekly_target || 0
+                      } matches`}
+                      size="small"
+                    />
+                  </Stack>
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.min(
+                      stats.weekly_activity?.progress_pct || 0,
+                      100
+                    )}
+                  />
+                </Stack>
+
+                <Stack direction="row" alignItems="center" gap={1}>
+                  <Typography color="text.secondary">Activity streak:</Typography>
+                  <Chip
+                    label={`${stats.activity_streak?.current_streak_weeks || 0} weeks`}
+                    color={
+                      stats.activity_streak?.is_active_this_week ? "success" : "default"
+                    }
+                    size="small"
+                  />
+                  {tier && (
+                    <Chip label={tier.label} color={tier.color} size="small" />
+                  )}
+                </Stack>
               </Stack>
             )}
           </CardContent>
