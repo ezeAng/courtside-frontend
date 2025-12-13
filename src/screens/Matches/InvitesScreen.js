@@ -30,7 +30,7 @@ import {
   createInvite,
 } from "../../services/invitesApi";
 import { searchUsers } from "../../services/api";
-import MatchmakingLobbyModal from "./MatchmakingLobbyModal";
+import MatchmakingLobbyModalSuggestions from "./MatchmakingLobbyModalSuggestions";
 
 const tabOptions = [
   { label: "Received", value: "received" },
@@ -274,7 +274,7 @@ function InvitesScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [badgeCounts, setBadgeCounts] = useState({ pending: 0, invites: 0 });
-  const [modalOpen, setModalOpen] = useState(false);
+  const [suggestionsModalOpen, setSuggestionsModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
   const activeInvites = useMemo(() => invites || [], [invites]);
@@ -371,7 +371,7 @@ function InvitesScreen() {
             <Button
               variant="contained"
               startIcon={<GroupAddIcon />}
-              onClick={() => setModalOpen(true)}
+              onClick={() => setSuggestionsModalOpen(true)}
             >
               Search for match
             </Button>
@@ -423,10 +423,10 @@ function InvitesScreen() {
         </Paper>
       </Stack>
 
-      <MatchmakingLobbyModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onInviteCreated={() => {
+      <MatchmakingLobbyModalSuggestions
+        open={suggestionsModalOpen}
+        onClose={() => setSuggestionsModalOpen(false)}
+        onInviteSent={() => {
           setTab("sent");
           loadInvites("sent");
           refreshBadges();
