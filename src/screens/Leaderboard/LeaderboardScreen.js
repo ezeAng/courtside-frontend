@@ -105,13 +105,19 @@ function LeaderboardScreen() {
           </Typography>
         </Stack>
 
-        <Paper variant="outlined" sx={{ borderRadius: 3 }}>
+        <Paper variant="outlined" sx={{ borderRadius: 2 }}>
           <Tabs
             value={category}
             onChange={handleCategoryChange}
             variant="fullWidth"
             textColor="primary"
             indicatorColor="primary"
+            sx={{
+              minHeight: 48,
+              "& .MuiTabs-flexContainer": {
+                alignItems: "stretch",
+              },
+            }}
           >
             {categories.map((item) => (
               <Tab
@@ -120,10 +126,24 @@ function LeaderboardScreen() {
                 icon={item.icon}
                 iconPosition="top"
                 label={item.label}
-                sx={{ fontWeight: 600, py: 2, minHeight: 90 }}
+                sx={{
+                  minWidth: 15,
+                  minHeight: 90,
+                  padding: "6px 4px",
+                  fontSize: "0.65rem",
+                  lineHeight: 1.1,
+                  fontWeight: 600,
+                  "& .MuiTab-iconWrapper": {
+                    marginBottom: "2px",
+                    "& svg": {
+                      fontSize: 18,
+                    },
+                  },
+                }}
               />
             ))}
           </Tabs>
+
           <Divider />
           <Stack px={3} py={2} spacing={0.5}>
             <Typography variant="overline" color="text.secondary">
@@ -145,7 +165,7 @@ function LeaderboardScreen() {
             <CircularProgress />
           </Stack>
         ) : (
-          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
             <Table>
               <TableHead>
                 <TableRow>

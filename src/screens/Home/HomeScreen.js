@@ -78,11 +78,6 @@ function HomeScreen() {
       .slice(0, 5);
   }, [rivals]);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleString();
-  };
-
   const formatRelativeDate = (dateString) => {
     if (!dateString) return "";
     const created = new Date(dateString).getTime();
@@ -130,13 +125,6 @@ function HomeScreen() {
       .toUpperCase();
   }, [user]);
 
-  const heroBackground = useMemo(() => {
-    if (user?.profile_image_url) {
-      return `linear-gradient(135deg, rgba(0,0,0,0.55), rgba(0,0,0,0.2)), url(${user.profile_image_url})`;
-    }
-    return "linear-gradient(135deg, #0f172a, #1d4ed8)";
-  }, [user]);
-
   const topHeroStats = useMemo(
     () => [
       {
@@ -164,287 +152,285 @@ function HomeScreen() {
   return (
     <Container
       maxWidth="sm"
-      sx={{
-        py: 3,
-        pb: 6,
-        px: { xs: 2, sm: 3 },
-        background: "radial-gradient(circle at 10% 20%, #f1f5f9 0, #fff 35%)",
-      }}
     >
       <Stack spacing={3}>
-        <Card
-          sx={{
-            position: "relative",
-            overflow: "hidden",
-            borderRadius: 4,
-            boxShadow: "0 18px 48px rgba(15,23,42,0.08)",
-            border: "1px solid",
-            borderColor: "divider",
-            backgroundImage: heroBackground,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            color: "common.white",
-          }}
-        >
+        {/* FULL-WIDTH HERO */}
+        <Box sx={{ position: "relative", width: "100vw", left: "-5%", right: "0%" }}>
           <Box
             sx={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(160deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 100%)",
+              height: "40vh",
+              minHeight: 280,
+              backgroundImage: user?.profile_image_url
+                ? `url(${user.profile_image_url})`
+                : "linear-gradient(135deg, #e5e7eb, #f8fafc)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              position: "relative",
+              display: "flex",
+              alignItems: "flex-end",
+              px: { xs: 2.5, sm: 4 },
+              pb: 10,
             }}
-          />
-          <CardContent sx={{ position: "relative", zIndex: 1, p: { xs: 2.5, sm: 3 } }}>
-            <Stack spacing={2}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Avatar
-                  sx={{
-                    width: 82,
-                    height: 82,
-                    fontSize: 36,
-                    bgcolor: "rgba(255,255,255,0.18)",
-                    color: "common.white",
-                    border: "2px solid rgba(255,255,255,0.35)",
-                    backdropFilter: "blur(6px)",
-                  }}
-                >
-                  {selectedAvatar || initials || (user?.username || "?")[0] || "?"}
-                </Avatar>
-                <Box>
-                  <Typography variant="h5" fontWeight={800} gutterBottom>
-                    {user?.username || "Player"}
-                  </Typography>
-                  <Typography color="rgba(255,255,255,0.85)" variant="body2">
-                    {user?.bio || user?.region || "Badminton"}
-                  </Typography>
-                  {tier && (
-                    <Chip
-                      label={`${tier.label} tier`}
-                      color={tier.color}
-                      size="small"
-                      sx={{ mt: 1 }}
-                    />
-                  )}
-                </Box>
-              </Stack>
+          >
+            {/* Bottom fade gradient */}
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.25) 60%, rgba(255,255,255,1) 100%)",
+              }}
+            />
 
-              <Box
+            {/* Profile identity */}
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              sx={{ position: "relative", zIndex: 2 }}
+            >
+              <Avatar
                 sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "repeat(3, 1fr)", sm: "repeat(3, 1fr)" },
-                  gap: 1,
+                  width: 96,
+                  height: 96,
+                  fontSize: 40,
+                  bgcolor: "#fff",
+                  color: "text.primary",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
                 }}
               >
-                {topHeroStats.map((item) => (
-                  <Box
-                    key={item.label}
-                    sx={{
-                      px: 1.5,
-                      py: 1,
-                      borderRadius: 3,
-                      bgcolor: "rgba(255,255,255,0.14)",
-                      border: "1px solid rgba(255,255,255,0.25)",
-                      textAlign: "center",
-                      backdropFilter: "blur(4px)",
-                    }}
-                  >
-                    <Typography color="rgba(255,255,255,0.8)" variant="caption">
-                      {item.label}
-                    </Typography>
-                    <Typography variant="h6" fontWeight={800}>
-                      {item.value}
-                    </Typography>
-                  </Box>
-                ))}
+                {selectedAvatar || initials || "?"}
+              </Avatar>
+
+              <Box>
+                <Typography variant="h5" fontWeight={800} color="#fff">
+                  {user?.username || "Player"}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9, color: "#fff" }}>
+                  Badminton
+                </Typography>
+                {tier && (
+                  <Chip
+                    label={tier.label}
+                    color={tier.color}
+                    size="small"
+                    sx={{ mt: 1 }}
+                  />
+                )}
               </Box>
             </Stack>
+          </Box>
+
+          {/* FLOATING STAT CARDS */}
+          <Container maxWidth="sm" sx={{ position: "relative", mt: -6, pb: 2 }}>
+            <Grid container spacing={2} paddingLeft={1}>
+              {topHeroStats.map((item) => (
+                <Card
+                  key={item.label}
+                  sx={{
+                    margin: "auto",
+                    width: "30%",
+                    borderRadius: 1,
+                    textAlign: "center",
+                    boxShadow: "0 12px 28px rgba(0,0,0,0.12)",
+                  }}
+                >
+                  <CardContent sx={{ py: 2 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ letterSpacing: 0.5 }}
+                    >
+                      {item.label}
+                    </Typography>
+                    <Typography variant="h5" fontWeight={800}>
+                      {item.value}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))}
+            </Grid>
+          </Container>
+        </Box>
+
+
+        <Card variant="outlined" sx={{ height: "100%" }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight={700} gutterBottom>
+              Performance snapshot
+            </Typography>
+            {loading && !stats && (
+              <Typography color="text.secondary">Loading stats...</Typography>
+            )}
+            {!loading && !stats && (
+              <Typography color="text.secondary">No stats available.</Typography>
+            )}
+            {stats && (
+              <Stack spacing={3}>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography color="text.secondary" variant="body2">
+                      Record
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {stats.wins ?? 0}W - {stats.losses ?? 0}L
+                    </Typography>
+                    {overallWinRate !== null && (
+                      <Typography color="text.secondary" variant="body2">
+                        {overallWinRate}% win rate overall
+                      </Typography>
+                    )}
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography color="text.secondary" variant="body2">
+                      Total Matches
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {totalMatches}
+                    </Typography>
+                    {totalMatches > 0 && (
+                      <Typography color="text.secondary" variant="body2">
+                        Last 10: {winRateLast10}% wins
+                      </Typography>
+                    )}
+                  </Grid>
+                </Grid>
+
+                <Stack spacing={1}>
+                  <Stack direction="row" alignItems="center" gap={1}>
+                    <Typography color="text.secondary">Weekly activity</Typography>
+                    <Chip
+                      label={`${stats.weekly_activity?.matches_this_week || 0}/${
+                        stats.weekly_activity?.weekly_target || 0
+                      } matches`}
+                      size="small"
+                    />
+                  </Stack>
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.min(
+                      stats.weekly_activity?.progress_pct || 0,
+                      100
+                    )}
+                  />
+                </Stack>
+
+                <Stack direction="row" alignItems="center" gap={1}>
+                  <Typography color="text.secondary">Activity streak:</Typography>
+                  <Chip
+                    label={`${stats.activity_streak?.current_streak_weeks || 0} weeks`}
+                    color={
+                      stats.activity_streak?.is_active_this_week
+                        ? "success"
+                        : "default"
+                    }
+                    size="small"
+                  />
+                  {tier && (
+                    <Chip label={tier.label} color={tier.color} size="small" />
+                  )}
+                </Stack>
+              </Stack>
+            )}
           </CardContent>
         </Card>
 
-        <Grid container spacing={2.5} alignItems="stretch">
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined" sx={{ height: "100%" }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  Performance snapshot
+        <EloStockChart onRecordMatch={handleRecordMatch} />
+        
+        {/* Recent Matches */}
+        {/* <Card variant="outlined" width="100%">
+          <CardContent>
+            <Stack spacing={2}>
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography variant="h6" fontWeight={700}>
+                  Recent matches
                 </Typography>
-                {loading && !stats && (
-                  <Typography color="text.secondary">Loading stats...</Typography>
-                )}
-                {!loading && !stats && (
-                  <Typography color="text.secondary">No stats available.</Typography>
-                )}
-                {stats && (
-                  <Stack spacing={3}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Typography color="text.secondary" variant="body2">
-                          Record
-                        </Typography>
-                        <Typography variant="h6" fontWeight={700}>
-                          {stats.wins ?? 0}W - {stats.losses ?? 0}L
-                        </Typography>
-                        {overallWinRate !== null && (
-                          <Typography color="text.secondary" variant="body2">
-                            {overallWinRate}% win rate overall
-                          </Typography>
-                        )}
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography color="text.secondary" variant="body2">
-                          Total Matches
-                        </Typography>
-                        <Typography variant="h6" fontWeight={700}>
-                          {totalMatches}
-                        </Typography>
-                        {totalMatches > 0 && (
-                          <Typography color="text.secondary" variant="body2">
-                            Last 10: {winRateLast10}% wins
-                          </Typography>
-                        )}
-                      </Grid>
-                    </Grid>
-
-                    <Stack spacing={1}>
-                      <Stack direction="row" alignItems="center" gap={1}>
-                        <Typography color="text.secondary">Weekly activity</Typography>
-                        <Chip
-                          label={`${stats.weekly_activity?.matches_this_week || 0}/${
-                            stats.weekly_activity?.weekly_target || 0
-                          } matches`}
-                          size="small"
-                        />
-                      </Stack>
-                      <LinearProgress
-                        variant="determinate"
-                        value={Math.min(
-                          stats.weekly_activity?.progress_pct || 0,
-                          100
-                        )}
-                      />
-                    </Stack>
-
-                    <Stack direction="row" alignItems="center" gap={1}>
-                      <Typography color="text.secondary">Activity streak:</Typography>
-                      <Chip
-                        label={`${stats.activity_streak?.current_streak_weeks || 0} weeks`}
-                        color={
-                          stats.activity_streak?.is_active_this_week
-                            ? "success"
-                            : "default"
-                        }
-                        size="small"
-                      />
-                      {tier && (
-                        <Chip label={tier.label} color={tier.color} size="small" />
-                      )}
-                    </Stack>
-                  </Stack>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-
-        <Grid item xs={12} md={6}>
-          <EloStockChart onRecordMatch={handleRecordMatch} />
-        </Grid>
-
-        <Grid item xs={12}>
-          <Card variant="outlined">
-            <CardContent>
-              <Stack spacing={2}>
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Typography variant="h6" fontWeight={700}>
-                    Recent matches
+                {loading && (
+                  <Typography color="text.secondary" variant="body2">
+                    Loading...
                   </Typography>
-                  {loading && (
-                    <Typography color="text.secondary" variant="body2">
-                      Loading...
-                    </Typography>
-                  )}
-                </Stack>
-                {error && (
-                  <Typography color="error" variant="body2" mb={1}>
-                    {error}
-                  </Typography>
-                )}
-                {!loading && !error && recentMatches.length === 0 && (
-                  <Typography color="text.secondary">
-                    No recent matches yet.
-                  </Typography>
-                )}
-                {recentMatches.length > 0 && (
-                  <Stack divider={<Divider flexItem />} spacing={1.5} mt={0.5}>
-                    {recentMatches.map((match, index) => {
-                      const isWinner = match.winner_username === user?.username;
-                      const resultLabel = isWinner ? "W" : "L";
-                      const opponent = isWinner
-                        ? match.loser_username || "Opponent"
-                        : match.winner_username || "Opponent";
-                      const key =
-                        match.match_id ||
-                        `${match.winner_username}-${match.loser_username}-${match.created_at}-${index}`;
-                      return (
-                        <Stack
-                          key={key}
-                          direction="row"
-                          alignItems="center"
-                          justifyContent="space-between"
-                          spacing={2}
-                          sx={{ py: 0.5 }}
-                        >
-                          <Stack direction="row" spacing={1.5} alignItems="center" minWidth={0}>
-                            <Avatar sx={{ width: 44, height: 44 }}>
-                              {opponent?.slice(0, 1)?.toUpperCase() || "?"}
-                            </Avatar>
-                            <Box minWidth={0}>
-                              <Typography fontWeight={700} noWrap>
-                                {opponent}
-                              </Typography>
-                              <Typography color="text.secondary" variant="body2" noWrap>
-                                {match.gender} · {match.category}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                          <Stack spacing={0.5} alignItems="flex-end">
-                            <Box
-                              sx={{
-                                px: 1.5,
-                                py: 0.25,
-                                borderRadius: 2,
-                                fontWeight: 800,
-                                letterSpacing: 0.5,
-                                color: isWinner ? "success.dark" : "error.dark",
-                                backgroundColor: isWinner
-                                  ? "rgba(34,197,94,0.14)"
-                                  : "rgba(239,68,68,0.14)",
-                              }}
-                            >
-                              {resultLabel}
-                            </Box>
-                            <Typography variant="body2" fontWeight={700}>
-                              {match.scores || "-"}
-                            </Typography>
-                            <Typography color="text.secondary" variant="caption">
-                              {formatRelativeDate(match.created_at)}
-                            </Typography>
-                          </Stack>
-                        </Stack>
-                      );
-                    })}
-                  </Stack>
                 )}
               </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+              {error && (
+                <Typography color="error" variant="body2" mb={1}>
+                  {error}
+                </Typography>
+              )}
+              {!loading && !error && recentMatches.length === 0 && (
+                <Typography color="text.secondary">
+                  No recent matches yet.
+                </Typography>
+              )}
+              {recentMatches.length > 0 && (
+                <Stack divider={<Divider flexItem />} spacing={1.5} mt={0.5}>
+                  {recentMatches.map((match, index) => {
+                    const isWinner = match.winner_username === user?.username;
+                    const resultLabel = isWinner ? "W" : "L";
+                    const opponent = isWinner
+                      ? match.loser_username || "Opponent"
+                      : match.winner_username || "Opponent";
+                    const key =
+                      match.match_id ||
+                      `${match.winner_username}-${match.loser_username}-${match.created_at}-${index}`;
+                    return (
+                      <Stack
+                        key={key}
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        spacing={2}
+                        sx={{ py: 0.5 }}
+                      >
+                        <Stack direction="row" spacing={1.5} alignItems="center" minWidth={0}>
+                          <Avatar sx={{ width: 44, height: 44 }}>
+                            {opponent?.slice(0, 1)?.toUpperCase() || "?"}
+                          </Avatar>
+                          <Box minWidth={0}>
+                            <Typography fontWeight={700} noWrap>
+                              {opponent}
+                            </Typography>
+                            <Typography color="text.secondary" variant="body2" noWrap>
+                              {match.gender} · {match.category}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                        <Stack spacing={0.5} alignItems="flex-end">
+                          <Box
+                            sx={{
+                              px: 1.5,
+                              py: 0.25,
+                              borderRadius: 2,
+                              fontWeight: 800,
+                              letterSpacing: 0.5,
+                              color: isWinner ? "success.dark" : "error.dark",
+                              backgroundColor: isWinner
+                                ? "rgba(34,197,94,0.14)"
+                                : "rgba(239,68,68,0.14)",
+                            }}
+                          >
+                            {resultLabel}
+                          </Box>
+                          <Typography variant="body2" fontWeight={700}>
+                            {match.scores || "-"}
+                          </Typography>
+                          <Typography color="text.secondary" variant="caption">
+                            {formatRelativeDate(match.created_at)}
+                          </Typography>
+                        </Stack>
+                      </Stack>
+                    );
+                  })}
+                </Stack>
+              )}
+            </Stack>
+          </CardContent>
+        </Card> */}
 
-        <Grid item xs={12}>
-          <Card variant="outlined">
+        <Card variant="outlined">
             <CardContent>
               <Typography variant="h6" fontWeight={700} mb={2}>
                 H2H Rivals
@@ -509,8 +495,7 @@ function HomeScreen() {
               )}
             </CardContent>
           </Card>
-        </Grid>
-        </Grid>
+        
       </Stack>
     </Container>
   );
