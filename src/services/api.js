@@ -108,6 +108,19 @@ export async function getRecentActivity(token) {
   return handleResponse(response);
 }
 
+export async function uploadAvatar(token, file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${base}/api/profile/upload-avatar`, {
+    method: "POST",
+    headers: withAuth(token),
+    body: formData,
+  });
+
+  return handleResponse(response);
+}
+
 export async function getH2H(token) {
   const response = await fetch(`${base}/api/matches/h2h`, {
     method: "GET",
@@ -148,4 +161,5 @@ export default {
   getH2H,
   getHomeStats,
   getPlayerCardData,
+  uploadAvatar,
 };
