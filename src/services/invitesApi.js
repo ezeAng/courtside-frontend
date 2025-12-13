@@ -73,6 +73,18 @@ export async function findMatch(token, mode) {
   return handleResponse(response);
 }
 
+export async function findMatchSuggestions(token, mode) {
+  const response = await fetch(`${base}/api/matchmaking/find`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...withAuth(token),
+    },
+    body: JSON.stringify({ mode }),
+  });
+  return handleResponse(response);
+}
+
 export async function leaveQueue(token, mode) {
   const response = await fetch(`${base}/api/matchmaking/leave`, {
     method: "POST",
@@ -92,5 +104,6 @@ export default {
   cancelInvite,
   createInvite,
   findMatch,
+  findMatchSuggestions,
   leaveQueue,
 };
