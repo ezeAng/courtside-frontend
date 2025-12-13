@@ -1,60 +1,247 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
-import GenderToggle from "../../components/GenderToggle";
-import LeaderboardCard from "../../components/LeaderboardCard";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Paper from "@mui/material/Paper";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Avatar from "@mui/material/Avatar";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import LeaderboardIcon from "@mui/icons-material/Leaderboard";
+import ManIcon from "@mui/icons-material/Man";
+import WomanIcon from "@mui/icons-material/Woman";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 import { setGender, fetchLeaderboard } from "../../features/leaderboard/leaderboardSlice";
 
 function LeaderboardScreen() {
   const dispatch = useDispatch();
-  const { gender, data, loading, error } = useSelector((state) => state.leaderboard);
+  const { data, loading, error } = useSelector((state) => state.leaderboard);
+
+  const [category, setCategory] = useState("overall");
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+
+  const categories = useMemo(
+    () => [
+      {
+        value: "overall",
+        label: "Overall",
+        icon: <LeaderboardIcon fontSize="small" />,
+        gender: "mixed",
+        helper: "Top players across all match types",
+      },
+      {
+        value: "menSingles",
+        label: "Men's Singles",
+        icon: <ManIcon fontSize="small" />,
+        gender: "male",
+        helper: "Single matches for men",
+      },
+      {
+        value: "womenSingles",
+        label: "Women's Singles",
+        icon: <WomanIcon fontSize="small" />,
+        gender: "female",
+        helper: "Single matches for women",
+      },
+      {
+        value: "menDoubles",
+        label: "Men's Doubles",
+        icon: <PeopleAltIcon fontSize="small" />,
+        gender: "male",
+        helper: "Doubles play for men",
+      },
+      {
+        value: "womenDoubles",
+        label: "Women's Doubles",
+        icon: <PeopleAltIcon fontSize="small" />,
+        gender: "female",
+        helper: "Doubles play for women",
+      },
+    ],
+    []
+  );
+
+  const activeCategory = useMemo(
+    () => categories.find((item) => item.value === category) || categories[0],
+    [categories, category]
+  );
 
   useEffect(() => {
-    dispatch(fetchLeaderboard(gender));
-  }, [dispatch, gender]);
+    dispatch(fetchLeaderboard(activeCategory.gender));
+  }, [dispatch, activeCategory]);
 
-  const handleGenderChange = (newGender) => {
-    dispatch(setGender(newGender));
-    dispatch(fetchLeaderboard(newGender));
+  const handleCategoryChange = (_event, newValue) => {
+    if (!newValue) return;
+    const newCategory = categories.find((item) => item.value === newValue);
+    if (newCategory) {
+      setCategory(newCategory.value);
+      dispatch(setGender(newCategory.gender));
+    }
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
+    <Container maxWidth="md" sx={{ py: 4, pb: 10 }}>
       <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="h5" fontWeight={700}>
-            Leaderboard
+        <Stack spacing={1} alignItems="center">
+          <Typography variant="h5" fontWeight={700} textAlign="center">
+            League Rankings
           </Typography>
-          <GenderToggle value={gender} onChange={handleGenderChange} />
+          <Typography variant="body2" color="text.secondary" textAlign="center">
+            Explore the top players across singles and doubles leaderboards.
+          </Typography>
         </Stack>
+
+        <Paper variant="outlined" sx={{ borderRadius: 3 }}>
+          <Tabs
+            value={category}
+            onChange={handleCategoryChange}
+            variant="fullWidth"
+            textColor="primary"
+            indicatorColor="primary"
+          >
+            {categories.map((item) => (
+              <Tab
+                key={item.value}
+                value={item.value}
+                icon={item.icon}
+                iconPosition="top"
+                label={item.label}
+                sx={{ fontWeight: 600, py: 2, minHeight: 90 }}
+              />
+            ))}
+          </Tabs>
+          <Divider />
+          <Stack px={3} py={2} spacing={0.5}>
+            <Typography variant="overline" color="text.secondary">
+              TOP 100 PLAYERS ON COURTSIDE
+            </Typography>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <SportsTennisIcon fontSize="small" color="primary" />
+              <Typography variant="body2" color="text.secondary">
+                {activeCategory.helper}
+              </Typography>
+            </Stack>
+          </Stack>
+        </Paper>
 
         {error && <Alert severity="error">{error}</Alert>}
 
         {loading ? (
-          <Stack alignItems="center" py={4}>
+          <Stack alignItems="center" py={6}>
             <CircularProgress />
           </Stack>
         ) : (
-          <Stack spacing={2}>
-            {data.map((entry, index) => (
-              <LeaderboardCard
-                key={entry.id || `${entry.username}-${index}`}
-                username={entry.username}
-                elo={entry.elo}
-                gender={entry.gender}
-                rank={entry.rank ?? index + 1}
-              />
-            ))}
-            {!data.length && !error && (
-              <Typography color="text.secondary">No entries yet.</Typography>
-            )}
-          </Stack>
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ width: 80, fontWeight: 700 }}>Rank</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Player</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 700 }}>
+                    Elo Rating
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data.map((entry, index) => (
+                  <TableRow
+                    key={entry.id || `${entry.username}-${index}`}
+                    hover
+                    onClick={() =>
+                      setSelectedPlayer({
+                        ...entry,
+                        rank: entry.rank ?? index + 1,
+                      })
+                    }
+                    sx={{ cursor: "pointer" }}
+                  >
+                    <TableCell>
+                      <Typography fontWeight={700}>{entry.rank ?? index + 1}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Avatar>
+                          {entry.username?.charAt(0).toUpperCase() || "P"}
+                        </Avatar>
+                        <Box>
+                          <Typography fontWeight={700}>{entry.username}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {entry.gender ? `${entry.gender} player` : "Player"}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography fontWeight={700}>{entry.elo ?? "—"}</Typography>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!data.length && !error && (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                      <Typography color="text.secondary">No entries yet.</Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </Stack>
+
+      <Dialog
+        open={Boolean(selectedPlayer)}
+        onClose={() => setSelectedPlayer(null)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Player Profile</DialogTitle>
+        <DialogContent>
+          {selectedPlayer && (
+            <Stack spacing={2} alignItems="center" py={1}>
+              <Avatar sx={{ width: 72, height: 72 }}>
+                {selectedPlayer.username?.charAt(0).toUpperCase() || "P"}
+              </Avatar>
+              <Stack spacing={0.5} alignItems="center">
+                <Typography variant="h6" fontWeight={800}>
+                  {selectedPlayer.username}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {selectedPlayer.gender ? `${selectedPlayer.gender} player` : "Player"}
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={2} divider={<Divider orientation="vertical" flexItem />}>
+                <Box textAlign="center">
+                  <Typography variant="body2" color="text.secondary">
+                    Rank
+                  </Typography>
+                  <Typography fontWeight={800}>{selectedPlayer.rank}</Typography>
+                </Box>
+                <Box textAlign="center">
+                  <Typography variant="body2" color="text.secondary">
+                    Elo
+                  </Typography>
+                  <Typography fontWeight={800}>{selectedPlayer.elo ?? "—"}</Typography>
+                </Box>
+              </Stack>
+            </Stack>
+          )}
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 }
