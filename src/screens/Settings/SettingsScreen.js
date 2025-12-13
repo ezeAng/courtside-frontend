@@ -167,7 +167,7 @@ function SettingsScreen() {
               </Typography>
               <Grid container spacing={2} columns={10}>
                 {AVATARS.map((icon, index) => (
-                  <Grid item xs={2} key={icon}>
+                  <Grid size={2} key={icon}>
                     <Button
                       variant={avatar === index ? "contained" : "outlined"}
                       onClick={() => setAvatar(index)}
