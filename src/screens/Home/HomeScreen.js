@@ -16,6 +16,7 @@ import { fetchCurrentUser } from "../../features/user/userSlice";
 import EloStockChart from "../../components/home/EloStockChart";
 import ProfileAvatar from "../../components/ProfileAvatar";
 import { normalizeProfileImage } from "../../utils/profileImage";
+import Avatar from "@mui/material/Avatar";
 
 function HomeScreen() {
   const navigate = useNavigate();
