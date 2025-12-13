@@ -5,15 +5,21 @@ import {
   Button,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Paper,
   Stack,
   Tab,
   Tabs,
+  TextField,
   Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -21,7 +27,9 @@ import {
   cancelInvite,
   fetchBadgeCounts,
   fetchInvites,
+  createInvite,
 } from "../../services/invitesApi";
+import { searchUsers } from "../../services/api";
 import MatchmakingLobbyModal from "./MatchmakingLobbyModal";
 
 const tabOptions = [
@@ -89,6 +97,175 @@ function InviteCard({ invite, tab, onAccept, onDecline, onCancel }) {
   );
 }
 
+function InvitePlayerModal({ open, onClose, onInviteCreated }) {
+  const token = useSelector((state) => state.auth.accessToken);
+  const currentUser = useSelector((state) => state.user.user);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setResults([]);
+      setError(null);
+      setSelectedUser(null);
+      setIsSending(false);
+    }
+  }, [open]);
+
+  const handleSearch = async () => {
+    if (!query.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await searchUsers(query.trim(), token);
+      const filteredResults = (data || []).filter(
+        (user) => user?.auth_id !== currentUser?.auth_id
+      );
+      setResults(filteredResults);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendInvite = async () => {
+    if (!selectedUser || !token) return;
+    const opponentAuthId =
+      selectedUser.auth_id || selectedUser.user_id || selectedUser.id;
+    if (!opponentAuthId) {
+      setError("Unable to send invite to this user");
+      return;
+    }
+
+    const payload = {
+      mode: "singles",
+      players: [
+        {
+          auth_id: currentUser?.auth_id,
+          username: currentUser?.username || currentUser?.display_name || "You",
+          team: 1,
+        },
+        {
+          auth_id: opponentAuthId,
+          username:
+            selectedUser.username ||
+            selectedUser.display_name ||
+            selectedUser.name ||
+            "Player",
+          team: 2,
+        },
+      ],
+    };
+
+    try {
+      setIsSending(true);
+      setError(null);
+      await createInvite(token, payload);
+      onInviteCreated?.();
+      onClose?.();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Invite a Player</DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          <TextField
+            label="Search by username"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSearch();
+              }
+            }}
+            fullWidth
+          />
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="contained"
+              onClick={handleSearch}
+              disabled={loading || !query.trim()}
+            >
+              {loading ? <CircularProgress size={20} /> : "Search"}
+            </Button>
+            <Button variant="text" onClick={() => setQuery("")}>Clear</Button>
+          </Stack>
+
+          {error && <Alert severity="error">{error}</Alert>}
+
+          {results.length === 0 && !loading ? (
+            <Typography color="text.secondary" variant="body2">
+              Search for a username to invite.
+            </Typography>
+          ) : (
+            <Stack spacing={1}>
+              {results.map((user) => {
+                const isSelected = selectedUser?.auth_id === user.auth_id;
+                return (
+                  <Paper
+                    key={user.auth_id || user.id}
+                    variant={isSelected ? "outlined" : "elevation"}
+                    sx={{
+                      p: 1.5,
+                      borderColor: isSelected ? "primary.main" : undefined,
+                      cursor: "pointer",
+                    }}
+                    onClick={() => setSelectedUser(user)}
+                  >
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Stack>
+                        <Typography fontWeight={600}>
+                          {user.username || user.display_name || user.name || "User"}
+                        </Typography>
+                        {user.email && (
+                          <Typography variant="caption" color="text.secondary">
+                            {user.email}
+                          </Typography>
+                        )}
+                      </Stack>
+                      {isSelected && (
+                        <Typography color="primary" fontWeight={700}>
+                          Selected
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Paper>
+                );
+              })}
+            </Stack>
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="inherit">
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          startIcon={<PersonAddAlt1Icon />}
+          onClick={handleSendInvite}
+          disabled={!selectedUser || isSending}
+        >
+          {isSending ? <CircularProgress size={20} color="inherit" /> : "Send Invite"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 function InvitesScreen() {
   const token = useSelector((state) => state.auth.accessToken);
   const navigate = useNavigate();
@@ -98,6 +275,7 @@ function InvitesScreen() {
   const [error, setError] = useState(null);
   const [badgeCounts, setBadgeCounts] = useState({ pending: 0, invites: 0 });
   const [modalOpen, setModalOpen] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
   const activeInvites = useMemo(() => invites || [], [invites]);
 
@@ -182,13 +360,22 @@ function InvitesScreen() {
               Back to Matches
             </Button>
           </Stack>
-          <Button
-            variant="contained"
-            startIcon={<GroupAddIcon />}
-            onClick={() => setModalOpen(true)}
-          >
-            Search for match
-          </Button>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="outlined"
+              startIcon={<PersonAddAlt1Icon />}
+              onClick={() => setInviteModalOpen(true)}
+            >
+              Invite player
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<GroupAddIcon />}
+              onClick={() => setModalOpen(true)}
+            >
+              Search for match
+            </Button>
+          </Stack>
         </Stack>
 
         <Paper variant="outlined" sx={{ borderRadius: 2 }}>
@@ -239,6 +426,15 @@ function InvitesScreen() {
       <MatchmakingLobbyModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        onInviteCreated={() => {
+          setTab("sent");
+          loadInvites("sent");
+          refreshBadges();
+        }}
+      />
+      <InvitePlayerModal
+        open={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
         onInviteCreated={() => {
           setTab("sent");
           loadInvites("sent");
