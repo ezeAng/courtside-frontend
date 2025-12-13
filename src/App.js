@@ -17,6 +17,7 @@ import MatchDetailScreen from "./screens/Matches/MatchDetailScreen";
 import PendingMatchesScreen from "./screens/Matches/PendingMatchesScreen";
 import LeaderboardScreen from "./screens/Leaderboard/LeaderboardScreen";
 import SettingsScreen from "./screens/Settings/SettingsScreen";
+import AppSettingsScreen from "./screens/Settings/AppSettingsScreen";
 import SplashScreen from "./screens/SplashScreen";
 import BottomNav from "./components/BottomNav";
 import { clearAuth } from "./features/auth/authSlice";
@@ -73,6 +74,7 @@ function App() {
           <Route path="/matches/:match_id" element={<MatchDetailScreen />} />
           <Route path="/leaderboard" element={<LeaderboardScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/settings/preferences" element={<AppSettingsScreen />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

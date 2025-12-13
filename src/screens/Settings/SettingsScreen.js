@@ -8,20 +8,37 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
-
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import MenuItem from "@mui/material/MenuItem";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import CloudDownloadIcon from "@mui/icons-material/CloudDownload";
+import LanguageIcon from "@mui/icons-material/Language";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import SubscriptionsIcon from "@mui/icons-material/Subscriptions";
+import HistoryIcon from "@mui/icons-material/History";
+import LogoutIcon from "@mui/icons-material/Logout";
+import SettingsIcon from "@mui/icons-material/Settings";
+import { useNavigate } from "react-router-dom";
 import { AVATARS } from "../../constants/avatars";
+import PlayerCardModal from "../../components/PlayerCardModal";
 import { clearAuth } from "../../features/auth/authSlice";
 import {
   clearUser,
   fetchCurrentUser,
   updateUserProfile,
 } from "../../features/user/userSlice";
-import { useNavigate } from "react-router-dom";
 
 function SettingsScreen() {
   const dispatch = useDispatch();
@@ -40,6 +57,8 @@ function SettingsScreen() {
     user?.profile_image_url || null
   );
   const [successMessage, setSuccessMessage] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [showCard, setShowCard] = useState(false);
 
   useEffect(() => {
     if (token && !user) {
@@ -61,6 +80,18 @@ function SettingsScreen() {
 
   const selectedAvatar = useMemo(() => AVATARS[avatar] || "", [avatar]);
 
+  const initials = useMemo(() => {
+    if (user?.username) {
+      return user.username
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+    }
+    return "";
+  }, [user]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSuccessMessage(null);
@@ -80,25 +111,139 @@ function SettingsScreen() {
     }
   };
 
+  const handleLogout = () => {
+    dispatch(clearAuth());
+    dispatch(clearUser());
+    navigate("/login", { replace: true });
+  };
+
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
-      <Card variant="outlined">
-        <CardContent>
-          <Stack spacing={3} component="form" onSubmit={handleSubmit}>
+      <Stack spacing={3}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="h5" fontWeight={700}>
+            My Profile
+          </Typography>
+          <IconButton
+            aria-label="Open settings"
+            edge="end"
+            onClick={() => navigate("/settings/preferences")}
+          >
+            <SettingsIcon />
+          </IconButton>
+        </Stack>
+
+        <Card variant="outlined">
+          <CardContent>
+            <Stack spacing={2} alignItems="center" textAlign="center">
+              <Avatar sx={{ width: 80, height: 80, fontSize: 34 }}>
+                {selectedAvatar || initials}
+              </Avatar>
+              <Box>
+                <Typography variant="h6" fontWeight={700}>
+                  {user?.username || "Loading user..."}
+                </Typography>
+                {user?.username && (
+                  <Typography color="text.secondary">@{user.username}</Typography>
+                )}
+              </Box>
+              {successMessage && (
+                <Alert severity="success" sx={{ width: "100%" }}>
+                  {successMessage}
+                </Alert>
+              )}
+              <Stack spacing={1} width="100%">
+                <Button
+                  variant="contained"
+                  size="large"
+                  fullWidth
+                  onClick={() => setEditOpen(true)}
+                >
+                  Edit Profile
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  fullWidth
+                  onClick={() => setShowCard(true)}
+                >
+                  View Player Card
+                </Button>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+
+        <Card variant="outlined">
+          <CardContent sx={{ p: 0 }}>
+            <List disablePadding>
+              <ListItemButton>
+                <ListItemIcon>
+                  <FavoriteBorderIcon />
+                </ListItemIcon>
+                <ListItemText primary="Favourites" secondary="Your saved matches" />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton>
+                <ListItemIcon>
+                  <CloudDownloadIcon />
+                </ListItemIcon>
+                <ListItemText primary="Downloads" secondary="Offline data" />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton>
+                <ListItemIcon>
+                  <LanguageIcon />
+                </ListItemIcon>
+                <ListItemText primary="Language" secondary="English" />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton>
+                <ListItemIcon>
+                  <LocationOnIcon />
+                </ListItemIcon>
+                <ListItemText primary="Location" secondary={region || "Not set"} />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton>
+                <ListItemIcon>
+                  <SubscriptionsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Subscription" secondary="Standard" />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton>
+                <ListItemIcon>
+                  <HistoryIcon />
+                </ListItemIcon>
+                <ListItemText primary="Clear history" />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton onClick={handleLogout} sx={{ color: "error.main" }}>
+                <ListItemIcon sx={{ color: "error.main" }}>
+                  <LogoutIcon />
+                </ListItemIcon>
+                <ListItemText primary="Log out" />
+              </ListItemButton>
+            </List>
+          </CardContent>
+        </Card>
+      </Stack>
+
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Edit Profile</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} component="form" onSubmit={handleSubmit} sx={{ pt: 1 }}>
+            {updateError && <Alert severity="error">{updateError}</Alert>}
+
             <Stack spacing={1} alignItems="center" textAlign="center">
-              <Typography variant="h5" fontWeight={700}>
-                Profile Settings
-              </Typography>
+              <Avatar sx={{ width: 72, height: 72, fontSize: 32 }}>
+                {selectedAvatar || initials}
+              </Avatar>
               <Typography color="text.secondary">
                 Update your profile details and choose a new avatar.
               </Typography>
-              <Avatar sx={{ width: 72, height: 72, fontSize: 32 }}>
-                {selectedAvatar}
-              </Avatar>
             </Stack>
-
-            {successMessage && <Alert severity="success">{successMessage}</Alert>}
-            {updateError && <Alert severity="error">{updateError}</Alert>}
 
             <TextField
               label="Username"
@@ -212,22 +357,11 @@ function SettingsScreen() {
             >
               {updateLoading ? "Saving..." : "Save Changes"}
             </Button>
-            <Button
-              variant="text"
-              color="error"
-              fullWidth
-              size="large"
-              onClick={() => {
-                dispatch(clearAuth());
-                dispatch(clearUser());
-                navigate("/login", { replace: true });
-              }}
-            >
-              Log out
-            </Button>
           </Stack>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
+
+      {showCard && <PlayerCardModal token={token} onClose={() => setShowCard(false)} />}
     </Container>
   );
 }
