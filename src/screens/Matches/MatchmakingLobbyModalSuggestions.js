@@ -39,7 +39,9 @@ function MatchmakingLobbyModalSuggestions({
   onInviteSent,
   defaultMode = "singles",
 }) {
-  const token = propToken || useSelector((state) => state.auth.accessToken);
+  const reduxToken = useSelector((state) => state.auth.accessToken);
+  const token = propToken || reduxToken;
+
   const currentUser = useSelector((state) => state.user.user);
   const [mode, setMode] = useState(defaultMode);
   const [status, setStatus] = useState("idle");
