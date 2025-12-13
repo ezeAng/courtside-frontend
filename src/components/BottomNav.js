@@ -6,12 +6,14 @@ import HomeIcon from "@mui/icons-material/Home";
 import SportsMartialArtsIcon from "@mui/icons-material/SportsMartialArts";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import SettingsIcon from "@mui/icons-material/Settings";
+import MarkEmailUnreadIcon from "@mui/icons-material/MarkEmailUnread";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const navItems = [
   { label: "Home", value: "/home", icon: <HomeIcon /> },
   { label: "Leaderboard", value: "/leaderboard", icon: <EmojiEventsIcon /> },
   { label: "Matches", value: "/matches", icon: <SportsMartialArtsIcon /> },
+  { label: "Invites", value: "/matches/invites", icon: <MarkEmailUnreadIcon /> },
   { label: "Settings", value: "/settings", icon: <SettingsIcon /> },
 ];
 
