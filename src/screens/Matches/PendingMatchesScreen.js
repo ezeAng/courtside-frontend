@@ -11,6 +11,10 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate } from "react-router-dom";
 import { confirmMatch, getPendingMatches, rejectMatch } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 
 export default function PendingMatchesScreen() {
   const navigate = useNavigate();
@@ -19,6 +23,24 @@ export default function PendingMatchesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [confirmFeedback, setConfirmFeedback] = useState(null);
+
+  const getPlayerLabel = (player) => {
+    if (!player) return "Player";
+
+    const names = [
+      player.username,
+      player.display_name,
+      player.name,
+      player.player_name,
+      player.player_username,
+      player.playerId,
+      player.player_id,
+      player.player_auth_id,
+      player.auth_id,
+    ];
+
+    return names.find(Boolean) || "Player";
+  };
 
   async function load() {
     try {
@@ -163,6 +185,79 @@ export default function PendingMatchesScreen() {
 
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
+      <Dialog
+        open={Boolean(confirmFeedback)}
+        onClose={() => setConfirmFeedback(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Match Confirmed</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={1.5}>
+            {confirmFeedback?.upset && (
+              <Alert
+                severity={confirmFeedback.upset.is_upset ? "warning" : "info"}
+                variant="filled"
+              >
+                {confirmFeedback.upset.is_upset ? "Upset! " : "Match result"}
+                {confirmFeedback.upset.winner_avg_elo &&
+                  confirmFeedback.upset.opponent_avg_elo &&
+                  confirmFeedback.upset.elo_gap !== undefined && (
+                    <>
+                      {" "}Winner avg ELO: {confirmFeedback.upset.winner_avg_elo}, Opponent
+                      avg ELO: {confirmFeedback.upset.opponent_avg_elo} (gap {" "}
+                      {confirmFeedback.upset.elo_gap}).
+                    </>
+                  )}
+              </Alert>
+            )}
+
+            {confirmFeedback?.updated_elos?.updates?.length > 0 && (
+              <Stack spacing={0.5}>
+                <Typography variant="subtitle1" fontWeight={700}>
+                  ELO Updates
+                </Typography>
+                {confirmFeedback.updated_elos.updates.map((u, idx) => {
+                  const playerLabel = getPlayerLabel(u);
+                  const delta = u.delta ?? u.change ?? u.elo_change ?? 0;
+                  const formattedDelta = delta > 0 ? `+${delta}` : `${delta}`;
+                  return (
+                    <Typography key={`${playerLabel}-${idx}`} variant="body2">
+                      {playerLabel}: {u.new_elo ?? u.newElo ?? u.elo ?? ""} ({formattedDelta})
+                    </Typography>
+                  );
+                })}
+              </Stack>
+            )}
+
+            {confirmFeedback?.ranks?.length > 0 && (
+              <Stack spacing={0.5}>
+                <Typography variant="subtitle1" fontWeight={700}>
+                  Rank Changes
+                </Typography>
+                {confirmFeedback.ranks.map((r, idx) => {
+                  const playerLabel = getPlayerLabel(r);
+                  const movement = r.rankChange ?? 0;
+                  const direction = movement > 0 ? "up" : movement < 0 ? "down" : "no";
+                  const movementText =
+                    direction === "no"
+                      ? "No movement"
+                      : `Moved ${direction} ${Math.abs(movement)} spots`;
+                  return (
+                    <Typography key={`${playerLabel}-${idx}`} variant="body2">
+                      {playerLabel}: {movementText} (from {r.previousRank ?? "?"} to {" "}
+                      {r.newRank ?? "?"})
+                    </Typography>
+                  );
+                })}
+              </Stack>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmFeedback(null)}>Dismiss</Button>
+        </DialogActions>
+      </Dialog>
       <Stack spacing={3}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Button
@@ -176,93 +271,6 @@ export default function PendingMatchesScreen() {
             Pending Matches
           </Typography>
         </Stack>
-
-        {confirmFeedback && (
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-            <Stack spacing={1.5}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="h6" fontWeight={700}>
-                  Match Confirmed
-                </Typography>
-                <Button size="small" onClick={() => setConfirmFeedback(null)}>
-                  Dismiss
-                </Button>
-              </Stack>
-
-              {confirmFeedback?.upset && (
-                <Alert
-                  severity={confirmFeedback.upset.is_upset ? "warning" : "info"}
-                  variant="filled"
-                >
-                  {confirmFeedback.upset.is_upset ? "Upset! " : "Match result"}
-                  {confirmFeedback.upset.winner_avg_elo &&
-                    confirmFeedback.upset.opponent_avg_elo &&
-                    confirmFeedback.upset.elo_gap !== undefined && (
-                      <>
-                        {" "}Winner avg ELO: {confirmFeedback.upset.winner_avg_elo}, Opponent
-                        avg ELO: {confirmFeedback.upset.opponent_avg_elo} (gap {" "}
-                        {confirmFeedback.upset.elo_gap}).
-                      </>
-                    )}
-                </Alert>
-              )}
-
-              {confirmFeedback?.updated_elos?.updates?.length > 0 && (
-                <Stack spacing={0.5}>
-                  <Typography variant="subtitle1" fontWeight={700}>
-                    ELO Updates
-                  </Typography>
-                  {confirmFeedback.updated_elos.updates.map((u, idx) => {
-                    const playerLabel =
-                      u.display_name ??
-                      u.name ??
-                      u.player_name ??
-                      u.playerId ??
-                      u.player_id ??
-                      "Player";
-                    const delta = u.delta ?? u.change ?? u.elo_change ?? 0;
-                    const formattedDelta = delta > 0 ? `+${delta}` : `${delta}`;
-                    return (
-                      <Typography key={`${playerLabel}-${idx}`} variant="body2">
-                        {playerLabel}: {u.new_elo ?? u.newElo ?? u.elo ?? ""} ({formattedDelta})
-                      </Typography>
-                    );
-                  })}
-                </Stack>
-              )}
-
-              {confirmFeedback?.ranks?.length > 0 && (
-                <Stack spacing={0.5}>
-                  <Typography variant="subtitle1" fontWeight={700}>
-                    Rank Changes
-                  </Typography>
-                  {confirmFeedback.ranks.map((r, idx) => {
-                    const playerLabel =
-                      r.display_name ??
-                      r.name ??
-                      r.player_name ??
-                      r.playerId ??
-                      r.player_id ??
-                      "Player";
-                    const movement = r.rankChange ?? 0;
-                    const direction = movement > 0 ? "up" : movement < 0 ? "down" : "no";
-                    const movementText =
-                      direction === "no"
-                        ? "No movement"
-                        : `Moved ${direction} ${Math.abs(movement)} spots`;
-                    return (
-                      <Typography key={`${playerLabel}-${idx}`} variant="body2">
-                        {playerLabel}: {movementText} (from {r.previousRank ?? "?"} to {" "}
-                        {r.newRank ?? "?"})
-                      </Typography>
-                    );
-                  })}
-                </Stack>
-              )}
-            </Stack>
-          </Paper>
-        )}
-
         {renderIncoming()}
 
         <Divider />
