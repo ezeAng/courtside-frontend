@@ -18,6 +18,7 @@ export default function PendingMatchesScreen() {
   const [outgoing, setOutgoing] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [confirmFeedback, setConfirmFeedback] = useState(null);
 
   async function load() {
     try {
@@ -41,7 +42,8 @@ export default function PendingMatchesScreen() {
   async function handleConfirm(matchId) {
     try {
       const token = getStoredToken();
-      await confirmMatch(matchId, token);
+      const confirmation = await confirmMatch(matchId, token);
+      setConfirmFeedback(confirmation);
       await load();
     } catch (err) {
       alert(err.message);
@@ -174,6 +176,92 @@ export default function PendingMatchesScreen() {
             Pending Matches
           </Typography>
         </Stack>
+
+        {confirmFeedback && (
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+            <Stack spacing={1.5}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Typography variant="h6" fontWeight={700}>
+                  Match Confirmed
+                </Typography>
+                <Button size="small" onClick={() => setConfirmFeedback(null)}>
+                  Dismiss
+                </Button>
+              </Stack>
+
+              {confirmFeedback?.upset && (
+                <Alert
+                  severity={confirmFeedback.upset.is_upset ? "warning" : "info"}
+                  variant="filled"
+                >
+                  {confirmFeedback.upset.is_upset ? "Upset! " : "Match result"}
+                  {confirmFeedback.upset.winner_avg_elo &&
+                    confirmFeedback.upset.opponent_avg_elo &&
+                    confirmFeedback.upset.elo_gap !== undefined && (
+                      <>
+                        {" "}Winner avg ELO: {confirmFeedback.upset.winner_avg_elo}, Opponent
+                        avg ELO: {confirmFeedback.upset.opponent_avg_elo} (gap {" "}
+                        {confirmFeedback.upset.elo_gap}).
+                      </>
+                    )}
+                </Alert>
+              )}
+
+              {confirmFeedback?.updated_elos?.updates?.length > 0 && (
+                <Stack spacing={0.5}>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    ELO Updates
+                  </Typography>
+                  {confirmFeedback.updated_elos.updates.map((u, idx) => {
+                    const playerLabel =
+                      u.display_name ??
+                      u.name ??
+                      u.player_name ??
+                      u.playerId ??
+                      u.player_id ??
+                      "Player";
+                    const delta = u.delta ?? u.change ?? u.elo_change ?? 0;
+                    const formattedDelta = delta > 0 ? `+${delta}` : `${delta}`;
+                    return (
+                      <Typography key={`${playerLabel}-${idx}`} variant="body2">
+                        {playerLabel}: {u.new_elo ?? u.newElo ?? u.elo ?? ""} ({formattedDelta})
+                      </Typography>
+                    );
+                  })}
+                </Stack>
+              )}
+
+              {confirmFeedback?.ranks?.length > 0 && (
+                <Stack spacing={0.5}>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    Rank Changes
+                  </Typography>
+                  {confirmFeedback.ranks.map((r, idx) => {
+                    const playerLabel =
+                      r.display_name ??
+                      r.name ??
+                      r.player_name ??
+                      r.playerId ??
+                      r.player_id ??
+                      "Player";
+                    const movement = r.rankChange ?? 0;
+                    const direction = movement > 0 ? "up" : movement < 0 ? "down" : "no";
+                    const movementText =
+                      direction === "no"
+                        ? "No movement"
+                        : `Moved ${direction} ${Math.abs(movement)} spots`;
+                    return (
+                      <Typography key={`${playerLabel}-${idx}`} variant="body2">
+                        {playerLabel}: {movementText} (from {r.previousRank ?? "?"} to {" "}
+                        {r.newRank ?? "?"})
+                      </Typography>
+                    );
+                  })}
+                </Stack>
+              )}
+            </Stack>
+          </Paper>
+        )}
 
         {renderIncoming()}
 
