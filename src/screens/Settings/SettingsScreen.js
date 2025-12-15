@@ -28,6 +28,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import SubscriptionsIcon from "@mui/icons-material/Subscriptions";
 import HistoryIcon from "@mui/icons-material/History";
 import LogoutIcon from "@mui/icons-material/Logout";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useNavigate } from "react-router-dom";
 import { AVATARS } from "../../constants/avatars";
@@ -36,6 +37,7 @@ import ProfileAvatar from "../../components/ProfileAvatar";
 import { clearAuth } from "../../features/auth/authSlice";
 import {
   clearUser,
+  deleteCurrentUser,
   fetchCurrentUser,
   updateUserProfile,
 } from "../../features/user/userSlice";
@@ -43,9 +45,14 @@ import {
 function SettingsScreen() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, updateLoading, updateError, avatarError } = useSelector(
-    (state) => state.user
-  );
+  const {
+    user,
+    updateLoading,
+    updateError,
+    avatarError,
+    deleteLoading,
+    deleteError,
+  } = useSelector((state) => state.user);
 
   const token = useSelector((state) => state.auth.accessToken);
 
@@ -58,6 +65,9 @@ function SettingsScreen() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [showCard, setShowCard] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteUsername, setDeleteUsername] = useState("");
+  const [deleteSuccessMessage, setDeleteSuccessMessage] = useState("");
 
   useEffect(() => {
     if (token && !user) {
@@ -114,6 +124,19 @@ function SettingsScreen() {
     dispatch(clearUser());
     navigate("/login", { replace: true });
   };
+
+  const handleDeleteSubmit = async (event) => {
+    event.preventDefault();
+    setDeleteSuccessMessage("");
+    const result = await dispatch(deleteCurrentUser());
+    if (deleteCurrentUser.fulfilled.match(result)) {
+      setDeleteSuccessMessage("Account deleted. Logging you out...");
+      setTimeout(handleLogout, 1200);
+    }
+  };
+
+  const canDelete =
+    deleteUsername.trim().toLowerCase() === (user?.username || "").toLowerCase();
 
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
@@ -220,6 +243,20 @@ function SettingsScreen() {
                   <LogoutIcon />
                 </ListItemIcon>
                 <ListItemText primary="Log out" />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton
+                onClick={() => {
+                  setDeleteUsername("");
+                  setDeleteSuccessMessage("");
+                  setDeleteOpen(true);
+                }}
+                sx={{ color: "error.main" }}
+              >
+                <ListItemIcon sx={{ color: "error.main" }}>
+                  <DeleteForeverIcon />
+                </ListItemIcon>
+                <ListItemText primary="Delete Account" />
               </ListItemButton>
             </List>
           </CardContent>
@@ -343,6 +380,42 @@ function SettingsScreen() {
               }
             >
               {updateLoading ? "Saving..." : "Save Changes"}
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Delete Account</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} component="form" onSubmit={handleDeleteSubmit} sx={{ pt: 1 }}>
+            <Typography>
+              This action is permanent. Please type your username to confirm
+              deletion.
+            </Typography>
+            {deleteError && <Alert severity="error">{deleteError}</Alert>}
+            {deleteSuccessMessage && (
+              <Alert severity="success">{deleteSuccessMessage}</Alert>
+            )}
+            <TextField
+              label="Confirm username"
+              value={deleteUsername}
+              onChange={(e) => setDeleteUsername(e.target.value)}
+              fullWidth
+              autoFocus
+              disabled={deleteLoading || Boolean(deleteSuccessMessage)}
+              placeholder={user?.username || "Your username"}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              color="error"
+              disabled={!canDelete || deleteLoading}
+              startIcon={
+                deleteLoading ? <CircularProgress size={20} color="inherit" /> : null
+              }
+            >
+              {deleteLoading ? "Deleting..." : "Delete account"}
             </Button>
           </Stack>
         </DialogContent>
