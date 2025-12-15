@@ -6,6 +6,10 @@ async function handleResponse(response) {
     const message = errorData.error || errorData.message || response.statusText;
     throw new Error(message);
   }
+  if (response.status === 204) {
+    return null;
+  }
+
   return response.json();
 }
 
@@ -47,6 +51,15 @@ export async function updateProfile(token, profileData) {
     },
     body: JSON.stringify(profileData),
   });
+  return handleResponse(response);
+}
+
+export async function deleteUser(token) {
+  const response = await fetch(`${base}/api/users/me`, {
+    method: "DELETE",
+    headers: withAuth(token),
+  });
+
   return handleResponse(response);
 }
 
@@ -162,4 +175,5 @@ export default {
   getHomeStats,
   getPlayerCardData,
   uploadAvatar,
+  deleteUser,
 };

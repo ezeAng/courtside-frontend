@@ -1,5 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { getCurrentUser, updateProfile, uploadAvatar } from "../../services/api";
+import {
+  deleteUser,
+  getCurrentUser,
+  updateProfile,
+  uploadAvatar,
+} from "../../services/api";
 
 const initialState = {
   user: null,
@@ -9,6 +14,8 @@ const initialState = {
   updateError: null,
   avatarUploading: false,
   avatarError: null,
+  deleteLoading: false,
+  deleteError: null,
 };
 
 export const fetchCurrentUser = createAsyncThunk(
@@ -64,6 +71,23 @@ export const uploadUserAvatar = createAsyncThunk(
   }
 );
 
+export const deleteCurrentUser = createAsyncThunk(
+  "user/deleteCurrentUser",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const token = getState().auth.accessToken;
+      if (!token) {
+        throw new Error("User not authenticated");
+      }
+
+      await deleteUser(token);
+      return true;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState,
@@ -75,6 +99,8 @@ const userSlice = createSlice({
       state.updateError = null;
       state.avatarUploading = false;
       state.avatarError = null;
+      state.deleteLoading = false;
+      state.deleteError = null;
     },
   },
   extraReducers: (builder) => {
@@ -122,6 +148,18 @@ const userSlice = createSlice({
       .addCase(uploadUserAvatar.rejected, (state, action) => {
         state.avatarUploading = false;
         state.avatarError = action.payload || "Failed to upload avatar";
+      })
+      .addCase(deleteCurrentUser.pending, (state) => {
+        state.deleteLoading = true;
+        state.deleteError = null;
+      })
+      .addCase(deleteCurrentUser.fulfilled, (state) => {
+        state.deleteLoading = false;
+        state.user = null;
+      })
+      .addCase(deleteCurrentUser.rejected, (state, action) => {
+        state.deleteLoading = false;
+        state.deleteError = action.payload || "Failed to delete account";
       });
   },
 });
