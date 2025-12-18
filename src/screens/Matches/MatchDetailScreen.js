@@ -10,6 +10,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import { alpha } from "@mui/material/styles";
 import { fetchMatchDetail } from "../../features/matches/matchSlice";
+import PlayerProfileChip from "../../components/PlayerProfileChip";
 
 const getOutcomeStyles = (theme, outcome) => {
   const isWinner = outcome === "winner";
@@ -74,14 +75,18 @@ function TeamCard({ title, players, outcome }) {
           </Typography>
           {players?.map((player) => (
             <Stack
-              key={player.auth_id || player.id}
+              key={player.auth_id || player.id || player.username}
               direction="row"
               justifyContent="space-between"
               alignItems="center"
             >
-              <Typography sx={(theme) => getOutcomeStyles(theme, outcome)}>
-                {player.username}
-              </Typography>
+              <PlayerProfileChip
+                player={player}
+                chipProps={{
+                  sx: (theme) => getOutcomeStyles(theme, outcome),
+                  variant: "outlined",
+                }}
+              />
               <Typography color="text.secondary">Elo: {player.elo}</Typography>
             </Stack>
           ))}

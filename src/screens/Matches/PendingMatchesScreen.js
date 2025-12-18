@@ -15,6 +15,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import PlayerProfileChip from "../../components/PlayerProfileChip";
 
 export default function PendingMatchesScreen() {
   const navigate = useNavigate();
@@ -123,7 +124,13 @@ export default function PendingMatchesScreen() {
               <Typography variant="subtitle1" fontWeight={700}>
                 Match Type: {m.match_type}
               </Typography>
-              <Typography variant="body2">Submitted By: {m.submitted_by}</Typography>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Typography variant="body2">Submitted By:</Typography>
+                <PlayerProfileChip
+                  player={{ username: m.submitted_by }}
+                  chipProps={{ variant: "outlined" }}
+                />
+              </Stack>
               <Typography variant="body2" color="text.secondary">
                 Created At: {new Date(m.created_at).toLocaleString()}
               </Typography>
@@ -222,9 +229,23 @@ export default function PendingMatchesScreen() {
                   const delta = u.delta ?? u.change ?? u.elo_change ?? 0;
                   const formattedDelta = delta > 0 ? `+${delta}` : `${delta}`;
                   return (
-                    <Typography key={`${playerLabel}-${idx}`} variant="body2">
-                      {playerLabel}: {u.new_elo ?? u.newElo ?? u.elo ?? ""} ({formattedDelta})
-                    </Typography>
+                    <Stack
+                      key={`${playerLabel}-${idx}`}
+                      direction="row"
+                      alignItems="center"
+                      spacing={0.75}
+                      flexWrap="wrap"
+                    >
+                      <PlayerProfileChip
+                        player={u}
+                        chipProps={{
+                          variant: "outlined",
+                        }}
+                      />
+                      <Typography variant="body2">
+                        {u.new_elo ?? u.newElo ?? u.elo ?? ""} ({formattedDelta})
+                      </Typography>
+                    </Stack>
                   );
                 })}
               </Stack>
@@ -244,10 +265,23 @@ export default function PendingMatchesScreen() {
                       ? "No movement"
                       : `Moved ${direction} ${Math.abs(movement)} spots`;
                   return (
-                    <Typography key={`${playerLabel}-${idx}`} variant="body2">
-                      {playerLabel}: {movementText} (from {r.previousRank ?? "?"} to {" "}
-                      {r.newRank ?? "?"})
-                    </Typography>
+                    <Stack
+                      key={`${playerLabel}-${idx}`}
+                      direction="row"
+                      alignItems="center"
+                      spacing={0.75}
+                      flexWrap="wrap"
+                    >
+                      <PlayerProfileChip
+                        player={r}
+                        chipProps={{
+                          variant: "outlined",
+                        }}
+                      />
+                      <Typography variant="body2">
+                        {movementText} (from {r.previousRank ?? "?"} to {r.newRank ?? "?"})
+                      </Typography>
+                    </Stack>
                   );
                 })}
               </Stack>
