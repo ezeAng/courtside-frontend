@@ -4,13 +4,14 @@ import { useParams } from "react-router-dom";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Container from "@mui/material/Container";
+import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import { alpha } from "@mui/material/styles";
 import { fetchMatchDetail } from "../../features/matches/matchSlice";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const getOutcomeStyles = (theme, outcome) => {
   const isWinner = outcome === "winner";
@@ -110,8 +111,32 @@ function MatchDetailScreen() {
   if (loading && !matchDetail) {
     return (
       <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
-        <Stack alignItems="center" py={4}>
-          <CircularProgress />
+        <Stack spacing={2}>
+          <Typography variant="h5" fontWeight={700}>
+            Match Detail
+          </Typography>
+          <Card variant="outlined">
+            <CardContent>
+              <Stack spacing={1.5}>
+                <Skeleton width="40%" />
+                <Skeleton width="50%" />
+                <Skeleton width="30%" />
+                <Skeleton width="60%" />
+              </Stack>
+            </CardContent>
+          </Card>
+          {[...Array(2)].map((_, idx) => (
+            <Card key={idx} variant="outlined">
+              <CardContent>
+                <Stack spacing={1}>
+                  <Skeleton width="30%" />
+                  <Skeleton variant="rectangular" height={18} />
+                  <Skeleton variant="rectangular" height={18} width="80%" />
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+          <LoadingSpinner message="Loading match details..." />
         </Stack>
       </Container>
     );

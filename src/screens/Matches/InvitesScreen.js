@@ -13,6 +13,7 @@ import {
   DialogTitle,
   Divider,
   Paper,
+  Skeleton,
   Stack,
   Tab,
   Tabs,
@@ -36,6 +37,7 @@ import MatchmakingLobbyModalSuggestions from "./MatchmakingLobbyModalSuggestions
 import { normalizeProfileImage } from "../../utils/profileImage";
 import { formatTeamNames, normalizeMatchPlayers } from "../../utils/matchPlayers";
 import PlayerProfileInviteModal from "../../components/PlayerProfileInviteModal";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const tabOptions = [
   { label: "Received", value: "received" },
@@ -330,7 +332,7 @@ function InvitePlayerModal({ open, onClose, onInviteCreated }) {
                     ...params.InputProps,
                     endAdornment: (
                       <>
-                        {loadingSuggestions ? <CircularProgress color="inherit" size={20} /> : null}
+                        {loadingSuggestions ? <CircularProgress color="success" size={20} /> : null}
                         {params.InputProps.endAdornment}
                       </>
                     ),
@@ -499,9 +501,17 @@ function InvitesScreen() {
           <Divider />
           <Box p={2}>
             {loading ? (
-              <Stack alignItems="center" spacing={2} py={3}>
-                <CircularProgress />
-                <Typography color="text.secondary">Loading invites...</Typography>
+              <Stack spacing={2} py={1}>
+                {[...Array(3)].map((_, idx) => (
+                  <Paper key={idx} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Stack spacing={1}>
+                      <Skeleton width="70%" />
+                      <Skeleton width="40%" />
+                      <Skeleton variant="rounded" height={32} width="50%" />
+                    </Stack>
+                  </Paper>
+                ))}
+                <LoadingSpinner message="Loading invites..." />
               </Stack>
             ) : error ? (
               <Alert severity="error">{error}</Alert>

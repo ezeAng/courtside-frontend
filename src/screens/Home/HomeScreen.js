@@ -6,6 +6,7 @@ import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import LinearProgress from "@mui/material/LinearProgress";
+import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useState } from "react";
@@ -17,6 +18,7 @@ import EloStockChart from "../../components/home/EloStockChart";
 import ProfileAvatar from "../../components/ProfileAvatar";
 import { normalizeProfileImage } from "../../utils/profileImage";
 import Avatar from "@mui/material/Avatar";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -111,6 +113,8 @@ function HomeScreen() {
     return Math.round(stats.win_rate_last_10 ?? 0);
   }, [stats]);
 
+  const heroStatsLoading = loading && !stats;
+
   const topHeroStats = useMemo(
     () => [
       {
@@ -140,6 +144,9 @@ function HomeScreen() {
       maxWidth="sm"
     >
       <Stack spacing={3}>
+        {loading && (
+          <LoadingSpinner message="Refreshing your Courtside insights..." inline />
+        )}
         {/* FULL-WIDTH HERO */}
         <Box sx={{ position: "relative", width: "100vw", left: "-5%", right: "0%" }}>
           <Box
@@ -175,24 +182,37 @@ function HomeScreen() {
               alignItems="center"
               sx={{ position: "relative", zIndex: 2 }}
             >
-              <ProfileAvatar
-                user={user}
-                size={96}
-                sx={{
-                  bgcolor: "#fff",
-                  color: "text.primary",
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-                  border: "2px solid rgba(255,255,255,0.9)",
-                }}
-              />
+              {user ? (
+                <ProfileAvatar
+                  user={user}
+                  size={96}
+                  sx={{
+                    bgcolor: "#fff",
+                    color: "text.primary",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+                    border: "2px solid rgba(255,255,255,0.9)",
+                  }}
+                />
+              ) : (
+                <Skeleton variant="circular" width={96} height={96} />
+              )}
 
               <Box>
-                <Typography variant="h5" fontWeight={800} color="#fff">
-                  {user?.username || "Player"}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9, color: "#fff" }}>
-                  Badminton
-                </Typography>
+                {user ? (
+                  <>
+                    <Typography variant="h5" fontWeight={800} color="#fff">
+                      {user?.username || "Player"}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9, color: "#fff" }}>
+                      Badminton
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <Skeleton variant="text" width={140} sx={{ bgcolor: "rgba(255,255,255,0.5)" }} />
+                    <Skeleton variant="text" width={90} sx={{ bgcolor: "rgba(255,255,255,0.4)" }} />
+                  </>
+                )}
                 {tier && (
                   <Chip
                     label={tier.label}
@@ -205,37 +225,46 @@ function HomeScreen() {
             </Stack>
           </Box>
 
-          {/* FLOATING STAT CARDS */}
-          <Container maxWidth="sm" sx={{ position: "relative", mt: -6, pb: 2 }}>
-            <Grid container spacing={2} paddingLeft={1}>
-              {topHeroStats.map((item) => (
-                <Card
-                  key={item.label}
-                  sx={{
-                    margin: "auto",
-                    width: "30%",
-                    borderRadius: 1,
-                    textAlign: "center",
-                    boxShadow: "0 12px 28px rgba(0,0,0,0.12)",
-                  }}
-                >
-                  <CardContent sx={{ py: 2 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ letterSpacing: 0.5 }}
-                    >
-                      {item.label}
-                    </Typography>
-                    <Typography variant="h5" fontWeight={800}>
-                      {item.value}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              ))}
-            </Grid>
-          </Container>
-        </Box>
+        {/* FLOATING STAT CARDS */}
+        <Container maxWidth="sm" sx={{ position: "relative", mt: -6, pb: 2 }}>
+          <Grid container spacing={2} paddingLeft={1}>
+            {(heroStatsLoading ? [...Array(3)] : topHeroStats).map((item, idx) => (
+              <Card
+                key={item?.label || idx}
+                sx={{
+                  margin: "auto",
+                  width: "30%",
+                  borderRadius: 1,
+                  textAlign: "center",
+                  boxShadow: "0 12px 28px rgba(0,0,0,0.12)",
+                }}
+              >
+                <CardContent sx={{ py: 2 }}>
+                  {heroStatsLoading ? (
+                    <Stack spacing={1} alignItems="center">
+                      <Skeleton variant="text" width="60%" />
+                      <Skeleton variant="text" width="50%" />
+                    </Stack>
+                  ) : (
+                    <>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ letterSpacing: 0.5 }}
+                      >
+                        {item.label}
+                      </Typography>
+                      <Typography variant="h5" fontWeight={800}>
+                        {item.value}
+                      </Typography>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
 
 
         <Card variant="outlined" sx={{ height: "100%" }}>
@@ -244,7 +273,31 @@ function HomeScreen() {
               Performance snapshot
             </Typography>
             {loading && !stats && (
-              <Typography color="text.secondary">Loading stats...</Typography>
+              <Stack spacing={2}>
+                {[...Array(2)].map((_, idx) => (
+                  <Grid container spacing={2} key={idx}>
+                    <Grid item xs={6}>
+                      <Skeleton variant="text" width="60%" />
+                      <Skeleton variant="text" width="50%" />
+                      <Skeleton variant="text" width="70%" />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Skeleton variant="text" width="55%" />
+                      <Skeleton variant="text" width="40%" />
+                      <Skeleton variant="text" width="70%" />
+                    </Grid>
+                  </Grid>
+                ))}
+                <Stack spacing={1}>
+                  <Skeleton variant="text" width="40%" />
+                  <Skeleton variant="rounded" height={12} />
+                </Stack>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Skeleton variant="text" width="30%" />
+                  <Skeleton variant="rounded" height={28} width={90} />
+                  <Skeleton variant="rounded" height={28} width={70} />
+                </Stack>
+              </Stack>
             )}
             {!loading && !stats && (
               <Typography color="text.secondary">No stats available.</Typography>

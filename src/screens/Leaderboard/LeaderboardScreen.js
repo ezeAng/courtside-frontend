@@ -4,7 +4,7 @@ import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
+import Skeleton from "@mui/material/Skeleton";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Paper from "@mui/material/Paper";
@@ -27,6 +27,7 @@ import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 import { setGender, fetchLeaderboard } from "../../features/leaderboard/leaderboardSlice";
 import { normalizeProfileImage } from "../../utils/profileImage";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 function LeaderboardScreen() {
   const dispatch = useDispatch();
@@ -162,8 +163,42 @@ function LeaderboardScreen() {
         {error && <Alert severity="error">{error}</Alert>}
 
         {loading ? (
-          <Stack alignItems="center" py={6}>
-            <CircularProgress />
+          <Stack spacing={2}>
+            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ width: 80, fontWeight: 700 }}>Rank</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Player</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>
+                      Elo Rating
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {[...Array(6)].map((_, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>
+                        <Skeleton width={24} />
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <Skeleton variant="circular" width={40} height={40} />
+                          <Box flex={1}>
+                            <Skeleton width="70%" />
+                            <Skeleton width="50%" />
+                          </Box>
+                        </Stack>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Skeleton width={40} sx={{ ml: "auto" }} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <LoadingSpinner message="Loading leaderboard..." />
           </Stack>
         ) : (
           <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
