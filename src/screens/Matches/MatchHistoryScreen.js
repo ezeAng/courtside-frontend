@@ -21,6 +21,7 @@ import RecordMatchModal from "./RecordMatchModal";
 import { fetchMatchHistory } from "../../features/matches/matchSlice";
 import { getPendingMatches } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
+import PlayerProfileChip from "../../components/PlayerProfileChip";
 
 const getOutcomeFromWinnerTeam = (winnerTeam, teamKey) => {
   if (winnerTeam === "draw" || winnerTeam === null) return "draw";
@@ -90,9 +91,13 @@ function TeamCard({ title, players, outcome }) {
           justifyContent="space-between"
           alignItems="center"
         >
-          <Typography sx={(theme) => getOutcomeStyles(theme, outcome)}>
-            {player.username || player.name}
-          </Typography>
+          <PlayerProfileChip
+            player={player}
+            chipProps={{
+              sx: (theme) => getOutcomeStyles(theme, outcome),
+              variant: "outlined",
+            }}
+          />
           {player.elo !== undefined && (
             <Typography color="text.secondary">Elo: {player.elo}</Typography>
           )}
@@ -138,9 +143,6 @@ function MatchHistoryScreen() {
       dispatch(fetchMatchHistory(userId));
     }
   };
-
-  const formatPlayers = (team) =>
-    team?.map((player) => player.username || player.name).join(", ") || "";
 
   const handleMatchClick = (match) => {
     setSelectedMatch(match);
@@ -254,18 +256,40 @@ function MatchHistoryScreen() {
                         <Typography variant="body2" color="text.primary">
                           Score: {match.score}
                         </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={(theme) => getOutcomeStyles(theme, teamAOutcome)}
-                        >
-                          Team A: {formatPlayers(match.players?.team_A)}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={(theme) => getOutcomeStyles(theme, teamBOutcome)}
-                        >
-                          Team B: {formatPlayers(match.players?.team_B)}
-                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                          <Typography variant="body2" fontWeight={700}>
+                            Team A:
+                          </Typography>
+                          <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
+                            {(match.players?.team_A || []).map((player) => (
+                              <PlayerProfileChip
+                                key={player.auth_id || player.id || player.username}
+                                player={player}
+                                chipProps={{
+                                  sx: (theme) => getOutcomeStyles(theme, teamAOutcome),
+                                  variant: "outlined",
+                                }}
+                              />
+                            ))}
+                          </Stack>
+                        </Stack>
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                          <Typography variant="body2" fontWeight={700}>
+                            Team B:
+                          </Typography>
+                          <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
+                            {(match.players?.team_B || []).map((player) => (
+                              <PlayerProfileChip
+                                key={player.auth_id || player.id || player.username}
+                                player={player}
+                                chipProps={{
+                                  sx: (theme) => getOutcomeStyles(theme, teamBOutcome),
+                                  variant: "outlined",
+                                }}
+                              />
+                            ))}
+                          </Stack>
+                        </Stack>
                         <Typography variant="caption" color="text.secondary">
                           {match.played_at
                             ? new Date(match.played_at).toLocaleDateString()
