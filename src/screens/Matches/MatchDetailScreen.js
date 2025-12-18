@@ -65,8 +65,15 @@ function MatchDetailScreen() {
     );
   }
 
-  const isTeamAWinner = matchDetail.winner_team === "A";
-  const isTeamBWinner = matchDetail.winner_team === "B";
+  const winnerTeam = matchDetail.winner_team;
+  const isDraw = winnerTeam === "draw" || winnerTeam === null;
+  const isTeamAWinner = winnerTeam === "A";
+  const isTeamBWinner = winnerTeam === "B";
+  const winnerLabel = isDraw
+    ? "Draw"
+    : winnerTeam
+    ? `Team ${winnerTeam}`
+    : "";
 
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
@@ -81,7 +88,7 @@ function MatchDetailScreen() {
               <Typography variant="h6" fontWeight={700}>
                 {matchDetail.match_type === "doubles" ? "Doubles" : "Singles"}
               </Typography>
-              <Typography color="text.secondary">Winner: Team {matchDetail.winner_team}</Typography>
+              <Typography color="text.secondary">Result: {winnerLabel}</Typography>
               <Typography>Score: {matchDetail.score}</Typography>
               <Typography color="text.secondary">
                 {matchDetail.played_at

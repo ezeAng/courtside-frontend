@@ -4,16 +4,13 @@ import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
 import { getOtherUsers } from "../../services/api";
 import ScoreSetsInput from "./ScoreSetsInput";
 import { formatSetsScore } from "./scoreFormatting";
-import { areSetsWithinRange, doesWinnerAlignWithScores } from "./scoreValidation";
+import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
 
 function SinglesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
@@ -21,16 +18,25 @@ function SinglesForm({ onRecorded, onClose }) {
   const currentUser = useSelector((state) => state.user.user);
   const [opponentId, setOpponentId] = useState("");
   const [sets, setSets] = useState([{ your: "", opponent: "" }]);
-  const [winnerTeam, setWinnerTeam] = useState("A");
+  const [winnerTeam, setWinnerTeam] = useState("");
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState(null);
   const userId = currentUser?.auth_id;
 
+  const autoWinner = useMemo(() => determineOutcomeFromSets(sets), [sets]);
+
   const isValid = useMemo(
-    () => opponentId && winnerTeam && areSetsWithinRange(sets),
-    [opponentId, sets, winnerTeam]
+    () => opponentId && autoWinner && areSetsWithinRange(sets),
+    [autoWinner, opponentId, sets]
   );
+
+  useEffect(() => {
+    const desiredWinner = autoWinner || "";
+    if (desiredWinner !== winnerTeam) {
+      setWinnerTeam(desiredWinner);
+    }
+  }, [autoWinner, winnerTeam]);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -73,12 +79,14 @@ function SinglesForm({ onRecorded, onClose }) {
       return;
     }
 
-    if (!doesWinnerAlignWithScores(sets, winnerTeam)) {
-      setError("Winner selection must match the set results");
-      return;
-    }
     try {
+      if (!winnerTeam) {
+        setError("Enter valid set scores to determine the result automatically");
+        return;
+      }
+
       const formattedScore = formatSetsScore(sets);
+      const winnerToSubmit = winnerTeam === "draw" ? null : winnerTeam;
 
       await dispatch(
         recordMatch({
@@ -86,7 +94,7 @@ function SinglesForm({ onRecorded, onClose }) {
           players_team_A: [userId],
           players_team_B: [opponent.auth_id || opponent.id],
           score: formattedScore,
-          winner_team: winnerTeam,
+          winner_team: winnerToSubmit,
         })
       ).unwrap();
       onRecorded?.();
@@ -116,15 +124,20 @@ function SinglesForm({ onRecorded, onClose }) {
         </TextField>
         <ScoreSetsInput sets={sets} onChange={setSets} />
         <Stack spacing={1}>
-          <FormLabel>Winner</FormLabel>
-          <RadioGroup
-            row
-            value={winnerTeam}
-            onChange={(e) => setWinnerTeam(e.target.value)}
-          >
-            <FormControlLabel value="A" control={<Radio />} label="Team A (You)" />
-            <FormControlLabel value="B" control={<Radio />} label="Team B (Opponent)" />
-          </RadioGroup>
+          <FormLabel>Result</FormLabel>
+          {winnerTeam ? (
+            <Alert severity="info">
+              {winnerTeam === "draw"
+                ? "The match will be recorded as a draw based on the entered scores."
+                : winnerTeam === "A"
+                ? "Winner: Team A (You)"
+                : "Winner: Team B (Opponent)"}
+            </Alert>
+          ) : (
+            <Alert severity="warning">
+              Enter complete set scores to automatically determine the winner or draw.
+            </Alert>
+          )}
         </Stack>
         <Button type="submit" variant="contained" disabled={!isValid}>
           Record Match
