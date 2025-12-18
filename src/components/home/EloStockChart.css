@@ -14,25 +14,25 @@
 .elo-range-button {
   padding: 6px 12px;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: #f8fafc;
-  color: #1f2937;
+  border: 1px solid var(--color-border-subtle, #e5e7eb);
+  background: var(--color-neutral-surface, #f8fafc);
+  color: var(--color-text-primary, #1f2937);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .elo-range-button:hover {
-  background: #e3f2fd;
-  color: #0d47a1;
-  border-color: #90caf9;
+  background: var(--color-accent-blue-surface, #e3f2fd);
+  color: var(--color-accent-blue-dark, #0d47a1);
+  border-color: var(--color-accent-blue-light, #90caf9);
 }
 
 .elo-range-button.active {
-  background: #e3f2fd;
-  color: #0d47a1;
-  border-color: #90caf9;
-  box-shadow: inset 0 0 0 1px #90caf9;
+  background: var(--color-accent-blue-surface, #e3f2fd);
+  color: var(--color-accent-blue-dark, #0d47a1);
+  border-color: var(--color-accent-blue-light, #90caf9);
+  box-shadow: inset 0 0 0 1px var(--color-accent-blue-light, #90caf9);
 }
 
 .elo-chart-container {
@@ -42,8 +42,8 @@
 
 .elo-empty-state {
   padding: 16px;
-  border: 1px dashed #d1d5db;
+  border: 1px dashed var(--color-neutral-dashed, #d1d5db);
   border-radius: 12px;
   text-align: left;
-  background: #f9fafb;
+  background: var(--color-neutral-raised, #f9fafb);
 }
