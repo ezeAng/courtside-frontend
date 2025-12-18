@@ -7,14 +7,10 @@ export const areSetsWithinRange = (sets) =>
   sets.length <= 3 &&
   sets.every((set) => isValidScoreValue(set.your) && isValidScoreValue(set.opponent));
 
-export const doesWinnerAlignWithScores = (sets, winnerTeam) => {
-  if (!winnerTeam) return false;
+export const determineOutcomeFromSets = (sets) => {
+  if (!areSetsWithinRange(sets)) return null;
 
-  if (sets.length === 2) {
-    return true;
-  }
-
-  const setWinners = sets.map((set) => {
+  const setResults = sets.map((set) => {
     const yourScore = Number(set.your);
     const opponentScore = Number(set.opponent);
 
@@ -22,30 +18,61 @@ export const doesWinnerAlignWithScores = (sets, winnerTeam) => {
       return null;
     }
 
-    return yourScore > opponentScore ? "A" : "B";
+    const winner = yourScore > opponentScore ? "A" : "B";
+    return {
+      winner,
+      margin: Math.abs(yourScore - opponentScore),
+    };
   });
 
-  if (setWinners.includes(null)) {
-    return false;
+  if (setResults.some((result) => result === null)) {
+    return null;
   }
 
-  if (sets.length === 1) {
-    return setWinners[0] === winnerTeam;
+  const winsA = setResults.filter((result) => result.winner === "A").length;
+  const winsB = setResults.length - winsA;
+
+  if (setResults.length === 1) {
+    return setResults[0].winner;
   }
 
-  if (sets.length === 3) {
-    const winsA = setWinners.filter((winner) => winner === "A").length;
-    const winsB = setWinners.length - winsA;
+  if (setResults.length === 2) {
+    if (winsA === 2) return "A";
+    if (winsB === 2) return "B";
 
-    if (winsA === winsB) {
-      return false;
+    const [firstSet, secondSet] = setResults;
+
+    if (firstSet.margin === secondSet.margin && winsA === 1 && winsB === 1) {
+      return "draw";
     }
 
-    const winningTeam = winsA > winsB ? "A" : "B";
-    return winningTeam === winnerTeam;
+    const totalYourScore = sets.reduce((total, set) => total + Number(set.your), 0);
+    const totalOpponentScore = sets.reduce((total, set) => total + Number(set.opponent), 0);
+
+    if (totalYourScore === totalOpponentScore) {
+      return "draw";
+    }
+
+    return totalYourScore > totalOpponentScore ? "A" : "B";
   }
 
-  return true;
+  if (setResults.length === 3) {
+    if (winsA === winsB) {
+      return null;
+    }
+
+    return winsA > winsB ? "A" : "B";
+  }
+
+  return null;
+};
+
+export const doesWinnerAlignWithScores = (sets, winnerTeam) => {
+  if (!winnerTeam) return false;
+
+  const outcome = determineOutcomeFromSets(sets);
+
+  return outcome === winnerTeam;
 };
 
 function isValidScoreValue(value) {

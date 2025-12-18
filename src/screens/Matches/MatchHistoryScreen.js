@@ -103,8 +103,15 @@ function MatchHistoryScreen() {
 
     const teamAPlayers = getTeamPlayers(selectedMatch, "team_A");
     const teamBPlayers = getTeamPlayers(selectedMatch, "team_B");
-    const isTeamAWinner = selectedMatch.winner_team === "A";
-    const isTeamBWinner = selectedMatch.winner_team === "B";
+    const winnerTeam = selectedMatch.winner_team;
+    const isDraw = winnerTeam === "draw" || winnerTeam === null;
+    const isTeamAWinner = winnerTeam === "A";
+    const isTeamBWinner = winnerTeam === "B";
+    const winnerLabel = isDraw
+      ? "Draw"
+      : winnerTeam
+      ? `Team ${winnerTeam}`
+      : "";
 
     return (
       <Dialog
@@ -120,9 +127,7 @@ function MatchHistoryScreen() {
               <Typography variant="h6" fontWeight={700}>
                 {selectedMatch.match_type === "doubles" ? "Doubles" : "Singles"}
               </Typography>
-              <Typography color="text.secondary">
-                Winner: Team {selectedMatch.winner_team}
-              </Typography>
+              <Typography color="text.secondary">Result: {winnerLabel}</Typography>
               <Typography>Score: {selectedMatch.score}</Typography>
               <Typography color="text.secondary">
                 {selectedMatch.played_at
@@ -176,7 +181,12 @@ function MatchHistoryScreen() {
                 onClick={() => handleMatchClick(match)}
               >
                 <ListItemText
-                  primary={`${match.match_type === "doubles" ? "Doubles" : "Singles"} • Winner: Team ${match.winner_team}`}
+                  primary={`${match.match_type === "doubles" ? "Doubles" : "Singles"} • ${(() => {
+                    const wt = match.winner_team;
+                    if (wt === "draw" || wt === null) return "Draw";
+                    if (wt) return `Winner: Team ${wt}`;
+                    return "Result pending";
+                  })()}`}
                   primaryTypographyProps={{ component: "span" }}
                   secondaryTypographyProps={{ component: "div" }}
                   secondary={

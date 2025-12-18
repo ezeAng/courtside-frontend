@@ -4,16 +4,13 @@ import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
 import { getOtherUsers } from "../../services/api";
 import ScoreSetsInput from "./ScoreSetsInput";
 import { formatSetsScore } from "./scoreFormatting";
-import { areSetsWithinRange, doesWinnerAlignWithScores } from "./scoreValidation";
+import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
 
 function DoublesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
@@ -23,22 +20,27 @@ function DoublesForm({ onRecorded, onClose }) {
   const [opponent1Id, setOpponent1Id] = useState("");
   const [opponent2Id, setOpponent2Id] = useState("");
   const [sets, setSets] = useState([{ your: "", opponent: "" }]);
-  const [winnerTeam, setWinnerTeam] = useState("A");
+  const [winnerTeam, setWinnerTeam] = useState("");
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState(null);
 
   const userId = currentUser?.auth_id;
 
+  const autoWinner = useMemo(() => determineOutcomeFromSets(sets), [sets]);
+
   const isValid = useMemo(
     () =>
-      partnerId &&
-      opponent1Id &&
-      opponent2Id &&
-      winnerTeam &&
-      areSetsWithinRange(sets),
-    [opponent1Id, opponent2Id, partnerId, sets, winnerTeam]
+      partnerId && opponent1Id && opponent2Id && autoWinner && areSetsWithinRange(sets),
+    [autoWinner, opponent1Id, opponent2Id, partnerId, sets]
   );
+
+  useEffect(() => {
+    const desiredWinner = autoWinner || "";
+    if (desiredWinner !== winnerTeam) {
+      setWinnerTeam(desiredWinner);
+    }
+  }, [autoWinner, winnerTeam]);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -95,12 +97,13 @@ function DoublesForm({ onRecorded, onClose }) {
         return;
       }
 
-      if (!doesWinnerAlignWithScores(sets, winnerTeam)) {
-        setError("Winner selection must match the set results");
+      const formattedScore = formatSetsScore(sets);
+      const winnerToSubmit = winnerTeam === "draw" ? null : winnerTeam;
+
+      if (!winnerTeam) {
+        setError("Enter valid set scores to determine the result automatically");
         return;
       }
-
-      const formattedScore = formatSetsScore(sets);
 
       await dispatch(
         recordMatch({
@@ -108,7 +111,7 @@ function DoublesForm({ onRecorded, onClose }) {
           players_team_A: [userId, partner.auth_id || partner.id],
           players_team_B: [opponent1.auth_id || opponent1.id, opponent2.auth_id || opponent2.id],
           score: formattedScore,
-          winner_team: winnerTeam,
+          winner_team: winnerToSubmit,
         })
       ).unwrap();
       onRecorded?.();
@@ -144,15 +147,20 @@ function DoublesForm({ onRecorded, onClose }) {
         {createPlayerSelect("Opponent 2", opponent2Id, setOpponent2Id)}
         <ScoreSetsInput sets={sets} onChange={setSets} />
         <Stack spacing={1}>
-          <FormLabel>Winner</FormLabel>
-          <RadioGroup
-            row
-            value={winnerTeam}
-            onChange={(e) => setWinnerTeam(e.target.value)}
-          >
-            <FormControlLabel value="A" control={<Radio />} label="Team A (You + Partner)" />
-            <FormControlLabel value="B" control={<Radio />} label="Team B (Opponents)" />
-          </RadioGroup>
+          <FormLabel>Result</FormLabel>
+          {winnerTeam ? (
+            <Alert severity="info">
+              {winnerTeam === "draw"
+                ? "The match will be recorded as a draw based on the entered scores."
+                : winnerTeam === "A"
+                ? "Winner: Team A (You + Partner)"
+                : "Winner: Team B (Opponents)"}
+            </Alert>
+          ) : (
+            <Alert severity="warning">
+              Enter complete set scores to automatically determine the winner or draw.
+            </Alert>
+          )}
         </Stack>
         <Button type="submit" variant="contained" disabled={!isValid}>
           Record Match
