@@ -7,7 +7,6 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -32,6 +31,7 @@ import {
   getPlayerDisplayName,
   normalizeMatchPlayers,
 } from "../../utils/matchPlayers";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const formatCriteria = (criteria) => {
   if (!criteria) return null;
@@ -340,12 +340,7 @@ function MatchmakingLobbyModalSuggestions({
           </ToggleButtonGroup>
           <Divider />
           {status === "loading" && (
-            <Stack spacing={2} alignItems="center" py={2}>
-              <CircularProgress />
-              <Typography color="text.secondary">
-                Finding players near your Elo...
-              </Typography>
-            </Stack>
+            <LoadingSpinner message="Finding players near your Elo..." />
           )}
           {status === "suggested" && renderRecommendations()}
           {status === "no_suggestions" && renderNoSuggestions()}

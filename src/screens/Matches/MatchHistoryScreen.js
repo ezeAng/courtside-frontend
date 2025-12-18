@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import Badge from "@mui/material/Badge";
-import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
@@ -12,6 +11,7 @@ import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
+import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
@@ -22,6 +22,7 @@ import { fetchMatchHistory } from "../../features/matches/matchSlice";
 import { getPendingMatches } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const getOutcomeFromWinnerTeam = (winnerTeam, teamKey) => {
   if (winnerTeam === "draw" || winnerTeam === null) return "draw";
@@ -226,8 +227,16 @@ function MatchHistoryScreen() {
         </Stack>
 
         {loading ? (
-          <Stack alignItems="center" py={4}>
-            <CircularProgress />
+          <Stack spacing={2}>
+            {[...Array(4)].map((_, idx) => (
+              <Stack key={idx} spacing={1} p={2} sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}>
+                <Skeleton width="80%" />
+                <Skeleton width="60%" />
+                <Skeleton variant="rectangular" height={8} />
+                <Skeleton variant="rectangular" height={8} width="70%" />
+              </Stack>
+            ))}
+            <LoadingSpinner message="Loading match history..." />
           </Stack>
         ) : matches?.length ? (
           <List>

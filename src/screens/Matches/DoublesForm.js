@@ -11,6 +11,7 @@ import { getOtherUsers } from "../../services/api";
 import ScoreSetsInput from "./ScoreSetsInput";
 import { formatSetsScore } from "./scoreFormatting";
 import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 function DoublesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
@@ -142,6 +143,7 @@ function DoublesForm({ onRecorded, onClose }) {
     <form onSubmit={handleSubmit}>
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
+        {loadingUsers && <LoadingSpinner message="Loading players..." inline size={20} />}
         {createPlayerSelect("Partner", partnerId, setPartnerId)}
         {createPlayerSelect("Opponent 1", opponent1Id, setOpponent1Id)}
         {createPlayerSelect("Opponent 2", opponent2Id, setOpponent2Id)}

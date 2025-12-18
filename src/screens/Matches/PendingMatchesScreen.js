@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
 import Paper from "@mui/material/Paper";
+import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
@@ -16,6 +16,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 export default function PendingMatchesScreen() {
   const navigate = useNavigate();
@@ -86,11 +87,17 @@ export default function PendingMatchesScreen() {
   if (loading) {
     return (
       <Container maxWidth="sm" sx={{ py: 4 }}>
-        <Stack alignItems="center" spacing={2}>
-          <CircularProgress />
-          <Typography variant="body2" color="text.secondary">
-            Loading pending matches...
-          </Typography>
+        <Stack spacing={2}>
+          {[...Array(3)].map((_, idx) => (
+            <Paper key={idx} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+              <Stack spacing={1}>
+                <Skeleton width="50%" />
+                <Skeleton width="35%" />
+                <Skeleton variant="rectangular" height={18} />
+              </Stack>
+            </Paper>
+          ))}
+          <LoadingSpinner message="Loading pending matches..." />
         </Stack>
       </Container>
     );

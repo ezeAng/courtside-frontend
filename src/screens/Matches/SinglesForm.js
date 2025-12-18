@@ -11,6 +11,7 @@ import { getOtherUsers } from "../../services/api";
 import ScoreSetsInput from "./ScoreSetsInput";
 import { formatSetsScore } from "./scoreFormatting";
 import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 function SinglesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
@@ -108,6 +109,7 @@ function SinglesForm({ onRecorded, onClose }) {
     <form onSubmit={handleSubmit}>
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
+        {loadingUsers && <LoadingSpinner message="Loading opponents..." inline size={20} />}
         <TextField
           select
           label="Opponent"
