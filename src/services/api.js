@@ -80,6 +80,16 @@ export async function searchUsers(query, token) {
   return handleResponse(response);
 }
 
+export async function getUserProfile(username, token) {
+  const response = await fetch(
+    `${base}/api/users/profile/${encodeURIComponent(username)}`,
+    {
+      headers: withAuth(token),
+    }
+  );
+  return handleResponse(response);
+}
+
 export async function getOtherUsers(token) {
   const response = await fetch(`${base}/api/users/others`, {
     headers: withAuth(token),
@@ -166,6 +176,7 @@ export default {
   updateProfile,
   getLeaderboard,
   searchUsers,
+  getUserProfile,
   getOtherUsers,
   getMatchHistory,
   getMatchDetail,

@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Autocomplete,
+  Avatar,
   Box,
   Button,
+  Chip,
   CircularProgress,
   Container,
   Dialog,
@@ -10,6 +13,7 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  Grid,
   Paper,
   Stack,
   Tab,
@@ -29,8 +33,9 @@ import {
   fetchInvites,
   createInvite,
 } from "../../services/invitesApi";
-import { searchUsers } from "../../services/api";
+import { getUserProfile, searchUsers } from "../../services/api";
 import MatchmakingLobbyModalSuggestions from "./MatchmakingLobbyModalSuggestions";
+import { normalizeProfileImage } from "../../utils/profileImage";
 
 const tabOptions = [
   { label: "Received", value: "received" },
@@ -97,49 +102,227 @@ function InviteCard({ invite, tab, onAccept, onDecline, onCancel }) {
   );
 }
 
+function ProfilePreviewModal({
+  open,
+  onClose,
+  profile,
+  loading,
+  error,
+  onInvite,
+  inviteError,
+  isInviting,
+}) {
+  const profileDetails = profile?.profile || profile;
+  const stats = profile?.stats || profile?.statistics || profileDetails?.stats || profileDetails;
+
+  const wins =
+    stats?.wins ?? stats?.record?.wins ?? stats?.wins_count ?? stats?.winsCount ?? null;
+  const losses =
+    stats?.losses ??
+    stats?.record?.losses ??
+    stats?.losses_count ??
+    stats?.lossesCount ??
+    null;
+  const matchesPlayed =
+    stats?.matches_played ?? stats?.matches ?? stats?.total_matches ?? stats?.games ?? null;
+  const calculatedMatches =
+    matchesPlayed ?? (wins !== null && losses !== null ? wins + losses : null);
+  const winRate =
+    stats?.win_rate ??
+    (wins !== null && losses !== null && wins + losses > 0
+      ? Math.round((wins / (wins + losses)) * 100)
+      : null);
+  const elo = stats?.elo ?? stats?.rating ?? stats?.current_elo ?? profileDetails?.elo ?? null;
+
+  const username =
+    profileDetails?.username ||
+    profileDetails?.display_name ||
+    profileDetails?.name ||
+    profileDetails?.email ||
+    "User";
+
+  const avatarSrc = normalizeProfileImage(profileDetails?.profile_image_url);
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Player Profile</DialogTitle>
+      <DialogContent dividers>
+        {loading ? (
+          <Stack alignItems="center" spacing={2} py={2}>
+            <CircularProgress />
+            <Typography color="text.secondary">Loading profile...</Typography>
+          </Stack>
+        ) : error ? (
+          <Alert severity="error">{error}</Alert>
+        ) : profileDetails ? (
+          <Stack spacing={2}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar src={avatarSrc} sx={{ width: 64, height: 64 }}>
+                {username?.slice(0, 1)?.toUpperCase() || "U"}
+              </Avatar>
+              <Box>
+                <Typography variant="h6" fontWeight={800} gutterBottom>
+                  {username}
+                </Typography>
+                <Typography color="text.secondary">
+                  {profileDetails?.email || profileDetails?.bio || "Courtside player"}
+                </Typography>
+              </Box>
+            </Stack>
+
+            <Grid container spacing={1}>
+              <Grid item xs={6} sm={3}>
+                <Chip
+                  label={`Elo: ${elo ?? "—"}`}
+                  color="primary"
+                  variant="outlined"
+                  sx={{ width: "100%" }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Chip
+                  label={`Record: ${wins ?? "—"}W-${losses ?? "—"}L`}
+                  variant="outlined"
+                  sx={{ width: "100%" }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Chip
+                  label={`Win rate: ${winRate !== null ? `${winRate}%` : "—"}`}
+                  variant="outlined"
+                  sx={{ width: "100%" }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Chip
+                  label={`Matches: ${calculatedMatches ?? "—"}`}
+                  variant="outlined"
+                  sx={{ width: "100%" }}
+                />
+              </Grid>
+            </Grid>
+
+            {inviteError && <Alert severity="error">{inviteError}</Alert>}
+          </Stack>
+        ) : (
+          <Typography color="text.secondary">Select a player to see their profile.</Typography>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="inherit">
+          Close
+        </Button>
+        <Button
+          variant="contained"
+          startIcon={<PersonAddAlt1Icon />}
+          onClick={() => onInvite?.(profileDetails)}
+          disabled={!profileDetails || isInviting}
+        >
+          {isInviting ? <CircularProgress size={20} color="inherit" /> : "Invite to game"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 function InvitePlayerModal({ open, onClose, onInviteCreated }) {
   const token = useSelector((state) => state.auth.accessToken);
   const currentUser = useSelector((state) => state.user.user);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [searchError, setSearchError] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [profileData, setProfileData] = useState(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState(null);
+  const [inviteError, setInviteError] = useState(null);
   const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setQuery("");
-      setResults([]);
-      setError(null);
+      setSuggestions([]);
+      setSearchError(null);
       setSelectedUser(null);
+      setProfileData(null);
+      setProfileModalOpen(false);
+      setProfileLoading(false);
+      setProfileError(null);
+      setInviteError(null);
       setIsSending(false);
     }
   }, [open]);
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    if (!open) return;
+    if (!query.trim()) {
+      setSuggestions([]);
+      setSearchError(null);
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      setLoadingSuggestions(true);
+      setSearchError(null);
+      try {
+        const data = await searchUsers(query.trim(), token);
+        const filteredResults = (data || []).filter((user) => user?.auth_id !== currentUser?.auth_id);
+        const uniqueResults = [];
+        const seen = new Set();
+
+        filteredResults.forEach((user) => {
+          const key = user.auth_id || user.user_id || user.id || user.username;
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          uniqueResults.push(user);
+        });
+
+        setSuggestions(uniqueResults);
+      } catch (err) {
+        setSearchError(err.message || "Unable to search for users.");
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [query, token, currentUser?.auth_id, open]);
+
+  const fetchFullProfile = async (user) => {
+    const username =
+      user?.username || user?.display_name || user?.name || query.trim() || "";
+
+    if (!username) {
+      throw new Error("Please provide a username to search.");
+    }
+
     try {
-      const data = await searchUsers(query.trim(), token);
-      const filteredResults = (data || []).filter(
-        (user) => user?.auth_id !== currentUser?.auth_id
-      );
-      setResults(filteredResults);
+      const response = await getUserProfile(username, token);
+      return response?.profile || response?.user || response;
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      const fallbackResults = await searchUsers(username, token);
+      const bestMatch = (fallbackResults || []).find(
+        (entry) =>
+          entry.username === username ||
+          entry.display_name === username ||
+          entry.name === username
+      );
+
+      if (bestMatch) return bestMatch;
+      if (fallbackResults?.length) return fallbackResults[0];
+      throw err;
     }
   };
 
-  const handleSendInvite = async () => {
-    if (!selectedUser || !token) return;
+  const handleSendInvite = async (userOverride) => {
+    const targetUser = userOverride || profileData || selectedUser;
+    if (!targetUser || !token) return;
     const opponentAuthId =
-      selectedUser.auth_id || selectedUser.user_id || selectedUser.id;
+      targetUser.auth_id || targetUser.user_id || targetUser.id || targetUser.profile_id;
     if (!opponentAuthId) {
-      setError("Unable to send invite to this user");
+      setInviteError("Unable to send invite to this user");
       return;
     }
 
@@ -154,9 +337,9 @@ function InvitePlayerModal({ open, onClose, onInviteCreated }) {
         {
           auth_id: opponentAuthId,
           username:
-            selectedUser.username ||
-            selectedUser.display_name ||
-            selectedUser.name ||
+            targetUser.username ||
+            targetUser.display_name ||
+            targetUser.name ||
             "Player",
           team: 2,
         },
@@ -165,104 +348,142 @@ function InvitePlayerModal({ open, onClose, onInviteCreated }) {
 
     try {
       setIsSending(true);
-      setError(null);
+      setInviteError(null);
       await createInvite(token, payload);
       onInviteCreated?.();
+      setProfileModalOpen(false);
       onClose?.();
     } catch (err) {
-      setError(err.message);
+      setInviteError(err.message);
     } finally {
       setIsSending(false);
     }
   };
 
+  const handleOptionSelect = async (_event, value) => {
+    setSelectedUser(value);
+    if (!value) return;
+    setProfileModalOpen(true);
+    setProfileLoading(true);
+    setProfileError(null);
+    setInviteError(null);
+    try {
+      const profile = await fetchFullProfile(value);
+      setProfileData(profile);
+    } catch (err) {
+      setProfileError(err.message || "Unable to load player profile.");
+      setProfileData(value);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Invite a Player</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={2}>
-          <TextField
-            label="Search by username"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleSearch();
+    <>
+      <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+        <DialogTitle>Invite a Player</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            <Autocomplete
+              freeSolo
+              options={suggestions}
+              loading={loadingSuggestions}
+              inputValue={query}
+              value={selectedUser}
+              onChange={handleOptionSelect}
+              onInputChange={(_, value) => {
+                setQuery(value);
+                setSearchError(null);
+              }}
+              getOptionLabel={(option) =>
+                typeof option === "string"
+                  ? option
+                  : option.username || option.display_name || option.name || ""
               }
-            }}
-            fullWidth
-          />
-          <Stack direction="row" spacing={1}>
-            <Button
-              variant="contained"
-              onClick={handleSearch}
-              disabled={loading || !query.trim()}
-            >
-              {loading ? <CircularProgress size={20} /> : "Search"}
-            </Button>
-            <Button variant="text" onClick={() => setQuery("")}>Clear</Button>
-          </Stack>
-
-          {error && <Alert severity="error">{error}</Alert>}
-
-          {results.length === 0 && !loading ? (
-            <Typography color="text.secondary" variant="body2">
-              Search for a username to invite.
-            </Typography>
-          ) : (
-            <Stack spacing={1}>
-              {results.map((user) => {
-                const isSelected = selectedUser?.auth_id === user.auth_id;
+              isOptionEqualToValue={(option, value) => {
+                if (!option || !value) return false;
+                if (option.auth_id && value.auth_id) return option.auth_id === value.auth_id;
                 return (
-                  <Paper
-                    key={user.auth_id || user.id}
-                    variant={isSelected ? "outlined" : "elevation"}
-                    sx={{
-                      p: 1.5,
-                      borderColor: isSelected ? "primary.main" : undefined,
-                      cursor: "pointer",
-                    }}
-                    onClick={() => setSelectedUser(user)}
-                  >
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                      <Stack>
-                        <Typography fontWeight={600}>
-                          {user.username || user.display_name || user.name || "User"}
-                        </Typography>
-                        {user.email && (
-                          <Typography variant="caption" color="text.secondary">
-                            {user.email}
-                          </Typography>
-                        )}
-                      </Stack>
-                      {isSelected && (
-                        <Typography color="primary" fontWeight={700}>
-                          Selected
-                        </Typography>
-                      )}
-                    </Stack>
-                  </Paper>
+                  option.username === value.username ||
+                  option.display_name === value.display_name ||
+                  option.name === value.name
                 );
-              })}
-            </Stack>
-          )}
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="inherit">
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<PersonAddAlt1Icon />}
-          onClick={handleSendInvite}
-          disabled={!selectedUser || isSending}
-        >
-          {isSending ? <CircularProgress size={20} color="inherit" /> : "Send Invite"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+              }}
+              renderOption={(props, option) => {
+                const optionData =
+                  typeof option === "string"
+                    ? { username: option }
+                    : option || {};
+                const optionKey =
+                  optionData.auth_id ||
+                  optionData.id ||
+                  optionData.username ||
+                  optionData.display_name ||
+                  optionData.name ||
+                  option;
+
+                return (
+                  <li {...props} key={optionKey}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar src={normalizeProfileImage(optionData.profile_image_url)}>
+                        {optionData.username?.slice(0, 1)?.toUpperCase() || "U"}
+                      </Avatar>
+                      <Box>
+                        <Typography fontWeight={700}>
+                          {optionData.username || optionData.display_name || optionData.name || "User"}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          Elo: {optionData.elo ?? optionData.rating ?? "N/A"}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </li>
+                );
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Search by username"
+                  placeholder="Start typing a username"
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingSuggestions ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                  helperText="Select a player from the suggestions to view their profile."
+                  fullWidth
+                />
+              )}
+            />
+
+            {searchError && <Alert severity="error">{searchError}</Alert>}
+            {!suggestions.length && query.trim() && !loadingSuggestions && !searchError && (
+              <Alert severity="info">No players match that username yet. Try another search.</Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} color="inherit">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <ProfilePreviewModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        profile={profileData}
+        loading={profileLoading}
+        error={profileError}
+        onInvite={handleSendInvite}
+        inviteError={inviteError}
+        isInviting={isSending}
+      />
+    </>
   );
 }
 
