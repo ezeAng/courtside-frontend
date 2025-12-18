@@ -21,31 +21,13 @@ import {
   findMatch,
   leaveQueue,
 } from "../../services/invitesApi";
-
-function getDisplayName(player) {
-  if (!player) return "Opponent";
-  return (
-    player.username ||
-    player.display_name ||
-    player.name ||
-    player.user?.username ||
-    player.user?.display_name ||
-    player.id ||
-    "Opponent"
-  );
-}
-
-function getAuthId(player) {
-  if (!player) return undefined;
-  return (
-    player.auth_id ||
-    player.user_id ||
-    player.id ||
-    player.player_id ||
-    player.player_auth_id ||
-    player.user?.auth_id
-  );
-}
+import {
+  buildInvitePlayers,
+  formatTeamNames,
+  getPlayerAuthId,
+  getPlayerDisplayName,
+  normalizeMatchPlayers,
+} from "../../utils/matchPlayers";
 
 function MatchmakingLobbyModal({ open, onClose, onInviteCreated }) {
   const token = useSelector((state) => state.auth.accessToken);
@@ -122,39 +104,67 @@ function MatchmakingLobbyModal({ open, onClose, onInviteCreated }) {
     onClose?.();
   };
 
+  const { teamA, teamB } = useMemo(
+    () => normalizeMatchPlayers(opponent || {}),
+    [opponent]
+  );
+
+  const matchupLabel = useMemo(() => {
+    if (mode === "doubles") {
+      const teamALabel = formatTeamNames(teamA, userInfo.auth_id) || "Team A";
+      const teamBLabel = formatTeamNames(teamB, userInfo.auth_id) || "Team B";
+      return `${teamALabel} vs ${teamBLabel}`;
+    }
+    return getPlayerDisplayName(opponent || { username: "Opponent" });
+  }, [mode, opponent, teamA, teamB, userInfo.auth_id]);
+
   const handleSendInvite = async () => {
     if (!userInfo.auth_id) {
       setError("Missing current user info");
       return;
     }
 
-    const opponentAuthId = getAuthId(opponent);
-    const opponentName = getDisplayName(opponent);
+    const basePayload =
+      mode === "doubles"
+        ? (() => {
+            const players = buildInvitePlayers(teamA, teamB, userInfo);
+            if (players.length < 4) {
+              setError("Unable to build doubles invite. Need four players.");
+              return null;
+            }
+            return { mode: "doubles", players };
+          })()
+        : (() => {
+            const opponentAuthId = getPlayerAuthId(opponent);
+            const opponentName = getPlayerDisplayName(opponent);
 
-    if (!opponentAuthId) {
-      setError("Missing opponent info");
-      return;
-    }
+            if (!opponentAuthId) {
+              setError("Missing opponent info");
+              return null;
+            }
 
-    const payload = {
-      mode,
-      players: [
-        {
-          auth_id: userInfo.auth_id,
-          username: userInfo.username || "You",
-          team: 1,
-        },
-        {
-          auth_id: opponentAuthId,
-          username: opponentName,
-          team: 2,
-        },
-      ],
-    };
+            return {
+              mode,
+              players: [
+                {
+                  auth_id: userInfo.auth_id,
+                  username: userInfo.username || "You",
+                  team: "A",
+                },
+                {
+                  auth_id: opponentAuthId,
+                  username: opponentName,
+                  team: "B",
+                },
+              ],
+            };
+          })();
+
+    if (!basePayload) return;
 
     try {
       setError(null);
-      await createInvite(token, payload);
+      await createInvite(token, basePayload);
       setSuccessMessage("Invite sent");
       if (onInviteCreated) {
         onInviteCreated();
@@ -181,7 +191,7 @@ function MatchmakingLobbyModal({ open, onClose, onInviteCreated }) {
         Match found!
       </Typography>
       <Typography>
-        Opponent: <strong>{getDisplayName(opponent)}</strong>
+        Matchup: <strong>{matchupLabel}</strong>
       </Typography>
       <Stack direction="row" spacing={1}>
         <Button variant="contained" onClick={handleSendInvite}>

@@ -34,6 +34,7 @@ import {
 import { getUserProfile, searchUsersAutocomplete } from "../../services/api";
 import MatchmakingLobbyModalSuggestions from "./MatchmakingLobbyModalSuggestions";
 import { normalizeProfileImage } from "../../utils/profileImage";
+import { formatTeamNames, normalizeMatchPlayers } from "../../utils/matchPlayers";
 import PlayerProfileInviteModal from "../../components/PlayerProfileInviteModal";
 
 const tabOptions = [
@@ -42,20 +43,23 @@ const tabOptions = [
 ];
 
 function formatPlayersLabel(invite, currentUserId) {
-  const team1 = invite.players?.filter((p) => p.team === 1) || [];
-  const team2 = invite.players?.filter((p) => p.team === 2) || [];
+  const { teamA, teamB } = normalizeMatchPlayers(invite?.players || invite);
 
-  const isOnTeam1 = team1.some((p) => p.auth_id === currentUserId);
-  const myTeam = isOnTeam1 ? team1 : team2;
-  const opponentTeam = isOnTeam1 ? team2 : team1;
+  const isOnTeamA = teamA.some((p) => String(p.auth_id) === String(currentUserId));
+  const isOnTeamB = teamB.some((p) => String(p.auth_id) === String(currentUserId));
 
-  const formatTeam = (team) => team.map((p) => p.username || "Player").join(" & ");
+  const myTeam =
+    isOnTeamA || (!isOnTeamB && teamB.length === 0) ? teamA : teamB;
+  const opponentTeam = myTeam === teamA ? teamB : teamA;
 
-  if (myTeam.length <= 1 && opponentTeam.length <= 1) {
-    return `You vs ${formatTeam(opponentTeam) || "Opponent"}`;
+  const myLabel = formatTeamNames(myTeam, currentUserId) || "Your team";
+  const opponentLabel = formatTeamNames(opponentTeam, currentUserId) || "Opponents";
+
+  if (myTeam.length === 1 && opponentTeam.length === 1) {
+    return `${myLabel} vs ${opponentLabel}`;
   }
 
-  return `You${myTeam.length > 1 ? ` & ${formatTeam(myTeam.filter((p) => p.auth_id !== currentUserId))}` : ""} vs ${formatTeam(opponentTeam) || "Opponents"}`;
+  return `${myLabel} vs ${opponentLabel}`;
 }
 
 function InviteCard({ invite, tab, onAccept, onDecline, onCancel }) {
@@ -208,7 +212,7 @@ function InvitePlayerModal({ open, onClose, onInviteCreated }) {
         {
           auth_id: currentUser?.auth_id,
           username: currentUser?.username || currentUser?.display_name || "You",
-          team: 1,
+          team: "A",
         },
         {
           auth_id: opponentAuthId,
@@ -217,7 +221,7 @@ function InvitePlayerModal({ open, onClose, onInviteCreated }) {
             targetUser.display_name ||
             targetUser.name ||
             "Player",
-          team: 2,
+          team: "B",
         },
       ],
     };

@@ -25,6 +25,13 @@ import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import SendIcon from "@mui/icons-material/Send";
 import { useSelector } from "react-redux";
 import { createInvite, findMatchSuggestions } from "../../services/invitesApi";
+import {
+  buildInvitePlayers,
+  formatTeamNames,
+  getPlayerAuthId,
+  getPlayerDisplayName,
+  normalizeMatchPlayers,
+} from "../../utils/matchPlayers";
 
 const formatCriteria = (criteria) => {
   if (!criteria) return null;
@@ -107,6 +114,14 @@ function MatchmakingLobbyModalSuggestions({
   };
 
   const selectedRecommendation = recommendations[selectedIndex];
+  const selectedTeams = useMemo(
+    () => normalizeMatchPlayers(selectedRecommendation || {}),
+    [selectedRecommendation]
+  );
+  const doublesInvitePlayers = useMemo(
+    () => buildInvitePlayers(selectedTeams.teamA, selectedTeams.teamB, currentUserInfo),
+    [selectedTeams.teamA, selectedTeams.teamB, currentUserInfo]
+  );
 
   const handleRefresh = () => loadSuggestions(mode);
 
@@ -116,30 +131,52 @@ function MatchmakingLobbyModalSuggestions({
   };
 
   const handleSendInvite = async () => {
-    if (!currentUserInfo.auth_id || !selectedRecommendation || mode !== "singles") return;
-    const payload = {
-      mode,
-      players: [
-        {
-          auth_id: currentUserInfo.auth_id,
-          username: currentUserInfo.username,
-          team: 1,
-        },
-        {
-          auth_id:
-            selectedRecommendation.auth_id ||
-            selectedRecommendation.user_id ||
-            selectedRecommendation.id,
-          username: selectedRecommendation.username || selectedRecommendation.name || "Player",
-          team: 2,
-        },
-      ],
-    };
-
-    if (!payload.players[1].auth_id) {
-      setErrorMessage("Unable to send invite to this player.");
+    if (!currentUserInfo.auth_id) {
+      setErrorMessage("You need to be logged in to send invites.");
       return;
     }
+
+    if (!selectedRecommendation) return;
+
+    const payload =
+      mode === "doubles"
+        ? (() => {
+            if (doublesInvitePlayers.length < 4) {
+              setErrorMessage("Unable to send invite. Doubles invites require four players.");
+              return null;
+            }
+
+            return { mode: "doubles", players: doublesInvitePlayers };
+          })()
+        : (() => {
+            const opponentAuthId =
+              getPlayerAuthId(selectedRecommendation) || selectedRecommendation.id;
+            const opponentName =
+              getPlayerDisplayName(selectedRecommendation) || "Player";
+
+            if (!opponentAuthId) {
+              setErrorMessage("Unable to send invite to this player.");
+              return null;
+            }
+
+            return {
+              mode,
+              players: [
+                {
+                  auth_id: currentUserInfo.auth_id,
+                  username: currentUserInfo.username,
+                  team: "A",
+                },
+                {
+                  auth_id: opponentAuthId,
+                  username: opponentName,
+                  team: "B",
+                },
+              ],
+            };
+          })();
+
+    if (!payload) return;
 
     try {
       setIsSending(true);
@@ -172,9 +209,11 @@ function MatchmakingLobbyModalSuggestions({
       <Stack spacing={1}>
         {recommendations.map((rec, idx) => {
           const isSelected = idx === selectedIndex;
+          const { teamA, teamB } = normalizeMatchPlayers(rec);
+          const isDoubles = mode === "doubles";
           return (
             <Card
-              key={rec.auth_id || rec.username || idx}
+              key={rec.auth_id || rec.username || rec.match_id || idx}
               variant={isSelected ? "outlined" : "elevation"}
               sx={{
                 borderColor: isSelected ? "primary.main" : undefined,
@@ -182,15 +221,30 @@ function MatchmakingLobbyModalSuggestions({
             >
               <CardActionArea onClick={() => setSelectedIndex(idx)}>
                 <CardContent>
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar src={rec.profile_image_url} alt={rec.username || "Player"} />
-                    <Box flex={1}>
-                      <Typography fontWeight={700}>{rec.username || "Player"}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Elo: {rec.elo ?? "N/A"} · Gap: ±{rec.elo_gap}
+                  {isDoubles ? (
+                    <Stack spacing={0.5}>
+                      <Typography fontWeight={700}>Team A</Typography>
+                      <Typography color="text.secondary">
+                        {formatTeamNames(teamA, currentUserInfo.auth_id) || "Pending players"}
                       </Typography>
-                    </Box>
-                  </Stack>
+                      <Typography fontWeight={700} mt={1}>
+                        Team B
+                      </Typography>
+                      <Typography color="text.secondary">
+                        {formatTeamNames(teamB, currentUserInfo.auth_id) || "Pending players"}
+                      </Typography>
+                    </Stack>
+                  ) : (
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar src={rec.profile_image_url} alt={rec.username || "Player"} />
+                      <Box flex={1}>
+                        <Typography fontWeight={700}>{rec.username || "Player"}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Elo: {rec.elo ?? "N/A"} · Gap: ±{rec.elo_gap}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  )}
                 </CardContent>
               </CardActionArea>
             </Card>
@@ -211,15 +265,17 @@ function MatchmakingLobbyModalSuggestions({
           variant="contained"
           startIcon={<SendIcon />}
           onClick={handleSendInvite}
-          disabled={!selectedRecommendation || mode !== "singles" || isSending}
+          disabled={
+            !selectedRecommendation ||
+            (mode === "doubles" &&
+              doublesInvitePlayers.length < 4) ||
+            isSending
+          }
           fullWidth
         >
           Send Invite
         </Button>
       </Stack>
-      {mode === "doubles" && (
-        <Alert severity="info">Doubles invites coming soon.</Alert>
-      )}
       {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
     </Stack>
   );
