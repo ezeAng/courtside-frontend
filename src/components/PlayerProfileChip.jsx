@@ -129,12 +129,12 @@ export default function PlayerProfileChip({ player, chipProps = {} }) {
         {
           auth_id: currentUser.auth_id,
           username: getDisplayName(currentUser) || "You",
-          team: 1,
+          team: "A",
         },
         {
           auth_id: opponentAuthId,
           username: getDisplayName(opponent) || label,
-          team: 2,
+          team: "B",
         },
       ],
     };
