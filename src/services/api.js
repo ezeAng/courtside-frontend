@@ -70,9 +70,19 @@ export async function getLeaderboard(gender, token) {
   return handleResponse(response);
 }
 
-export async function searchUsers(query, token) {
+export async function searchUsersAutocomplete(query, token) {
   const response = await fetch(
-    `${base}/api/users/search?query=${encodeURIComponent(query)}`,
+    `${base}/api/users/search/autocomplete?query=${encodeURIComponent(query)}`,
+    {
+      headers: withAuth(token),
+    }
+  );
+  return handleResponse(response);
+}
+
+export async function getUserProfile(username, token) {
+  const response = await fetch(
+    `${base}/api/users/search/profile?username=${encodeURIComponent(username)}`,
     {
       headers: withAuth(token),
     }
@@ -165,7 +175,8 @@ export default {
   getCurrentUser,
   updateProfile,
   getLeaderboard,
-  searchUsers,
+  searchUsersAutocomplete,
+  getUserProfile,
   getOtherUsers,
   getMatchHistory,
   getMatchDetail,
