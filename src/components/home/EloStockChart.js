@@ -13,6 +13,7 @@ import {
 import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
 
+import { alpha, useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -49,6 +50,11 @@ function EloStockChart({ onRecordMatch }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const theme = useTheme();
+
+  const lineColor = theme.palette.primary.main;
+  const lineFill = alpha(theme.palette.primary.main, 0.15);
+  const gridColor = theme.custom?.colors?.accent.grid || theme.palette.divider;
 
   /* ---------------- Fetch ---------------- */
   useEffect(() => {
@@ -80,8 +86,8 @@ function EloStockChart({ onRecordMatch }) {
             x: new Date(p.t),
             y: p.elo,
           })),
-          borderColor: "#1976d2",
-          backgroundColor: "rgba(25, 118, 210, 0.15)",
+          borderColor: lineColor,
+          backgroundColor: lineFill,
           fill: true,
           tension: 0.25,
           pointRadius: 3,
@@ -89,7 +95,7 @@ function EloStockChart({ onRecordMatch }) {
         },
       ],
     };
-  }, [data]);
+  }, [data, lineColor, lineFill]);
 
   /* ---------------- Chart Options ---------------- */
   const chartOptions = useMemo(
@@ -118,14 +124,14 @@ function EloStockChart({ onRecordMatch }) {
         },
         y: {
           beginAtZero: false,
-          grid: { color: "#f0f4f8" },
+          grid: { color: gridColor },
           ticks: {
             callback: (v) => Math.round(v),
           },
         },
       },
     }),
-    []
+    [gridColor]
   );
 
   const summary = data?.summary;

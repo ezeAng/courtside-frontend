@@ -1,33 +1,23 @@
 // src/components/PlayerCard.js
 import { forwardRef } from "react";
+import { alpha } from "@mui/material/styles";
 import { normalizeProfileImage } from "../utils/profileImage";
+import { themeColors, themeFonts } from "../theme/tokens";
 
 /* -------------------- STYLE LOGIC -------------------- */
 
 // ELO → base color
 function getEloBase(elo) {
   if (elo >= 1200) {
-    return {
-      background: "linear-gradient(135deg, #2a003f, #14001f)",
-      accent: "#c77dff",
-    };
+    return themeColors.playerCard.tiers.elite;
   }
   if (elo >= 1000) {
-    return {
-      background: "linear-gradient(135deg, #0b2a3f, #06131f)",
-      accent: "#4bf0ff",
-    };
+    return themeColors.playerCard.tiers.pro;
   }
   if (elo >= 800) {
-    return {
-      background: "linear-gradient(135deg, #3f2f00, #1f1700)",
-      accent: "#ffd166",
-    };
+    return themeColors.playerCard.tiers.contender;
   }
-  return {
-    background: "linear-gradient(135deg, #2a1c0f, #140c05)",
-    accent: "#cd7f32",
-  };
+  return themeColors.playerCard.tiers.challenger;
 }
 
 // Win rate → glow
@@ -52,28 +42,28 @@ function getTierBorder(tier, accent) {
       return {
         width: 7,
         style: "solid",
-        color: "#e5e4e2",
-        glow: "0 0 14px rgba(229,228,226,0.8)",
+        color: themeColors.playerCard.borders.diamond,
+        glow: `0 0 14px ${alpha(themeColors.playerCard.borders.diamond, 0.8)}`,
       };
     case "Gold":
       return {
         width: 6,
         style: "solid",
-        color: "#ffd700",
-        glow: "0 0 12px rgba(255,215,0,0.8)",
+        color: themeColors.playerCard.borders.gold,
+        glow: `0 0 12px ${alpha(themeColors.playerCard.borders.gold, 0.8)}`,
       };
     case "Silver":
       return {
         width: 5,
         style: "solid",
-        color: "#c0c0c0",
-        glow: "0 0 8px rgba(192,192,192,0.6)",
+        color: themeColors.playerCard.borders.silver,
+        glow: `0 0 8px ${alpha(themeColors.playerCard.borders.silver, 0.6)}`,
       };
     default:
       return {
         width: 4,
         style: "solid",
-        color: "#cd7f32",
+        color: themeColors.playerCard.borders.bronze,
         glow: "none",
       };
   }
@@ -98,8 +88,8 @@ const PlayerCard = forwardRef(({ card }, ref) => {
         borderRadius: "14px",
         position: "relative",
         overflow: "hidden",
-        color: "#f5f7fa",
-        fontFamily: "'Verdana', sans-serif",
+        color: themeColors.playerCard.textLight,
+        fontFamily: themeFonts.accent,
 
         background: eloTheme.background,
 
@@ -107,8 +97,8 @@ const PlayerCard = forwardRef(({ card }, ref) => {
 
         boxShadow: `
           ${border.glow},
-          0 0 ${20 + glowStrength * 40}px rgba(0,0,0,0.6),
-          0 12px 30px rgba(0,0,0,0.6)
+          0 0 ${20 + glowStrength * 40}px ${alpha(themeColors.playerCard.frame, 0.6)},
+          0 12px 30px ${alpha(themeColors.playerCard.frame, 0.6)}
         `,
       }}
     >
@@ -145,10 +135,13 @@ const PlayerCard = forwardRef(({ card }, ref) => {
             borderRadius: "12px",
             marginBottom: "10px",
             position: "relative",
-            background: "#000",
+            background: themeColors.playerCard.frame,
 
             /* Outer frame */
-            boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.15)",
+            boxShadow: `inset 0 0 0 2px ${alpha(
+              themeColors.playerCard.textLight,
+              0.15
+            )}`,
           }}
         >
           {/* HARD MASK (this is the key layer) */}
@@ -158,7 +151,7 @@ const PlayerCard = forwardRef(({ card }, ref) => {
               inset: "4px",          // 🔒 hard safety margin
               borderRadius: "8px",
               overflow: "hidden",
-              background: "#000",
+              background: themeColors.playerCard.frame,
             }}
           >
             {/* IMAGE WRAPPER */}
@@ -217,8 +210,8 @@ const PlayerCard = forwardRef(({ card }, ref) => {
       {/* STATS PANEL */}
       <div
         style={{
-          background: "rgba(255,255,255,0.92)",
-          color: "#111",
+          background: themeColors.playerCard.panel,
+          color: themeColors.playerCard.textDark,
           borderRadius: "8px",
           padding: "10px",
           fontSize: "13px",
