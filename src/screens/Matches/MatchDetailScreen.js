@@ -8,16 +8,64 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
+import { alpha } from "@mui/material/styles";
 import { fetchMatchDetail } from "../../features/matches/matchSlice";
 
-function TeamCard({ title, players, isWinner }) {
+const getOutcomeStyles = (theme, outcome) => {
+  const isWinner = outcome === "winner";
+  const isLoser = outcome === "loser";
+
+  return {
+    color: isWinner
+      ? theme.palette.success.main
+      : isLoser
+      ? theme.palette.error.main
+      : theme.palette.text.primary,
+    backgroundColor: isWinner
+      ? alpha(theme.palette.success.main, 0.12)
+      : isLoser
+      ? alpha(theme.palette.error.main, 0.12)
+      : alpha(theme.palette.text.primary, 0.04),
+    px: 1,
+    py: 0.5,
+    borderRadius: 1,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 0.5,
+    fontWeight: isWinner ? 800 : 600,
+    fontSize: isWinner ? "1.05rem" : "1rem",
+    transform: isWinner ? "translateY(-2px)" : "none",
+    boxShadow: isWinner
+      ? `0 6px 12px ${alpha(theme.palette.success.main, 0.18)}`
+      : "none",
+  };
+};
+
+const getOutcomeFromWinnerTeam = (winnerTeam, teamKey) => {
+  if (winnerTeam === "draw" || winnerTeam === null) return "draw";
+  if (!winnerTeam) return "pending";
+  return winnerTeam === teamKey ? "winner" : "loser";
+};
+
+function TeamCard({ title, players, outcome }) {
+  const isWinner = outcome === "winner";
+
   return (
     <Card
       variant="outlined"
-      sx={{
-        borderColor: isWinner ? "primary.main" : "divider",
+      sx={(theme) => ({
+        borderColor: isWinner
+          ? theme.palette.success.main
+          : outcome === "loser"
+          ? alpha(theme.palette.error.main, 0.4)
+          : "divider",
         borderWidth: isWinner ? 2 : 1,
-      }}
+        boxShadow: isWinner
+          ? `0 6px 14px ${alpha(theme.palette.success.main, 0.16)}`
+          : "none",
+        transform: isWinner ? "translateY(-2px)" : "none",
+        transition: "all 0.2s ease",
+      })}
     >
       <CardContent>
         <Stack spacing={1}>
@@ -25,8 +73,15 @@ function TeamCard({ title, players, isWinner }) {
             {title}
           </Typography>
           {players?.map((player) => (
-            <Stack key={player.auth_id || player.id} direction="row" justifyContent="space-between">
-              <Typography>{player.username}</Typography>
+            <Stack
+              key={player.auth_id || player.id}
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Typography sx={(theme) => getOutcomeStyles(theme, outcome)}>
+                {player.username}
+              </Typography>
               <Typography color="text.secondary">Elo: {player.elo}</Typography>
             </Stack>
           ))}
@@ -67,13 +122,14 @@ function MatchDetailScreen() {
 
   const winnerTeam = matchDetail.winner_team;
   const isDraw = winnerTeam === "draw" || winnerTeam === null;
-  const isTeamAWinner = winnerTeam === "A";
-  const isTeamBWinner = winnerTeam === "B";
   const winnerLabel = isDraw
     ? "Draw"
     : winnerTeam
     ? `Team ${winnerTeam}`
     : "";
+
+  const teamAOutcome = getOutcomeFromWinnerTeam(winnerTeam, "A");
+  const teamBOutcome = getOutcomeFromWinnerTeam(winnerTeam, "B");
 
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
@@ -102,12 +158,12 @@ function MatchDetailScreen() {
         <TeamCard
           title="Team A"
           players={matchDetail.players_team_A}
-          isWinner={isTeamAWinner}
+          outcome={teamAOutcome}
         />
         <TeamCard
           title="Team B"
           players={matchDetail.players_team_B}
-          isWinner={isTeamBWinner}
+          outcome={teamBOutcome}
         />
       </Stack>
     </Container>

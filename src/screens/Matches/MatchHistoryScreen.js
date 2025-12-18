@@ -14,6 +14,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
 import InboxIcon from "@mui/icons-material/Inbox";
 import { useNavigate } from "react-router-dom";
 import RecordMatchModal from "./RecordMatchModal";
@@ -21,23 +22,77 @@ import { fetchMatchHistory } from "../../features/matches/matchSlice";
 import { getPendingMatches } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
 
-function TeamCard({ title, players, isWinner }) {
+const getOutcomeFromWinnerTeam = (winnerTeam, teamKey) => {
+  if (winnerTeam === "draw" || winnerTeam === null) return "draw";
+  if (!winnerTeam) return "pending";
+  return winnerTeam === teamKey ? "winner" : "loser";
+};
+
+const getOutcomeStyles = (theme, outcome) => {
+  const isWinner = outcome === "winner";
+  const isLoser = outcome === "loser";
+
+  return {
+    color: isWinner
+      ? theme.palette.success.main
+      : isLoser
+      ? theme.palette.error.main
+      : theme.palette.text.primary,
+    backgroundColor: isWinner
+      ? alpha(theme.palette.success.main, 0.12)
+      : isLoser
+      ? alpha(theme.palette.error.main, 0.12)
+      : alpha(theme.palette.text.primary, 0.04),
+    px: 1,
+    py: 0.5,
+    borderRadius: 1,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 0.5,
+    fontWeight: isWinner ? 800 : 600,
+    fontSize: isWinner ? "1.05rem" : "1rem",
+    transform: isWinner ? "translateY(-2px)" : "none",
+    boxShadow: isWinner
+      ? `0 6px 12px ${alpha(theme.palette.success.main, 0.18)}`
+      : "none",
+  };
+};
+
+function TeamCard({ title, players, outcome }) {
+  const isWinner = outcome === "winner";
+
   return (
     <Stack
       spacing={1}
-      sx={{
+      sx={(theme) => ({
         border: 1,
-        borderColor: isWinner ? "primary.main" : "divider",
+        borderColor: isWinner
+          ? theme.palette.success.main
+          : outcome === "loser"
+          ? alpha(theme.palette.error.main, 0.4)
+          : "divider",
         borderRadius: 2,
         p: 2,
-      }}
+        boxShadow: isWinner
+          ? `0 6px 14px ${alpha(theme.palette.success.main, 0.16)}`
+          : "none",
+        transform: isWinner ? "translateY(-2px)" : "none",
+        transition: "all 0.2s ease",
+      })}
     >
       <Typography variant="subtitle1" fontWeight={700}>
         {title}
       </Typography>
       {players?.map((player) => (
-        <Stack key={player.auth_id || player.id || player.username} direction="row" justifyContent="space-between">
-          <Typography>{player.username || player.name}</Typography>
+        <Stack
+          key={player.auth_id || player.id || player.username}
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Typography sx={(theme) => getOutcomeStyles(theme, outcome)}>
+            {player.username || player.name}
+          </Typography>
           {player.elo !== undefined && (
             <Typography color="text.secondary">Elo: {player.elo}</Typography>
           )}
@@ -105,8 +160,8 @@ function MatchHistoryScreen() {
     const teamBPlayers = getTeamPlayers(selectedMatch, "team_B");
     const winnerTeam = selectedMatch.winner_team;
     const isDraw = winnerTeam === "draw" || winnerTeam === null;
-    const isTeamAWinner = winnerTeam === "A";
-    const isTeamBWinner = winnerTeam === "B";
+    const teamAOutcome = getOutcomeFromWinnerTeam(winnerTeam, "A");
+    const teamBOutcome = getOutcomeFromWinnerTeam(winnerTeam, "B");
     const winnerLabel = isDraw
       ? "Draw"
       : winnerTeam
@@ -136,8 +191,8 @@ function MatchHistoryScreen() {
               </Typography>
             </Stack>
 
-            <TeamCard title="Team A" players={teamAPlayers} isWinner={isTeamAWinner} />
-            <TeamCard title="Team B" players={teamBPlayers} isWinner={isTeamBWinner} />
+            <TeamCard title="Team A" players={teamAPlayers} outcome={teamAOutcome} />
+            <TeamCard title="Team B" players={teamBPlayers} outcome={teamBOutcome} />
           </Stack>
         </DialogContent>
       </Dialog>
@@ -174,42 +229,54 @@ function MatchHistoryScreen() {
           </Stack>
         ) : matches?.length ? (
           <List>
-            {matches.map((match) => (
-              <ListItemButton
-                key={match.match_id || match.id}
-                divider
-                onClick={() => handleMatchClick(match)}
-              >
-                <ListItemText
-                  primary={`${match.match_type === "doubles" ? "Doubles" : "Singles"} • ${(() => {
-                    const wt = match.winner_team;
-                    if (wt === "draw" || wt === null) return "Draw";
-                    if (wt) return `Winner: Team ${wt}`;
-                    return "Result pending";
-                  })()}`}
-                  primaryTypographyProps={{ component: "span" }}
-                  secondaryTypographyProps={{ component: "div" }}
-                  secondary={
-                    <Stack spacing={0.5}>
-                      <Typography variant="body2" color="text.primary">
-                        Score: {match.score}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Team A: {formatPlayers(match.players?.team_A)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Team B: {formatPlayers(match.players?.team_B)}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {match.played_at
-                          ? new Date(match.played_at).toLocaleDateString()
-                          : ""}
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              </ListItemButton>
-            ))}
+            {matches.map((match) => {
+              const winnerTeam = match.winner_team;
+              const teamAOutcome = getOutcomeFromWinnerTeam(winnerTeam, "A");
+              const teamBOutcome = getOutcomeFromWinnerTeam(winnerTeam, "B");
+
+              return (
+                <ListItemButton
+                  key={match.match_id || match.id}
+                  divider
+                  onClick={() => handleMatchClick(match)}
+                >
+                  <ListItemText
+                    primary={`${match.match_type === "doubles" ? "Doubles" : "Singles"} • ${(() => {
+                      const wt = match.winner_team;
+                      if (wt === "draw" || wt === null) return "Draw";
+                      if (wt) return `Winner: Team ${wt}`;
+                      return "Result pending";
+                    })()}`}
+                    primaryTypographyProps={{ component: "span" }}
+                    secondaryTypographyProps={{ component: "div" }}
+                    secondary={
+                      <Stack spacing={0.5}>
+                        <Typography variant="body2" color="text.primary">
+                          Score: {match.score}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={(theme) => getOutcomeStyles(theme, teamAOutcome)}
+                        >
+                          Team A: {formatPlayers(match.players?.team_A)}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={(theme) => getOutcomeStyles(theme, teamBOutcome)}
+                        >
+                          Team B: {formatPlayers(match.players?.team_B)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {match.played_at
+                            ? new Date(match.played_at).toLocaleDateString()
+                            : ""}
+                        </Typography>
+                      </Stack>
+                    }
+                  />
+                </ListItemButton>
+              );
+            })}
           </List>
         ) : (
           <DialogContentText>No matches recorded yet.</DialogContentText>
