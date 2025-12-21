@@ -30,6 +30,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import LogoutIcon from "@mui/icons-material/Logout";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import SettingsIcon from "@mui/icons-material/Settings";
+import FeedbackIcon from "@mui/icons-material/Feedback";
 import { useNavigate } from "react-router-dom";
 import { AVATARS } from "../../constants/avatars";
 import PlayerCardModal from "../../components/PlayerCardModal";
@@ -41,6 +42,7 @@ import {
   fetchCurrentUser,
   updateUserProfile,
 } from "../../features/user/userSlice";
+import FeedbackModal from "./FeedbackModal";
 
 function SettingsScreen() {
   const dispatch = useDispatch();
@@ -68,6 +70,7 @@ function SettingsScreen() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteUsername, setDeleteUsername] = useState("");
   const [deleteSuccessMessage, setDeleteSuccessMessage] = useState("");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     if (token && !user) {
@@ -236,6 +239,13 @@ function SettingsScreen() {
                   <HistoryIcon />
                 </ListItemIcon>
                 <ListItemText primary="Clear history" />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton onClick={() => setFeedbackOpen(true)}>
+                <ListItemIcon>
+                  <FeedbackIcon />
+                </ListItemIcon>
+                <ListItemText primary="Send feedback" />
               </ListItemButton>
               <Divider component="li" />
               <ListItemButton onClick={handleLogout} sx={{ color: "error.main" }}>
@@ -422,6 +432,11 @@ function SettingsScreen() {
       </Dialog>
 
       {showCard && <PlayerCardModal token={token} onClose={() => setShowCard(false)} />}
+      <FeedbackModal
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        token={token}
+      />
     </Container>
   );
 }
