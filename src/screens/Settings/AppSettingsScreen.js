@@ -1,3 +1,5 @@
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import Container from "@mui/material/Container";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -8,9 +10,41 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import Switch from "@mui/material/Switch";
-import FormControlLabel from "@mui/material/FormControlLabel";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import { setThemeMode, toggleThemeMode } from "../../features/preferences/preferencesSlice";
+import { clearAuth } from "../../features/auth/authSlice";
+import { clearUser, deleteCurrentUser } from "../../features/user/userSlice";
 
 function AppSettingsScreen() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { themeMode } = useSelector((state) => state.preferences);
+  const { deleteLoading, deleteError } = useSelector((state) => state.user);
+
+  const handleToggleTheme = () => {
+    dispatch(toggleThemeMode());
+  };
+
+  const handleResetTheme = () => {
+    dispatch(setThemeMode("light"));
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Delete your account permanently? This cannot be undone."
+    );
+    if (!confirmed) return;
+
+    const result = await dispatch(deleteCurrentUser());
+    if (deleteCurrentUser.fulfilled.match(result)) {
+      dispatch(clearAuth());
+      dispatch(clearUser());
+      navigate("/login", { replace: true });
+    }
+  };
+
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
       <Stack spacing={3}>
@@ -29,17 +63,47 @@ function AppSettingsScreen() {
                   <ListItemText primary="Notifications" secondary="Match updates and reminders" />
                 </ListItem>
                 <Divider component="li" />
-                <ListItem disableGutters secondaryAction={<Switch edge="end" />}> 
-                  <ListItemText primary="Dark mode" secondary="Use system theme" />
-                </ListItem>
-                <Divider component="li" />
-                <ListItem disableGutters secondaryAction={<Switch edge="end" />}> 
-                  <ListItemText primary="Location access" secondary="Allow courts nearby" />
+                <ListItem
+                  disableGutters
+                  secondaryAction={<Switch edge="end" checked={themeMode === "dark"} onChange={handleToggleTheme} />}
+                >
+                  <ListItemText
+                    primary="Dark mode"
+                    secondary={themeMode === "dark" ? "On" : "Off"}
+                  />
                 </ListItem>
               </List>
               <Divider />
-              <FormControlLabel control={<Switch />} label="Email summaries" />
-              <FormControlLabel control={<Switch defaultChecked />} label="Tips & tutorials" />
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Appearance
+                </Typography>
+                <Stack direction="row" spacing={1} mt={1}>
+                  <Button size="small" variant="outlined" onClick={handleToggleTheme}>
+                    Toggle
+                  </Button>
+                  <Button size="small" onClick={handleResetTheme}>
+                    Reset to light
+                  </Button>
+                </Stack>
+              </Box>
+              <Divider />
+              <Stack spacing={1}>
+                {deleteError && (
+                  <Typography color="error" variant="body2">
+                    {deleteError}
+                  </Typography>
+                )}
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteForeverIcon />}
+                  onClick={handleDeleteAccount}
+                  disabled={deleteLoading}
+                >
+                  {deleteLoading ? "Deleting..." : "Delete Account"}
+                </Button>
+              </Stack>
             </Stack>
           </CardContent>
         </Card>
