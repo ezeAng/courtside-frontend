@@ -151,7 +151,8 @@ function InvitePlayerModal({ open, onClose, onInviteCreated }) {
       setSearchError(null);
       try {
         const data = await searchUsersAutocomplete(query.trim(), token);
-        const filteredResults = (data || []).filter((user) => user?.auth_id !== currentUser?.auth_id);
+        const results = Array.isArray(data) ? data : [];
+        const filteredResults = results.filter((user) => user?.auth_id !== currentUser?.auth_id);
         const uniqueResults = [];
         const seen = new Set();
 
@@ -186,7 +187,8 @@ function InvitePlayerModal({ open, onClose, onInviteCreated }) {
       return response?.profile || response?.user || response;
     } catch (err) {
       const fallbackResults = await searchUsersAutocomplete(username, token);
-      const bestMatch = (fallbackResults || []).find(
+      const normalizedFallback = Array.isArray(fallbackResults) ? fallbackResults : [];
+      const bestMatch = normalizedFallback.find(
         (entry) =>
           entry.username === username ||
           entry.display_name === username ||
@@ -194,7 +196,7 @@ function InvitePlayerModal({ open, onClose, onInviteCreated }) {
       );
 
       if (bestMatch) return bestMatch;
-      if (fallbackResults?.length) return fallbackResults[0];
+      if (normalizedFallback.length) return normalizedFallback[0];
       throw err;
     }
   };
