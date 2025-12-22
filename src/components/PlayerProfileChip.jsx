@@ -64,16 +64,19 @@ export default function PlayerProfileChip({ player, chipProps = {} }) {
       const fallbackResults = await searchUsersAutocomplete(usernameToFetch, token).catch(
         () => []
       );
+      const normalizedFallback = Array.isArray(fallbackResults)
+        ? fallbackResults
+        : [];
 
-      if (fallbackResults?.length) {
-        const bestMatch = fallbackResults.find(
+      if (normalizedFallback.length) {
+        const bestMatch = normalizedFallback.find(
           (entry) =>
             entry.username === usernameToFetch ||
             entry.display_name === usernameToFetch ||
             entry.name === usernameToFetch
         );
 
-        return bestMatch || fallbackResults[0];
+        return bestMatch || normalizedFallback[0];
       }
 
       throw err;

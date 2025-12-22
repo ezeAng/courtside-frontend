@@ -77,7 +77,14 @@ export async function searchUsersAutocomplete(query, token) {
       headers: withAuth(token),
     }
   );
-  return handleResponse(response);
+  const payload = await handleResponse(response);
+  const results =
+    payload?.results ||
+    payload?.users ||
+    payload?.data ||
+    payload;
+
+  return Array.isArray(results) ? results : [];
 }
 
 export async function getUserProfile(username, token) {
