@@ -1,23 +1,23 @@
 export const onboardingSlides = [
   {
-    key: "identity",
-    title: "Your game, finally tracked properly",
+    key: "bragging",
+    title: "Turn your games into bragging rights",
     description:
-      "Log matches, track your progress, and see how your level evolves over time — all in one place.",
+      "Log matches, track scores, and build a player profile you can actually show off!",
     image: "/assets/onboarding/player-card.svg",
   },
   {
-    key: "progress",
-    title: "See real progress, not guesses",
+    key: "leaderboard",
+    title: "Record games. Watch the leaderboard move.",
     description:
-      "Every match updates your rating and stats, so you always know where you stand and what to improve.",
-    image: "/assets/onboarding/progress-chart.svg",
+      "Play with friends, log your matches, and see rankings update after every game.",
+    image: "/assets/onboarding/leaderboard-shift.svg",
   },
   {
-    key: "social",
-    title: "Play with context, not in isolation",
+    key: "competition",
+    title: "Compete, climb, and join the action",
     description:
-      "Compare stats, invite friends, and see how you stack up — casually or competitively.",
-    image: "/assets/onboarding/social-compare.svg",
+      "Track stats, follow the leaderboard, and jump into casual leagues or tournaments!",
+    image: "/assets/onboarding/leagues-competition.svg",
   },
 ];
