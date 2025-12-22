@@ -2,13 +2,7 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
-export type OnboardingSlideProps = {
-  title: string;
-  description: string;
-  image: string;
-};
-
-function OnboardingSlide({ title, description, image }: OnboardingSlideProps) {
+function OnboardingSlide({ title, description, image }) {
   return (
     <Stack spacing={2.5} alignItems="center" textAlign="center" sx={{ height: "100%" }}>
       <Box

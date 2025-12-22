@@ -1,11 +1,4 @@
-export type OnboardingSlideContent = {
-  key: string;
-  title: string;
-  description: string;
-  image: string;
-};
-
-export const onboardingSlides: OnboardingSlideContent[] = [
+export const onboardingSlides = [
   {
     key: "identity",
     title: "Your game, finally tracked properly",

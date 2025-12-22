@@ -1,4 +1,3 @@
-import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -13,14 +12,9 @@ import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRound
 import OnboardingSlide from "./OnboardingSlide";
 import { onboardingSlides } from "./onboardingContent";
 
-export type OnboardingModalProps = {
-  open: boolean;
-  onDismiss: () => void;
-};
-
-function OnboardingModal({ open, onDismiss }: OnboardingModalProps) {
+function OnboardingModal({ open, onDismiss }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartX, setTouchStartX] = useState(null);
 
   const slideCount = useMemo(() => onboardingSlides.length, []);
 
@@ -48,12 +42,12 @@ function OnboardingModal({ open, onDismiss }: OnboardingModalProps) {
     setActiveIndex((prev) => Math.max(prev - 1, 0));
   }, []);
 
-  const handleTouchStart = useCallback((event: React.TouchEvent) => {
+  const handleTouchStart = useCallback((event) => {
     setTouchStartX(event.changedTouches[0]?.clientX ?? null);
   }, []);
 
   const handleTouchEnd = useCallback(
-    (event: React.TouchEvent) => {
+    (event) => {
       if (touchStartX === null) return;
       const deltaX = event.changedTouches[0]?.clientX - touchStartX;
       const swipeThreshold = 48;
