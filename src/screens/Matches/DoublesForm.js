@@ -106,7 +106,7 @@ function DoublesForm({ onRecorded, onClose }) {
         return;
       }
 
-      await dispatch(
+      const recordedMatch = await dispatch(
         recordMatch({
           match_type: "doubles",
           players_team_A: [userId, partner.auth_id || partner.id],
@@ -115,7 +115,7 @@ function DoublesForm({ onRecorded, onClose }) {
           winner_team: winnerToSubmit,
         })
       ).unwrap();
-      onRecorded?.();
+      onRecorded?.(recordedMatch);
       onClose?.();
     } catch (err) {
       setError(err.message || "Failed to record match");
