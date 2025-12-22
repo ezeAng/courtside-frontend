@@ -15,6 +15,7 @@ import {
   Paper,
   Skeleton,
   Stack,
+  Snackbar,
   Tab,
   Tabs,
   TextField,
@@ -380,8 +381,18 @@ function InvitesScreen() {
   const [badgeCounts, setBadgeCounts] = useState({ pending: 0, invites: 0 });
   const [suggestionsModalOpen, setSuggestionsModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
   const activeInvites = useMemo(() => invites || [], [invites]);
+
+  const showToast = (message, severity = "success") => {
+    setToast({ open: true, message, severity });
+  };
+
+  const handleToastClose = (_, reason) => {
+    if (reason === "clickaway") return;
+    setToast((prev) => ({ ...prev, open: false }));
+  };
 
   const loadInvites = async (type) => {
     if (!token) return;
@@ -417,8 +428,9 @@ function InvitesScreen() {
       await acceptInvite(token, matchId);
       await loadInvites(tab);
       refreshBadges();
+      showToast("Invite accepted. Your matches are up to date.");
     } catch (err) {
-      alert(err.message);
+      showToast(err.message || "Failed to accept invite", "error");
     }
   };
 
@@ -429,8 +441,9 @@ function InvitesScreen() {
       await cancelInvite(token, matchId, "declined");
       await loadInvites(tab);
       refreshBadges();
+      showToast("Invite declined.", "info");
     } catch (err) {
-      alert(err.message);
+      showToast(err.message || "Failed to decline invite", "error");
     }
   };
 
@@ -441,8 +454,9 @@ function InvitesScreen() {
       await cancelInvite(token, matchId, "cancelled");
       await loadInvites(tab);
       refreshBadges();
+      showToast("Invite cancelled.", "info");
     } catch (err) {
-      alert(err.message);
+      showToast(err.message || "Failed to cancel invite", "error");
     }
   };
 
@@ -542,6 +556,7 @@ function InvitesScreen() {
           setTab("sent");
           loadInvites("sent");
           refreshBadges();
+          showToast("Invite sent successfully.", "success");
         }}
       />
       <InvitePlayerModal
@@ -551,8 +566,25 @@ function InvitesScreen() {
           setTab("sent");
           loadInvites("sent");
           refreshBadges();
+          showToast("Invite sent successfully.", "success");
         }}
       />
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={3800}
+        onClose={handleToastClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleToastClose}
+          severity={toast.severity}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

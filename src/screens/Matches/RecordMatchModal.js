@@ -24,8 +24,8 @@ function RecordMatchModal({ open, onClose, onRecorded }) {
     onClose?.();
   };
 
-  const handleRecorded = () => {
-    onRecorded?.();
+  const handleRecorded = (matchData) => {
+    onRecorded?.(matchData);
     setTab(0);
   };
 

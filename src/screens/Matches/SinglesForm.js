@@ -89,7 +89,7 @@ function SinglesForm({ onRecorded, onClose }) {
       const formattedScore = formatSetsScore(sets);
       const winnerToSubmit = winnerTeam === "draw" ? null : winnerTeam;
 
-      await dispatch(
+      const recordedMatch = await dispatch(
         recordMatch({
           match_type: "singles",
           players_team_A: [userId],
@@ -98,7 +98,7 @@ function SinglesForm({ onRecorded, onClose }) {
           winner_team: winnerToSubmit,
         })
       ).unwrap();
-      onRecorded?.();
+      onRecorded?.(recordedMatch);
       onClose?.();
     } catch (err) {
       setError(err.message || "Failed to record match");

@@ -18,6 +18,7 @@ import { alpha } from "@mui/material/styles";
 import InboxIcon from "@mui/icons-material/Inbox";
 import { useNavigate } from "react-router-dom";
 import RecordMatchModal from "./RecordMatchModal";
+import MatchSuccessModal from "./MatchSuccessModal";
 import { fetchMatchHistory } from "../../features/matches/matchSlice";
 import { getPendingMatches } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
@@ -116,6 +117,8 @@ function MatchHistoryScreen() {
   const [openModal, setOpenModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [recordedMatch, setRecordedMatch] = useState(null);
   useEffect(() => {
     if (userId) {
       dispatch(fetchMatchHistory(userId));
@@ -138,11 +141,18 @@ function MatchHistoryScreen() {
     loadPendingCount();
   }, []);
 
-  const handleRecorded = () => {
+  const handleRecorded = (matchData) => {
     setOpenModal(false);
+    setRecordedMatch(matchData?.match || matchData || null);
+    setShowSuccessModal(true);
     if (userId) {
       dispatch(fetchMatchHistory(userId));
     }
+  };
+
+  const handleCloseSuccess = () => {
+    setShowSuccessModal(false);
+    setRecordedMatch(null);
   };
 
   const handleMatchClick = (match) => {
@@ -320,6 +330,11 @@ function MatchHistoryScreen() {
         open={openModal}
         onClose={() => setOpenModal(false)}
         onRecorded={handleRecorded}
+      />
+      <MatchSuccessModal
+        open={showSuccessModal}
+        match={recordedMatch}
+        onClose={handleCloseSuccess}
       />
       {renderMatchDetail()}
     </Container>
