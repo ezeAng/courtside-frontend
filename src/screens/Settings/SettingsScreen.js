@@ -11,7 +11,6 @@ import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
-import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -21,18 +20,13 @@ import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import CloudDownloadIcon from "@mui/icons-material/CloudDownload";
 import LanguageIcon from "@mui/icons-material/Language";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import SubscriptionsIcon from "@mui/icons-material/Subscriptions";
-import HistoryIcon from "@mui/icons-material/History";
 import LogoutIcon from "@mui/icons-material/Logout";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import SettingsIcon from "@mui/icons-material/Settings";
 import FeedbackIcon from "@mui/icons-material/Feedback";
 import { useNavigate } from "react-router-dom";
-import { AVATARS } from "../../constants/avatars";
 import PlayerCardModal from "../../components/PlayerCardModal";
 import ProfileAvatar from "../../components/ProfileAvatar";
 import { clearAuth } from "../../features/auth/authSlice";
@@ -51,7 +45,6 @@ function SettingsScreen() {
     user,
     updateLoading,
     updateError,
-    avatarError,
     deleteLoading,
     deleteError,
   } = useSelector((state) => state.user);
@@ -60,7 +53,6 @@ function SettingsScreen() {
 
   const [username, setUsername] = useState(user?.username || "");
   const [gender, setGender] = useState(user?.gender || "male");
-  const [avatar, setAvatar] = useState(user?.avatar ?? 0);
   const [region, setRegion] = useState(user?.region || "");
   const [address, setAddress] = useState(user?.address || "");
   const [bio, setBio] = useState(user?.bio || "");
@@ -82,14 +74,11 @@ function SettingsScreen() {
     if (user) {
       setUsername(user.username || "");
       setGender(user.gender || "male");
-      setAvatar(user.avatar ?? 0);
       setRegion(user.region || "");
       setAddress(user.address || "");
       setBio(user.bio || "");
     }
   }, [user]);
-
-  const selectedAvatar = useMemo(() => AVATARS[avatar] || "", [avatar]);
 
   const initials = useMemo(() => {
     if (user?.username) {
@@ -109,7 +98,6 @@ function SettingsScreen() {
     const payload = {
       username,
       gender,
-      avatar,
       region,
       address,
       bio,
@@ -201,20 +189,6 @@ function SettingsScreen() {
             <List disablePadding>
               <ListItemButton>
                 <ListItemIcon>
-                  <FavoriteBorderIcon />
-                </ListItemIcon>
-                <ListItemText primary="Favourites" secondary="Your saved matches" />
-              </ListItemButton>
-              <Divider component="li" />
-              <ListItemButton>
-                <ListItemIcon>
-                  <CloudDownloadIcon />
-                </ListItemIcon>
-                <ListItemText primary="Downloads" secondary="Offline data" />
-              </ListItemButton>
-              <Divider component="li" />
-              <ListItemButton>
-                <ListItemIcon>
                   <LanguageIcon />
                 </ListItemIcon>
                 <ListItemText primary="Language" secondary="English" />
@@ -225,20 +199,6 @@ function SettingsScreen() {
                   <LocationOnIcon />
                 </ListItemIcon>
                 <ListItemText primary="Location" secondary={region || "Not set"} />
-              </ListItemButton>
-              <Divider component="li" />
-              <ListItemButton>
-                <ListItemIcon>
-                  <SubscriptionsIcon />
-                </ListItemIcon>
-                <ListItemText primary="Subscription" secondary="Standard" />
-              </ListItemButton>
-              <Divider component="li" />
-              <ListItemButton>
-                <ListItemIcon>
-                  <HistoryIcon />
-                </ListItemIcon>
-                <ListItemText primary="Clear history" />
               </ListItemButton>
               <Divider component="li" />
               <ListItemButton onClick={() => setFeedbackOpen(true)}>
@@ -278,7 +238,6 @@ function SettingsScreen() {
         <DialogContent>
           <Stack spacing={3} component="form" onSubmit={handleSubmit} sx={{ pt: 1 }}>
             {updateError && <Alert severity="error">{updateError}</Alert>}
-            {avatarError && <Alert severity="error">{avatarError}</Alert>}
 
             <Stack spacing={1} alignItems="center" textAlign="center">
               <ProfileAvatar user={user} size={72} editable />
@@ -339,46 +298,6 @@ function SettingsScreen() {
               minRows={3}
               fullWidth
             />
-
-            <Stack spacing={1}>
-              <Typography variant="subtitle1" fontWeight={600}>
-                Choose an avatar
-              </Typography>
-              <Grid container spacing={2} columns={10}>
-                {AVATARS.map((icon, index) => (
-                  <Grid size={2} key={icon}>
-                    <Button
-                      variant={avatar === index ? "contained" : "outlined"}
-                      onClick={() => setAvatar(index)}
-                      sx={{
-                        width: "100%",
-                        minWidth: 0,
-                        p: 0,
-                        borderRadius: 2,
-                        overflow: "hidden",
-                        aspectRatio: "1 / 1",
-                        borderColor: avatar === index ? undefined : "divider",
-                        boxShadow: avatar === index ? 2 : "none",
-                      }}
-                      aria-label={`Select avatar ${index + 1}`}
-                    >
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: "100%",
-                          height: "100%",
-                          fontSize: 28,
-                        }}
-                      >
-                        {icon}
-                      </Box>
-                    </Button>
-                  </Grid>
-                ))}
-              </Grid>
-            </Stack>
 
             <Button
               type="submit"
