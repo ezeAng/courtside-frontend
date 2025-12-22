@@ -10,6 +10,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { useSelector } from "react-redux";
 import { buildTheme } from "./theme";
+import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
 function ThemedApp() {
   const themeMode = useSelector((state) => state.preferences.themeMode);
@@ -31,3 +32,15 @@ root.render(
 );
 
 reportWebVitals();
+
+serviceWorkerRegistration.register({
+  onUpdate: (registration) => {
+    console.info("Service worker update available.", registration);
+  },
+  onSuccess: (registration) => {
+    console.info("Service worker registered for offline use.", registration);
+  },
+  onError: (error) => {
+    console.error("Service worker registration failed.", error);
+  },
+});
