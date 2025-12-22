@@ -16,6 +16,7 @@ import MatchHistoryScreen from "./screens/Matches/MatchHistoryScreen";
 import MatchDetailScreen from "./screens/Matches/MatchDetailScreen";
 import PendingMatchesScreen from "./screens/Matches/PendingMatchesScreen";
 import InvitesScreen from "./screens/Matches/InvitesScreen";
+import CompetitionsScreen from "./screens/Competitions/CompetitionsScreen";
 import LeaderboardScreen from "./screens/Leaderboard/LeaderboardScreen";
 import SettingsScreen from "./screens/Settings/SettingsScreen";
 import AppSettingsScreen from "./screens/Settings/AppSettingsScreen";
@@ -73,6 +74,7 @@ function App() {
           <Route path="/matches" element={<MatchHistoryScreen />} />
           <Route path="/matches/pending" element={<PendingMatchesScreen />} />
           <Route path="/matches/invites" element={<InvitesScreen />} />
+          <Route path="/competitions" element={<CompetitionsScreen />} />
           <Route path="/matches/:match_id" element={<MatchDetailScreen />} />
           <Route path="/leaderboard" element={<LeaderboardScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />

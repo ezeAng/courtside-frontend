@@ -16,6 +16,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import InboxIcon from "@mui/icons-material/Inbox";
+import MarkEmailUnreadIcon from "@mui/icons-material/MarkEmailUnread";
 import { useNavigate } from "react-router-dom";
 import RecordMatchModal from "./RecordMatchModal";
 import MatchSuccessModal from "./MatchSuccessModal";
@@ -215,11 +216,17 @@ function MatchHistoryScreen() {
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
       <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1.5}>
           <Typography variant="h5" fontWeight={700}>
             Match History
           </Typography>
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" justifyContent="flex-end">
+            <IconButton onClick={() => navigate("/matches/invites")}>
+              <MarkEmailUnreadIcon />
+            </IconButton>
+            <Button variant="outlined" onClick={() => navigate("/matches/invites")}>
+              Invite Player
+            </Button>
             <IconButton onClick={() => navigate("/matches/pending")}> 
               <Badge
                 color="error"
