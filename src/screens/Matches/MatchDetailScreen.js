@@ -12,6 +12,7 @@ import { alpha } from "@mui/material/styles";
 import { fetchMatchDetail } from "../../features/matches/matchSlice";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { getDisciplineFromMatch, getEloForMode } from "../../utils/elo";
 
 const getOutcomeStyles = (theme, outcome) => {
   const isWinner = outcome === "winner";
@@ -49,7 +50,7 @@ const getOutcomeFromWinnerTeam = (winnerTeam, teamKey) => {
   return winnerTeam === teamKey ? "winner" : "loser";
 };
 
-function TeamCard({ title, players, outcome }) {
+function TeamCard({ title, players, outcome, discipline }) {
   const isWinner = outcome === "winner";
 
   return (
@@ -88,7 +89,9 @@ function TeamCard({ title, players, outcome }) {
                   variant: "outlined",
                 }}
               />
-              <Typography color="text.secondary">Elo: {player.elo}</Typography>
+              <Typography color="text.secondary">
+                Elo: {getEloForMode(player, discipline, { fallback: player.elo })}
+              </Typography>
             </Stack>
           ))}
         </Stack>
@@ -150,6 +153,7 @@ function MatchDetailScreen() {
     );
   }
 
+  const discipline = getDisciplineFromMatch(matchDetail);
   const winnerTeam = matchDetail.winner_team;
   const isDraw = winnerTeam === "draw" || winnerTeam === null;
   const winnerLabel = isDraw
@@ -172,7 +176,7 @@ function MatchDetailScreen() {
           <CardContent>
             <Stack spacing={1}>
               <Typography variant="h6" fontWeight={700}>
-                {matchDetail.match_type === "doubles" ? "Doubles" : "Singles"}
+                {discipline === "doubles" ? "Doubles" : "Singles"}
               </Typography>
               <Typography color="text.secondary">Result: {winnerLabel}</Typography>
               <Typography>Score: {matchDetail.score}</Typography>
@@ -186,15 +190,17 @@ function MatchDetailScreen() {
         </Card>
 
         <TeamCard
-          title="Team A"
-          players={matchDetail.players_team_A}
-          outcome={teamAOutcome}
-        />
-        <TeamCard
-          title="Team B"
-          players={matchDetail.players_team_B}
-          outcome={teamBOutcome}
-        />
+        title="Team A"
+        players={matchDetail.players_team_A}
+        outcome={teamAOutcome}
+        discipline={discipline}
+      />
+      <TeamCard
+        title="Team B"
+        players={matchDetail.players_team_B}
+        outcome={teamBOutcome}
+        discipline={discipline}
+      />
       </Stack>
     </Container>
   );

@@ -25,13 +25,16 @@ import ManIcon from "@mui/icons-material/Man";
 import WomanIcon from "@mui/icons-material/Woman";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";
-import { setGender, fetchLeaderboard } from "../../features/leaderboard/leaderboardSlice";
+import { setGender, fetchLeaderboard, setDiscipline } from "../../features/leaderboard/leaderboardSlice";
 import { normalizeProfileImage } from "../../utils/profileImage";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import EloModeToggle from "../../components/EloModeToggle";
+import { getEloForMode, getEloLabelForMode } from "../../utils/elo";
 
 function LeaderboardScreen() {
   const dispatch = useDispatch();
   const { data, loading, error } = useSelector((state) => state.leaderboard);
+  const eloMode = useSelector((state) => state.ui.eloMode || "singles");
 
   const [category, setCategory] = useState("overall");
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -83,8 +86,14 @@ function LeaderboardScreen() {
   );
 
   useEffect(() => {
-    dispatch(fetchLeaderboard(activeCategory.gender));
-  }, [dispatch, activeCategory]);
+    dispatch(
+      fetchLeaderboard({
+        gender: activeCategory.gender,
+        discipline: eloMode,
+      })
+    );
+    dispatch(setDiscipline(eloMode));
+  }, [dispatch, activeCategory, eloMode]);
 
   const handleCategoryChange = (_event, newValue) => {
     if (!newValue) return;
@@ -105,6 +114,7 @@ function LeaderboardScreen() {
           <Typography variant="body2" color="text.secondary" textAlign="center">
             Explore the top players across singles and doubles leaderboards.
           </Typography>
+          <EloModeToggle label="Discipline" />
         </Stack>
 
         <Paper variant="outlined" sx={{ borderRadius: 2 }}>
@@ -167,16 +177,16 @@ function LeaderboardScreen() {
             <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
               <Table>
                 <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ width: 80, fontWeight: 700 }}>Rank</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Player</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>
-                      Elo Rating
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {[...Array(6)].map((_, idx) => (
+                <TableRow>
+                  <TableCell sx={{ width: 80, fontWeight: 700 }}>Rank</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Player</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 700 }}>
+                    {getEloLabelForMode(eloMode)}
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {[...Array(6)].map((_, idx) => (
                     <TableRow key={idx}>
                       <TableCell>
                         <Skeleton width={24} />
@@ -204,16 +214,16 @@ function LeaderboardScreen() {
           <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: 80, fontWeight: 700 }}>Rank</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Player</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>
-                    Elo Rating
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {data.map((entry, index) => (
+                  <TableRow>
+                    <TableCell sx={{ width: 80, fontWeight: 700 }}>Rank</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Player</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>
+                      {getEloLabelForMode(eloMode)}
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.map((entry, index) => (
                   <TableRow
                     key={entry.id || `${entry.username}-${index}`}
                     hover
@@ -245,7 +255,9 @@ function LeaderboardScreen() {
                       </Stack>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography fontWeight={700}>{entry.elo ?? "—"}</Typography>
+                      <Typography fontWeight={700}>
+                        {getEloForMode(entry, eloMode, { fallback: entry.elo }) ?? "—"}
+                      </Typography>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -298,7 +310,10 @@ function LeaderboardScreen() {
                   <Typography variant="body2" color="text.secondary">
                     Elo
                   </Typography>
-                  <Typography fontWeight={800}>{selectedPlayer.elo ?? "—"}</Typography>
+                  <Typography fontWeight={800}>
+                    {getEloForMode(selectedPlayer, eloMode, { fallback: selectedPlayer.elo }) ??
+                      "—"}
+                  </Typography>
                 </Box>
               </Stack>
             </Stack>

@@ -89,11 +89,15 @@ function SinglesForm({ onRecorded, onClose }) {
       const formattedScore = formatSetsScore(sets);
       const winnerToSubmit = winnerTeam === "draw" ? null : winnerTeam;
 
+      const teamAIds = [userId];
+      const teamBIds = [opponent.auth_id || opponent.id];
+
       const recordedMatch = await dispatch(
         recordMatch({
+          discipline: "singles",
           match_type: "singles",
-          players_team_A: [userId],
-          players_team_B: [opponent.auth_id || opponent.id],
+          team_a_auth_ids: teamAIds,
+          team_b_auth_ids: teamBIds,
           score: formattedScore,
           winner_team: winnerToSubmit,
         })

@@ -63,10 +63,15 @@ export async function deleteUser(token) {
   return handleResponse(response);
 }
 
-export async function getLeaderboard(gender, token) {
-  const response = await fetch(`${base}/api/leaderboard/${gender}`, {
-    headers: withAuth(token),
-  });
+export async function getLeaderboard(gender, token, discipline = "singles") {
+  const response = await fetch(
+    `${base}/api/leaderboard/${gender}?discipline=${encodeURIComponent(
+      discipline
+    )}`,
+    {
+      headers: withAuth(token),
+    }
+  );
   return handleResponse(response);
 }
 

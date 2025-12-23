@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Chart as ChartJS,
   LineElement,
@@ -20,8 +20,12 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 
 import { getEloSeries } from "../../services/statsService";
+import { setEloMode } from "../../features/ui/uiSlice";
+import { getEloLabelForMode } from "../../utils/elo";
 import "./EloStockChart.css";
 
 ChartJS.register(
@@ -44,6 +48,8 @@ const formatPercent = (v) =>
 
 function EloStockChart({ onRecordMatch }) {
   const token = useSelector((state) => state.auth.accessToken);
+  const eloMode = useSelector((state) => state.ui.eloMode || "singles");
+  const dispatch = useDispatch();
 
   const [range, setRange] = useState("1M");
   const [data, setData] = useState(null);
@@ -64,7 +70,7 @@ function EloStockChart({ onRecordMatch }) {
     setLoading(true);
     setError(null);
 
-    getEloSeries(range, token)
+    getEloSeries(range, token, eloMode)
       .then((res) => mounted && setData(res))
       .catch(() => mounted && setError("Failed to load Elo history"))
       .finally(() => mounted && setLoading(false));
@@ -72,7 +78,7 @@ function EloStockChart({ onRecordMatch }) {
     return () => {
       mounted = false;
     };
-  }, [range, token, reloadKey]);
+  }, [eloMode, range, token, reloadKey]);
 
   /* ---------------- Chart Data ---------------- */
   const chartData = useMemo(() => {
@@ -81,7 +87,7 @@ function EloStockChart({ onRecordMatch }) {
     return {
       datasets: [
         {
-          label: "Elo",
+          label: getEloLabelForMode(eloMode),
           data: data.points.map((p) => ({
             x: new Date(p.t),
             y: p.elo,
@@ -111,6 +117,8 @@ function EloStockChart({ onRecordMatch }) {
         tooltip: {
           callbacks: {
             label: (ctx) => `Elo: ${Math.round(ctx.parsed.y)}`,
+            title: (items) =>
+              `${getEloLabelForMode(eloMode)} • ${items[0]?.label || ""}`,
           },
         },
       },
@@ -131,7 +139,7 @@ function EloStockChart({ onRecordMatch }) {
         },
       },
     }),
-    [gridColor]
+    [eloMode, gridColor]
   );
 
   const summary = data?.summary;
@@ -143,10 +151,21 @@ function EloStockChart({ onRecordMatch }) {
     <Card variant="outlined">
       <CardContent>
         <Stack spacing={2}>
-          <Stack direction="row" justifyContent="space-between">
-            <Typography variant="h6" fontWeight={700}>
-              Elo History
-            </Typography>
+          <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1} alignItems={{ xs: "flex-start", sm: "center" }}>
+            <Stack spacing={0.5}>
+              <Typography variant="h6" fontWeight={700}>
+                {getEloLabelForMode(eloMode)} History
+              </Typography>
+              <ToggleButtonGroup
+                value={eloMode}
+                exclusive
+                size="small"
+                onChange={(_, value) => value && dispatch(setEloMode(value))}
+              >
+                <ToggleButton value="singles">Singles</ToggleButton>
+                <ToggleButton value="doubles">Doubles</ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
             <Box className="elo-range-selector">
               {RANGE_OPTIONS.map((opt) => (
                 <button
@@ -190,7 +209,7 @@ function EloStockChart({ onRecordMatch }) {
             <>
               <Stack direction="row" spacing={3} alignItems="baseline">
                 <Box>
-                  <Typography color="text.secondary">Current Elo</Typography>
+                  <Typography color="text.secondary">Current {getEloLabelForMode(eloMode)}</Typography>
                   <Typography variant="h4" fontWeight={700}>
                     {Math.round(summary?.endElo ?? "--")}
                   </Typography>

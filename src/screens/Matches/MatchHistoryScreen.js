@@ -24,6 +24,7 @@ import { getPendingMatches } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { getDisciplineFromMatch, getEloForMode } from "../../utils/elo";
 
 const getOutcomeFromWinnerTeam = (winnerTeam, teamKey) => {
   if (winnerTeam === "draw" || winnerTeam === null) return "draw";
@@ -61,7 +62,7 @@ const getOutcomeStyles = (theme, outcome) => {
   };
 };
 
-function TeamCard({ title, players, outcome }) {
+function TeamCard({ title, players, outcome, discipline }) {
   const isWinner = outcome === "winner";
 
   return (
@@ -101,7 +102,9 @@ function TeamCard({ title, players, outcome }) {
             }}
           />
           {player.elo !== undefined && (
-            <Typography color="text.secondary">Elo: {player.elo}</Typography>
+            <Typography color="text.secondary">
+              Elo: {getEloForMode(player, discipline, { fallback: player.elo })}
+            </Typography>
           )}
         </Stack>
       ))}
@@ -169,6 +172,7 @@ function MatchHistoryScreen() {
   const renderMatchDetail = () => {
     if (!selectedMatch) return null;
 
+    const discipline = getDisciplineFromMatch(selectedMatch);
     const teamAPlayers = getTeamPlayers(selectedMatch, "team_A");
     const teamBPlayers = getTeamPlayers(selectedMatch, "team_B");
     const winnerTeam = selectedMatch.winner_team;
@@ -204,8 +208,18 @@ function MatchHistoryScreen() {
               </Typography>
             </Stack>
 
-            <TeamCard title="Team A" players={teamAPlayers} outcome={teamAOutcome} />
-            <TeamCard title="Team B" players={teamBPlayers} outcome={teamBOutcome} />
+            <TeamCard
+              title="Team A"
+              players={teamAPlayers}
+              outcome={teamAOutcome}
+              discipline={discipline}
+            />
+            <TeamCard
+              title="Team B"
+              players={teamBPlayers}
+              outcome={teamBOutcome}
+              discipline={discipline}
+            />
           </Stack>
         </DialogContent>
       </Dialog>
@@ -254,6 +268,7 @@ function MatchHistoryScreen() {
         ) : matches?.length ? (
           <List>
             {matches.map((match) => {
+              const discipline = getDisciplineFromMatch(match);
               const winnerTeam = match.winner_team;
               const teamAOutcome = getOutcomeFromWinnerTeam(winnerTeam, "A");
               const teamBOutcome = getOutcomeFromWinnerTeam(winnerTeam, "B");
@@ -265,7 +280,7 @@ function MatchHistoryScreen() {
                   onClick={() => handleMatchClick(match)}
                 >
                   <ListItemText
-                    primary={`${match.match_type === "doubles" ? "Doubles" : "Singles"} • ${(() => {
+                    primary={`${discipline === "doubles" ? "Doubles" : "Singles"} • ${(() => {
                       const wt = match.winner_team;
                       if (wt === "draw" || wt === null) return "Draw";
                       if (wt) return `Winner: Team ${wt}`;
