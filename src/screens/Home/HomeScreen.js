@@ -9,6 +9,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { alpha, useTheme } from "@mui/material/styles";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +25,7 @@ import { getEloForMode, getEloLabelForMode } from "../../utils/elo";
 function HomeScreen() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const theme = useTheme();
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.auth.accessToken);
   const eloMode = useSelector((state) => state.ui.eloMode || "singles");
@@ -158,7 +160,7 @@ function HomeScreen() {
           <LoadingSpinner message="Refreshing your Courtside insights..." inline />
         )}
         {/* FULL-WIDTH HERO */}
-        <Box sx={{ position: "relative", width: "100vw", left: "-5%", right: "0%" }}>
+        <Box sx={{ position: "relative" }}>
           <Box
             sx={{
               height: "40vh",
@@ -173,6 +175,8 @@ function HomeScreen() {
               alignItems: "flex-end",
               px: { xs: 2.5, sm: 4 },
               pb: 10,
+              borderRadius: { xs: theme.shape.borderRadius, sm: theme.shape.borderRadius * 1.25 },
+              overflow: "hidden",
             }}
           >
             {/* Bottom fade gradient */}
@@ -181,7 +185,12 @@ function HomeScreen() {
                 position: "absolute",
                 inset: 0,
                 background:
-                  "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.25) 60%, rgba(255,255,255,1) 100%)",
+                  `linear-gradient(to bottom, ${alpha(
+                    theme.palette.common.black,
+                    0.1
+                  )} 0%, ${alpha(theme.palette.common.black, 0.35)} 60%, ${
+                    theme.palette.background.paper
+                  } 100%)`,
               }}
             />
 
@@ -197,10 +206,10 @@ function HomeScreen() {
                   user={user}
                   size={96}
                   sx={{
-                    bgcolor: "#fff",
+                    bgcolor: theme.palette.background.paper,
                     color: "text.primary",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-                    border: "2px solid rgba(255,255,255,0.9)",
+                    boxShadow: theme.custom?.colors?.shadows?.sm,
+                    border: `2px solid ${alpha(theme.palette.common.white, 0.85)}`,
                   }}
                 />
               ) : (
@@ -210,10 +219,10 @@ function HomeScreen() {
               <Box>
                 {user ? (
                   <>
-                    <Typography variant="h5" fontWeight={800} color="#fff">
+                    <Typography variant="h5" fontWeight={800} color={alpha(theme.palette.common.white, 0.94)}>
                       {user?.username || "Player"}
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9, color: "#fff" }}>
+                    <Typography variant="body2" sx={{ opacity: 0.9, color: alpha(theme.palette.common.white, 0.92) }}>
                       Badminton
                     </Typography>
                   </>
@@ -244,9 +253,9 @@ function HomeScreen() {
                 sx={{
                   margin: "auto",
                   width: "30%",
-                  borderRadius: 1,
+                  borderRadius: theme.shape.borderRadius,
                   textAlign: "center",
-                  boxShadow: "0 12px 28px rgba(0,0,0,0.12)",
+                  boxShadow: theme.custom?.colors?.shadows?.sm,
                 }}
               >
                 <CardContent sx={{ py: 2 }}>

@@ -5,6 +5,8 @@ import Stack from "@mui/material/Stack";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Typography from "@mui/material/Typography";
+import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
+import EmptyState from "../../components/EmptyState";
 
 const tabOptions = [
   { label: "Tournaments", value: "tournaments", emoji: "🏆" },
@@ -12,20 +14,17 @@ const tabOptions = [
 ];
 
 function ComingSoon({ emoji }) {
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 3,
-        borderRadius: 3,
-        textAlign: "center",
-      }}
-    >
-      <Typography variant="h6" fontWeight={700}>
-        Coming soon, stay tuned {emoji}
-      </Typography>
-    </Paper>
-  );
+  return <EmptyState
+    title="Competition hub coming soon"
+    description="Stay tuned for tournaments and leagues tailored to your discipline. We’ll notify you when sign-ups open."
+    icon={<EmojiEventsOutlinedIcon />}
+    actionLabel="Back to Home"
+    onAction={() => window.history.back()}
+  >
+    <Typography variant="caption" color="text.secondary">
+      {emoji} We’re polishing the brackets.
+    </Typography>
+  </EmptyState>;
 }
 
 export default function CompetitionsScreen() {
