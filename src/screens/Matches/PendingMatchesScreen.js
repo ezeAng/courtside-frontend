@@ -16,6 +16,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
+import EmptyState from "../../components/EmptyState";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getDisciplineFromMatch, getEloDeltaForMode, getEloForMode } from "../../utils/elo";
 
@@ -118,9 +119,10 @@ export default function PendingMatchesScreen() {
         Matches You Need To Confirm
       </Typography>
       {incoming.length === 0 ? (
-        <Typography color="text.secondary">
-          No matches waiting for your confirmation.
-        </Typography>
+        <EmptyState
+          title="Nothing to confirm"
+          description="You’ll see challenges that need your attention here. Record a match or wait for opponents to submit results."
+        />
       ) : (
         incoming.map((m) => (
           <Paper
@@ -171,9 +173,10 @@ export default function PendingMatchesScreen() {
         Matches You Submitted
       </Typography>
       {outgoing.length === 0 ? (
-        <Typography color="text.secondary">
-          No pending matches you have submitted.
-        </Typography>
+        <EmptyState
+          title="No pending submissions"
+          description="Submit a match to see opponents confirm results. Keep competing to build your streak."
+        />
       ) : (
         outgoing.map((m) => (
           <Paper

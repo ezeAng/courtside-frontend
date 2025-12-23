@@ -6,6 +6,7 @@ import Modal from "@mui/material/Modal";
 import Slide from "@mui/material/Slide";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
@@ -69,7 +70,9 @@ function OnboardingModal({ open, onDismiss }) {
       keepMounted
       slotProps={{
         backdrop: {
-          sx: { backgroundColor: "rgba(0, 0, 0, 0.4)" },
+          sx: (theme) => ({
+            backgroundColor: theme.custom?.colors?.overlay?.strong || "rgba(0, 0, 0, 0.4)",
+          }),
           timeout: 250,
         },
       }}
@@ -87,9 +90,9 @@ function OnboardingModal({ open, onDismiss }) {
             right: 0,
             height: { xs: "78vh", sm: "74vh" },
             bgcolor: "background.paper",
-            borderTopLeftRadius: 3,
-            borderTopRightRadius: 3,
-            boxShadow: "0px -8px 32px rgba(0,0,0,0.18)",
+            borderTopLeftRadius: (theme) => theme.shape.borderRadius * 1.25,
+            borderTopRightRadius: (theme) => theme.shape.borderRadius * 1.25,
+            boxShadow: (theme) => theme.custom?.colors?.shadows?.md || theme.shadows[8],
             p: { xs: 3, sm: 4 },
             display: "flex",
             flexDirection: "column",
@@ -115,6 +118,8 @@ function OnboardingModal({ open, onDismiss }) {
             </Stack>
           </Stack>
 
+          <Divider />
+
           <Box id="onboarding-modal-description" sx={{ flexGrow: 1, overflow: "hidden" }}>
             <OnboardingSlide {...onboardingSlides[activeIndex]} />
           </Box>
@@ -137,7 +142,8 @@ function OnboardingModal({ open, onDismiss }) {
                     height: 10,
                     minWidth: 10,
                     borderRadius: 999,
-                    bgcolor: index === activeIndex ? "primary.main" : "grey.300",
+                    bgcolor: (theme) =>
+                      index === activeIndex ? theme.palette.primary.main : theme.palette.divider,
                     width: index === activeIndex ? 28 : 10,
                     transition: "all 200ms ease",
                   }}

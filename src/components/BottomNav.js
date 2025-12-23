@@ -8,6 +8,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import MilitaryTechIcon from "@mui/icons-material/MilitaryTech";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTheme } from "@mui/material/styles";
 
 const navItems = [
   { label: "Home", value: "/home", icon: <HomeIcon /> },
@@ -20,6 +21,7 @@ const navItems = [
 function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const currentValue = useMemo(() => {
     const match = [...navItems]
@@ -30,13 +32,45 @@ function BottomNav() {
 
   return (
     <Paper
-      sx={{ position: "fixed", bottom: 0, left: 0, right: 0, borderTop: "1px solid rgba(255,255,255,0.1)" }}
+      sx={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        borderTop: `1px solid ${theme.palette.divider}`,
+        backgroundColor: theme.palette.background.paper,
+        boxShadow: theme.custom?.colors?.shadows?.sm,
+      }}
       elevation={3}
     >
       <BottomNavigation
         value={currentValue}
         onChange={(event, newValue) => navigate(newValue)}
         showLabels
+        sx={{
+          "& .MuiBottomNavigationAction-root": {
+            color: theme.palette.text.secondary,
+            fontWeight: 600,
+            paddingTop: theme.spacing(1),
+            paddingBottom: theme.spacing(1),
+            minWidth: 64,
+            gap: theme.spacing(0.5),
+          },
+          "& .MuiBottomNavigationAction-root .MuiSvgIcon-root": {
+            fontSize: "24px",
+          },
+          "& .Mui-selected": {
+            color: theme.palette.primary.main,
+            fontWeight: 700,
+          },
+          "& .Mui-selected .MuiSvgIcon-root": {
+            color: theme.palette.primary.main,
+          },
+          "& .MuiBottomNavigationAction-label": {
+            fontSize: theme.typography.caption.fontSize,
+            lineHeight: theme.typography.caption.lineHeight,
+          },
+        }}
       >
         {navItems.map((item) => (
           <BottomNavigationAction

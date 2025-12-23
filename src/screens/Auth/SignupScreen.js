@@ -80,8 +80,11 @@ function SignupScreen() {
       {!hasSeenOnboarding && !accessToken && (
         <OnboardingModal open={showOnboarding} onDismiss={handleOnboardingDismiss} />
       )}
-      <Container maxWidth="sm" sx={{ display: "flex", alignItems: "center", minHeight: "100vh" }}>
-        <Card sx={{ width: "100%" }}>
+      <Container
+        maxWidth="sm"
+        sx={{ display: "flex", alignItems: "center", minHeight: "100vh", py: 6 }}
+      >
+        <Card sx={{ width: "100%" }} variant="outlined">
           <CardContent>
             <Stack spacing={3} component="form" onSubmit={handleSubmit}>
               <Stack spacing={1}>

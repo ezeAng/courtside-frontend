@@ -1,6 +1,6 @@
 .elo-range-selector {
   display: flex;
-  gap: 8px;
+  gap: var(--space-sm, 8px);
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -10,29 +10,30 @@
   height: 260px;
 }
 
-
 .elo-range-button {
-  padding: 6px 12px;
-  border-radius: 12px;
+  padding: var(--space-xs, 4px) var(--space-md, 12px);
+  border-radius: var(--radius-md, 12px);
   border: 1px solid var(--color-border-subtle, #e5e7eb);
   background: var(--color-neutral-surface, #f8fafc);
-  color: var(--color-text-primary, #1f2937);
+  color: var(--color-text-secondary, #1f2937);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  box-shadow: var(--shadow-sm, none);
 }
 
 .elo-range-button:hover {
   background: var(--color-accent-blue-surface, #e3f2fd);
   color: var(--color-accent-blue-dark, #0d47a1);
   border-color: var(--color-accent-blue-light, #90caf9);
+  transform: translateY(-1px);
 }
 
 .elo-range-button.active {
-  background: var(--color-accent-blue-surface, #e3f2fd);
-  color: var(--color-accent-blue-dark, #0d47a1);
-  border-color: var(--color-accent-blue-light, #90caf9);
-  box-shadow: inset 0 0 0 1px var(--color-accent-blue-light, #90caf9);
+  background: var(--color-action-primary, #0FB177);
+  color: var(--color-primary-contrast, #ffffff);
+  border-color: var(--color-action-primary, #0FB177);
+  box-shadow: var(--shadow-sm, 0 8px 18px rgba(15, 177, 119, 0.12));
 }
 
 .elo-chart-container {
@@ -41,9 +42,9 @@
 }
 
 .elo-empty-state {
-  padding: 16px;
+  padding: var(--space-lg, 16px);
   border: 1px dashed var(--color-neutral-dashed, #d1d5db);
-  border-radius: 12px;
+  border-radius: var(--radius-md, 12px);
   text-align: left;
   background: var(--color-neutral-raised, #f9fafb);
 }
