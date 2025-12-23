@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -11,20 +11,26 @@ import Typography from "@mui/material/Typography";
 import MenuItem from "@mui/material/MenuItem";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
-import { signup } from "../../features/auth/authSlice";
+import { signup, resendConfirmationEmail } from "../../features/auth/authSlice";
 import OnboardingModal from "../../components/OnboardingModal/OnboardingModal";
 
 function SignupScreen() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { accessToken, loading, error } = useSelector((state) => state.auth);
+  const {
+    accessToken,
+    loading,
+    error,
+    signupMessage,
+    resendMessage,
+    resendError,
+    resendLoading,
+  } = useSelector((state) => state.auth);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [gender, setGender] = useState("male");
   const [submitError, setSubmitError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
 
@@ -51,17 +57,21 @@ function SignupScreen() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitError(null);
-    setSuccessMessage(null);
-    const result = await dispatch(
-      signup({ email, password, username, gender })
-    );
-    if (signup.fulfilled.match(result)) {
-      setSuccessMessage("Signup successful. Please log in to continue.");
-      navigate("/login");
-    } else if (result.payload) {
-      setSubmitError(result.payload);
-    } else if (result.error) {
-      setSubmitError(result.error.message);
+    const result = await dispatch(signup({ email, password, username, gender }));
+    if (signup.rejected.match(result)) {
+      setSubmitError(result.payload || result.error?.message);
+    }
+  };
+
+  const handleResend = async () => {
+    setSubmitError(null);
+    if (!email) {
+      setSubmitError("Please enter your email to resend the confirmation link.");
+      return;
+    }
+    const result = await dispatch(resendConfirmationEmail({ email }));
+    if (resendConfirmationEmail.rejected.match(result)) {
+      setSubmitError(result.payload || result.error?.message);
     }
   };
 
@@ -86,8 +96,21 @@ function SignupScreen() {
               {(submitError || error) && (
                 <Alert severity="error">{submitError || error}</Alert>
               )}
-              {successMessage && (
-                <Alert severity="success">{successMessage}</Alert>
+              {signupMessage && (
+                <Stack spacing={1}>
+                  <Alert severity="success">{signupMessage}</Alert>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleResend}
+                    disabled={resendLoading || !email}
+                    startIcon={resendLoading ? <CircularProgress size={16} color="inherit" /> : null}
+                  >
+                    Resend confirmation email
+                  </Button>
+                  {resendMessage && <Alert severity="info">{resendMessage}</Alert>}
+                  {resendError && <Alert severity="error">{resendError}</Alert>}
+                </Stack>
               )}
 
               <TextField

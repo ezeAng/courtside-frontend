@@ -1,5 +1,9 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { login as loginRequest, signup as signupRequest } from "../../services/api";
+import {
+  login as loginRequest,
+  signup as signupRequest,
+  resendConfirmationEmail as resendConfirmationEmailRequest,
+} from "../../services/api";
 import {
   clearStoredToken,
   getStoredToken,
@@ -12,6 +16,10 @@ const initialState = {
   accessToken: tokenFromStorage || null,
   loading: false,
   error: null,
+  signupMessage: null,
+  resendMessage: null,
+  resendError: null,
+  resendLoading: false,
 };
 
 export const signup = createAsyncThunk(
@@ -19,7 +27,7 @@ export const signup = createAsyncThunk(
   async ({ email, password, username, gender }, { rejectWithValue }) => {
     try {
       const data = await signupRequest(email, password, username, gender);
-      return data.message;
+      return data;
     } catch (error) {
       return rejectWithValue(error.message || "Signup failed");
     }
@@ -43,6 +51,18 @@ export const login = createAsyncThunk(
   }
 );
 
+export const resendConfirmationEmail = createAsyncThunk(
+  "auth/resendConfirmationEmail",
+  async ({ email }, { rejectWithValue }) => {
+    try {
+      const data = await resendConfirmationEmailRequest(email);
+      return data?.message || "Confirmation email resent if the account exists.";
+    } catch (error) {
+      return rejectWithValue(error.message || "Resend confirmation failed");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -54,6 +74,10 @@ const authSlice = createSlice({
     clearAuth: (state) => {
       state.accessToken = null;
       state.error = null;
+      state.signupMessage = null;
+      state.resendMessage = null;
+      state.resendError = null;
+      state.resendLoading = false;
       clearStoredToken();
     },
   },
@@ -62,14 +86,23 @@ const authSlice = createSlice({
       .addCase(signup.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.signupMessage = null;
+        state.resendMessage = null;
+        state.resendError = null;
       })
       .addCase(signup.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
+        state.signupMessage =
+          action.payload?.message ||
+          "Signup successful. Please check your email to confirm your account.";
       })
       .addCase(signup.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Signup failed";
+        state.signupMessage = null;
+        state.resendMessage = null;
+        state.resendError = null;
       })
       .addCase(login.pending, (state) => {
         state.loading = true;
@@ -82,6 +115,21 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Login failed";
+        state.resendMessage = null;
+        state.resendError = null;
+      })
+      .addCase(resendConfirmationEmail.pending, (state) => {
+        state.resendLoading = true;
+        state.resendMessage = null;
+        state.resendError = null;
+      })
+      .addCase(resendConfirmationEmail.fulfilled, (state, action) => {
+        state.resendLoading = false;
+        state.resendMessage = action.payload;
+      })
+      .addCase(resendConfirmationEmail.rejected, (state, action) => {
+        state.resendLoading = false;
+        state.resendError = action.payload || "Resend confirmation failed";
       });
   },
 });

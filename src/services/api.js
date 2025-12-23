@@ -35,6 +35,15 @@ export async function login(email, password) {
   return handleResponse(response);
 }
 
+export async function resendConfirmationEmail(email) {
+  const response = await fetch(`${base}/api/auth/resend-confirmation`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  return handleResponse(response);
+}
+
 export async function getCurrentUser(token) {
   const response = await fetch(`${base}/api/users/me`, {
     headers: withAuth(token),
@@ -198,5 +207,6 @@ export default {
   getHomeStats,
   getPlayerCardData,
   uploadAvatar,
+  resendConfirmationEmail,
   deleteUser,
 };
