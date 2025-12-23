@@ -3,10 +3,19 @@ export function getDisciplineFromMatch(match) {
 }
 
 export function getEloLabelForMode(mode) {
-  return mode === "doubles" ? "Doubles Elo" : "Singles Elo";
+  if (mode === "overall") return "Overall Elo";
+  if (mode === "doubles") return "Doubles Elo";
+  return "Singles Elo";
 }
 
 export function getEloForMode(entity, mode, { fallback } = {}) {
+  const overallRatings = [
+    entity?.overall_elo,
+    entity?.overallElo,
+    entity?.overall?.elo,
+    entity?.overall_rating,
+  ];
+
   const singlesRatings = [
     entity?.elo,
     entity?.rating,
@@ -22,12 +31,21 @@ export function getEloForMode(entity, mode, { fallback } = {}) {
     entity?.elo_dbl,
   ];
 
-  const chosen =
-    mode === "doubles"
-      ? doublesRatings.find((v) => v !== undefined && v !== null) ??
-        singlesRatings.find((v) => v !== undefined && v !== null)
-      : singlesRatings.find((v) => v !== undefined && v !== null) ??
-        doublesRatings.find((v) => v !== undefined && v !== null);
+  let chosen;
+
+  if (mode === "overall") {
+    chosen = overallRatings.find((v) => v !== undefined && v !== null);
+  } else if (mode === "doubles") {
+    chosen = doublesRatings.find((v) => v !== undefined && v !== null);
+    if (chosen === undefined || chosen === null) {
+      chosen = singlesRatings.find((v) => v !== undefined && v !== null);
+    }
+  } else {
+    chosen = singlesRatings.find((v) => v !== undefined && v !== null);
+    if (chosen === undefined || chosen === null) {
+      chosen = doublesRatings.find((v) => v !== undefined && v !== null);
+    }
+  }
 
   if (chosen === undefined || chosen === null) {
     if (fallback !== undefined) return fallback;

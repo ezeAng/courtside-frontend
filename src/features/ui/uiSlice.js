@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  eloMode: "singles",
+  eloMode: "overall",
 };
 
 const uiSlice = createSlice({
@@ -9,7 +9,12 @@ const uiSlice = createSlice({
   initialState,
   reducers: {
     setEloMode: (state, action) => {
-      state.eloMode = action.payload === "doubles" ? "doubles" : "singles";
+      const mode = action.payload;
+      if (mode === "overall" || mode === "singles" || mode === "doubles") {
+        state.eloMode = mode;
+        return;
+      }
+      state.eloMode = "overall";
     },
   },
 });

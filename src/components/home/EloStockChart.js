@@ -23,7 +23,7 @@ import Typography from "@mui/material/Typography";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 
-import { getEloSeries } from "../../services/statsService";
+import { getEloSeries } from "../../services/eloApi";
 import { setEloMode } from "../../features/ui/uiSlice";
 import { getEloLabelForMode } from "../../utils/elo";
 import "./EloStockChart.css";
@@ -38,7 +38,7 @@ ChartJS.register(
   CategoryScale
 );
 
-const RANGE_OPTIONS = ["1D", "1W", "1M", "YTD", "ALL"];
+const RANGE_OPTIONS = ["1W", "1M", "3M", "6M", "1Y"];
 
 const formatChange = (v) =>
   v === null || v === undefined ? null : `${v > 0 ? "+" : ""}${Math.round(v)}`;
@@ -46,9 +46,9 @@ const formatChange = (v) =>
 const formatPercent = (v) =>
   v === null || v === undefined ? null : `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
 
-function EloStockChart({ onRecordMatch }) {
+function EloStockChart({ onRecordMatch, overallElo }) {
   const token = useSelector((state) => state.auth.accessToken);
-  const eloMode = useSelector((state) => state.ui.eloMode || "singles");
+  const eloMode = useSelector((state) => state.ui.eloMode || "overall");
   const dispatch = useDispatch();
 
   const [range, setRange] = useState("1M");
@@ -70,7 +70,7 @@ function EloStockChart({ onRecordMatch }) {
     setLoading(true);
     setError(null);
 
-    getEloSeries(range, token, eloMode)
+    getEloSeries(token, range, eloMode)
       .then((res) => mounted && setData(res))
       .catch(() => mounted && setError("Failed to load Elo history"))
       .finally(() => mounted && setLoading(false));
@@ -89,7 +89,7 @@ function EloStockChart({ onRecordMatch }) {
         {
           label: getEloLabelForMode(eloMode),
           data: data.points.map((p) => ({
-            x: new Date(p.t),
+            x: p.t,
             y: p.elo,
           })),
           borderColor: lineColor,
@@ -101,7 +101,7 @@ function EloStockChart({ onRecordMatch }) {
         },
       ],
     };
-  }, [data, lineColor, lineFill]);
+  }, [data, lineColor, lineFill, eloMode]);
 
   /* ---------------- Chart Options ---------------- */
   const chartOptions = useMemo(
@@ -136,6 +136,10 @@ function EloStockChart({ onRecordMatch }) {
           ticks: {
             callback: (v) => Math.round(v),
           },
+          title: {
+            display: true,
+            text: "Elo Rating",
+          },
         },
       },
     }),
@@ -145,6 +149,17 @@ function EloStockChart({ onRecordMatch }) {
   const summary = data?.summary;
   const isEmpty =
     data && (data.has_data === false || !data.points?.length);
+  const isOverallLocked =
+    eloMode === "overall" &&
+    !loading &&
+    (overallElo === null || overallElo === undefined);
+
+  const chartTitle =
+    eloMode === "overall"
+      ? "Overall Elo Progression"
+      : eloMode === "singles"
+      ? "Singles Elo Progression"
+      : "Doubles Elo Progression";
 
   /* ---------------- Render ---------------- */
   return (
@@ -154,7 +169,7 @@ function EloStockChart({ onRecordMatch }) {
           <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1} alignItems={{ xs: "flex-start", sm: "center" }}>
             <Stack spacing={0.5}>
               <Typography variant="h6" fontWeight={700}>
-                {getEloLabelForMode(eloMode)} History
+                {chartTitle}
               </Typography>
               <ToggleButtonGroup
                 value={eloMode}
@@ -162,6 +177,7 @@ function EloStockChart({ onRecordMatch }) {
                 size="small"
                 onChange={(_, value) => value && dispatch(setEloMode(value))}
               >
+                <ToggleButton value="overall">Overall</ToggleButton>
                 <ToggleButton value="singles">Singles</ToggleButton>
                 <ToggleButton value="doubles">Doubles</ToggleButton>
               </ToggleButtonGroup>
@@ -193,7 +209,15 @@ function EloStockChart({ onRecordMatch }) {
             <Typography color="text.secondary">Loading Elo…</Typography>
           )}
 
-          {isEmpty && !loading && (
+          {isOverallLocked && (
+            <Stack spacing={1}>
+              <Typography fontWeight={700}>
+                Play 5 matches to unlock overall Elo
+              </Typography>
+            </Stack>
+          )}
+
+          {isEmpty && !loading && !isOverallLocked && (
             <Stack spacing={1}>
               <Typography fontWeight={700}>No Elo history yet</Typography>
               <Typography color="text.secondary">
@@ -205,7 +229,7 @@ function EloStockChart({ onRecordMatch }) {
             </Stack>
           )}
 
-          {!isEmpty && chartData && (
+          {!isEmpty && chartData && !isOverallLocked && (
             <>
               <Stack direction="row" spacing={3} alignItems="baseline">
                 <Box>
@@ -214,7 +238,9 @@ function EloStockChart({ onRecordMatch }) {
                     {Math.round(summary?.endElo ?? "--")}
                   </Typography>
                 </Box>
-                {summary?.change !== null && (
+                {summary &&
+                  summary.change !== null &&
+                  summary.change !== undefined && (
                   <Box>
                     <Typography color="text.secondary">
                       Change ({range})
