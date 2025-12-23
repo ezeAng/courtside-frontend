@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
@@ -21,6 +22,7 @@ import { normalizeProfileImage } from "../../utils/profileImage";
 import Avatar from "@mui/material/Avatar";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getEloForMode, getEloLabelForMode } from "../../utils/elo";
+import { getOverallRank } from "../../services/statsApi";
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -32,6 +34,7 @@ function HomeScreen() {
   const [recentMatches, setRecentMatches] = useState([]);
   const [rivals, setRivals] = useState([]);
   const [stats, setStats] = useState(null);
+  const [overall, setOverall] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -40,16 +43,18 @@ function HomeScreen() {
       try {
         setLoading(true);
         setError(null);
-        const [recent, rivalsData, statsData] = await Promise.all([
+        const [recent, rivalsData, statsData, overallRank] = await Promise.all([
           getRecentActivity(token),
           getH2H(token),
           getHomeStats(token),
+          getOverallRank(token),
         ]);
         setRecentMatches(recent?.matches || []);
         setRivals(rivalsData?.rivals || []);
         setStats(statsData?.stats || null);
+        setOverall(overallRank || null);
       } catch (err) {
-        setError(err.message || "Failed to load activity");
+        setError("Unable to load stats. Pull to refresh.");
       } finally {
         setLoading(false);
       }
@@ -106,6 +111,10 @@ function HomeScreen() {
     navigate("/matches");
   };
 
+  const handleViewLeaderboard = () => {
+    navigate("/leaderboard");
+  };
+
   const totalMatches = useMemo(() => {
     if (!stats) return 0;
     return stats.total_matches || stats.totalMatches || 0;
@@ -125,17 +134,32 @@ function HomeScreen() {
     return Math.round(stats.win_rate_last_10 ?? 0);
   }, [stats]);
 
-  const heroStatsLoading = loading && !stats;
+  const heroStatsLoading = loading && (!stats || !overall);
 
   const topHeroStats = useMemo(
     () => [
-      {
-        label: "Rank",
-        value:
-          stats?.rank !== undefined && stats?.rank !== null
-            ? `#${stats.rank}`
-            : "--",
-      },
+      overall?.overall_elo !== null && overall?.overall_elo !== undefined
+        ? {
+            label: "Overall Elo",
+            value: (
+              <Stack spacing={0.25} alignItems="center">
+                <Typography variant="h5" fontWeight={800} lineHeight={1}>
+                  {overall.overall_elo}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Rank #{overall.overall_rank ?? "--"}
+                </Typography>
+              </Stack>
+            ),
+          }
+        : {
+            label: "Overall Elo",
+            value: (
+              <Typography variant="body2" color="text.secondary" textAlign="center">
+                Play 5 matches to unlock overall ranking
+              </Typography>
+            ),
+          },
       {
         label: getEloLabelForMode(eloMode),
         value: currentElo ?? "--",
@@ -158,6 +182,11 @@ function HomeScreen() {
       <Stack spacing={3}>
         {loading && (
           <LoadingSpinner message="Refreshing your Courtside insights..." inline />
+        )}
+        {error && !loading && (
+          <Typography color="error" variant="body2">
+            {error}
+          </Typography>
         )}
         {/* FULL-WIDTH HERO */}
         <Box sx={{ position: "relative" }}>
@@ -256,7 +285,9 @@ function HomeScreen() {
                   borderRadius: theme.shape.borderRadius,
                   textAlign: "center",
                   boxShadow: theme.custom?.colors?.shadows?.sm,
+                  cursor: item?.label === "Overall Elo" ? "pointer" : "default",
                 }}
+                onClick={item?.label === "Overall Elo" ? handleViewLeaderboard : undefined}
               >
                 <CardContent sx={{ py: 2 }}>
                   {heroStatsLoading ? (
@@ -265,7 +296,7 @@ function HomeScreen() {
                       <Skeleton variant="text" width="50%" />
                     </Stack>
                   ) : (
-                    <>
+                    <Stack spacing={1} alignItems="center">
                       <Typography
                         variant="caption"
                         color="text.secondary"
@@ -273,10 +304,14 @@ function HomeScreen() {
                       >
                         {item.label}
                       </Typography>
-                      <Typography variant="h5" fontWeight={800}>
-                        {item.value}
-                      </Typography>
-                    </>
+                      {typeof item.value === "string" || typeof item.value === "number" ? (
+                        <Typography variant="h5" fontWeight={800}>
+                          {item.value}
+                        </Typography>
+                      ) : (
+                        item.value
+                      )}
+                    </Stack>
                   )}
                 </CardContent>
               </Card>
@@ -284,6 +319,12 @@ function HomeScreen() {
           </Grid>
         </Container>
       </Box>
+
+        <Stack direction="row" justifyContent="flex-end">
+          <Button variant="outlined" size="small" onClick={handleViewLeaderboard}>
+            View Leaderboard
+          </Button>
+        </Stack>
 
 
         <Card variant="outlined" sx={{ height: "100%" }}>
@@ -386,6 +427,35 @@ function HomeScreen() {
                     <Chip label={tier.label} color={tier.color} size="small" />
                   )}
                 </Stack>
+
+                <Divider />
+                <Typography variant="subtitle2" fontWeight={700}>
+                  Mode breakdown
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography color="text.secondary" variant="body2">
+                      Singles
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {stats.singles_elo ?? "--"}
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      {stats.singles_matches_played ?? 0} matches played
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography color="text.secondary" variant="body2">
+                      Doubles
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {stats.doubles_elo ?? "--"}
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      {stats.doubles_matches_played ?? 0} matches played
+                    </Typography>
+                  </Grid>
+                </Grid>
               </Stack>
             )}
           </CardContent>
