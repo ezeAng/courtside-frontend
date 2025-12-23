@@ -19,7 +19,6 @@ import ProfileAvatar from "../../components/ProfileAvatar";
 import { normalizeProfileImage } from "../../utils/profileImage";
 import Avatar from "@mui/material/Avatar";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import EloModeToggle from "../../components/EloModeToggle";
 import { getEloForMode, getEloLabelForMode } from "../../utils/elo";
 
 function HomeScreen() {
@@ -155,12 +154,9 @@ function HomeScreen() {
       maxWidth="sm"
     >
       <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          {loading && (
-            <LoadingSpinner message="Refreshing your Courtside insights..." inline />
-          )}
-          <EloModeToggle hideLabel />
-        </Stack>
+        {loading && (
+          <LoadingSpinner message="Refreshing your Courtside insights..." inline />
+        )}
         {/* FULL-WIDTH HERO */}
         <Box sx={{ position: "relative", width: "100vw", left: "-5%", right: "0%" }}>
           <Box
