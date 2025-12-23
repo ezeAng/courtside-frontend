@@ -11,9 +11,8 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import Switch from "@mui/material/Switch";
 import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import { setThemeMode, toggleThemeMode } from "../../features/preferences/preferencesSlice";
+import { toggleThemeMode } from "../../features/preferences/preferencesSlice";
 import { clearAuth } from "../../features/auth/authSlice";
 import { clearUser, deleteCurrentUser } from "../../features/user/userSlice";
 
@@ -25,10 +24,6 @@ function AppSettingsScreen() {
 
   const handleToggleTheme = () => {
     dispatch(toggleThemeMode());
-  };
-
-  const handleResetTheme = () => {
-    dispatch(setThemeMode("light"));
   };
 
   const handleDeleteAccount = async () => {
@@ -73,20 +68,6 @@ function AppSettingsScreen() {
                   />
                 </ListItem>
               </List>
-              <Divider />
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Appearance
-                </Typography>
-                <Stack direction="row" spacing={1} mt={1}>
-                  <Button size="small" variant="outlined" onClick={handleToggleTheme}>
-                    Toggle
-                  </Button>
-                  <Button size="small" onClick={handleResetTheme}>
-                    Reset to light
-                  </Button>
-                </Stack>
-              </Box>
               <Divider />
               <Stack spacing={1}>
                 {deleteError && (
