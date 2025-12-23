@@ -18,7 +18,7 @@ import { motion } from "framer-motion";
 
 const confettiColors = ["#66bb6a", "#42a5f5", "#ffa726", "#ef5350", "#ab47bc"];
 
-function MatchSuccessModal({ open, onClose, match }) {
+function MatchSuccessModal({ open, onClose, match, onAddVideo }) {
   const confettiPieces = useMemo(
     () =>
       Array.from({ length: 22 }, (_, idx) => ({
@@ -136,6 +136,11 @@ function MatchSuccessModal({ open, onClose, match }) {
         </Stack>
       </DialogContent>
       <DialogActions sx={{ zIndex: 1, position: "relative", pb: 2, px: 3 }}>
+        {onAddVideo && (
+          <Button onClick={onAddVideo} fullWidth>
+            Add match video
+          </Button>
+        )}
         <Button variant="contained" onClick={onClose} fullWidth>
           Awesome, thanks!
         </Button>
