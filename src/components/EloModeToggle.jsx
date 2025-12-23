@@ -8,7 +8,7 @@ import { getEloLabelForMode } from "../utils/elo";
 
 function EloModeToggle({ label = "Elo Mode", size = "medium", hideLabel = false }) {
   const dispatch = useDispatch();
-  const eloMode = useSelector((state) => state.ui.eloMode || "singles");
+  const eloMode = useSelector((state) => state.ui.eloMode || "overall");
 
   return (
     <Stack direction="row" spacing={1} alignItems="center">
@@ -23,6 +23,7 @@ function EloModeToggle({ label = "Elo Mode", size = "medium", hideLabel = false 
         size={size}
         onChange={(_, value) => value && dispatch(setEloMode(value))}
       >
+        <ToggleButton value="overall">Overall</ToggleButton>
         <ToggleButton value="singles">Singles</ToggleButton>
         <ToggleButton value="doubles">Doubles</ToggleButton>
       </ToggleButtonGroup>

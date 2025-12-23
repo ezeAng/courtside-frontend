@@ -11,7 +11,7 @@ import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha, useTheme } from "@mui/material/styles";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getH2H, getHomeStats, getRecentActivity } from "../../services/api";
@@ -21,8 +21,9 @@ import ProfileAvatar from "../../components/ProfileAvatar";
 import { normalizeProfileImage } from "../../utils/profileImage";
 import Avatar from "@mui/material/Avatar";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import { getEloForMode, getEloLabelForMode } from "../../utils/elo";
+import { getEloForMode } from "../../utils/elo";
 import { getOverallRank } from "../../services/statsApi";
+import { setEloMode } from "../../features/ui/uiSlice";
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -30,13 +31,17 @@ function HomeScreen() {
   const theme = useTheme();
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.auth.accessToken);
-  const eloMode = useSelector((state) => state.ui.eloMode || "singles");
+  const eloMode = useSelector((state) => state.ui.eloMode || "overall");
   const [recentMatches, setRecentMatches] = useState([]);
   const [rivals, setRivals] = useState([]);
   const [stats, setStats] = useState(null);
   const [overall, setOverall] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const handleSelectEloMode = useCallback(
+    (mode) => dispatch(setEloMode(mode)),
+    [dispatch]
+  );
 
   useEffect(() => {
     async function load() {
@@ -70,6 +75,50 @@ function HomeScreen() {
       dispatch(fetchCurrentUser(token));
     }
   }, [dispatch, token]);
+
+  const overallEloValue = useMemo(
+    () =>
+      overall?.overall_elo ?? stats?.overall?.elo ?? stats?.overall_elo ?? null,
+    [overall, stats]
+  );
+
+  const overallRankValue = useMemo(
+    () =>
+      overall?.overall_rank ?? stats?.overall?.rank ?? stats?.overall_rank ?? null,
+    [overall, stats]
+  );
+
+  const singlesEloValue = useMemo(
+    () =>
+      stats?.singles_elo ?? stats?.singlesElo ?? stats?.singles?.elo ??
+      getEloForMode(user, "singles", { fallback: null }),
+    [stats, user]
+  );
+
+  const doublesEloValue = useMemo(
+    () =>
+      stats?.doubles_elo ?? stats?.doublesElo ?? stats?.doubles?.elo ??
+      getEloForMode(user, "doubles", { fallback: null }),
+    [stats, user]
+  );
+
+  const singlesMatchesPlayed = useMemo(
+    () =>
+      stats?.singles_matches_played ??
+      stats?.singlesMatchesPlayed ??
+      stats?.singles?.matches_played ??
+      0,
+    [stats]
+  );
+
+  const doublesMatchesPlayed = useMemo(
+    () =>
+      stats?.doubles_matches_played ??
+      stats?.doublesMatchesPlayed ??
+      stats?.doubles?.matches_played ??
+      0,
+    [stats]
+  );
 
   const currentElo = useMemo(
     () =>
@@ -134,45 +183,46 @@ function HomeScreen() {
     return Math.round(stats.win_rate_last_10 ?? 0);
   }, [stats]);
 
-  const heroStatsLoading = loading && (!stats || !overall);
+  const heroStatsLoading = loading && (!stats || (!overall && !overallEloValue));
 
   const topHeroStats = useMemo(
     () => [
-      overall?.overall_elo !== null && overall?.overall_elo !== undefined
+      overallEloValue !== null && overallEloValue !== undefined
         ? {
             label: "Overall Elo",
             value: (
               <Stack spacing={0.25} alignItems="center">
                 <Typography variant="h5" fontWeight={800} lineHeight={1}>
-                  {overall.overall_elo}
+                  {overallEloValue}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Rank #{overall.overall_rank ?? "--"}
+                  Rank #{overallRankValue ?? "--"}
                 </Typography>
               </Stack>
             ),
+            onClick: () => handleSelectEloMode("overall"),
           }
         : {
             label: "Overall Elo",
             value: (
               <Typography variant="body2" color="text.secondary" textAlign="center">
-                Play 5 matches to unlock overall ranking
+                Play 5 matches to unlock overall Elo
               </Typography>
             ),
+            onClick: () => handleSelectEloMode("overall"),
           },
       {
-        label: getEloLabelForMode(eloMode),
-        value: currentElo ?? "--",
+        label: "Singles Elo",
+        value: singlesEloValue ?? "--",
+        onClick: () => handleSelectEloMode("singles"),
       },
       {
-        label: "Win rate",
-        value:
-          overallWinRate !== null && overallWinRate !== undefined
-            ? `${overallWinRate}%`
-            : "--",
+        label: "Doubles Elo",
+        value: doublesEloValue ?? "--",
+        onClick: () => handleSelectEloMode("doubles"),
       },
     ],
-    [currentElo, eloMode, overallWinRate, stats]
+    [doublesEloValue, handleSelectEloMode, overallEloValue, overallRankValue, singlesEloValue]
   );
 
   return (
@@ -285,9 +335,9 @@ function HomeScreen() {
                   borderRadius: theme.shape.borderRadius,
                   textAlign: "center",
                   boxShadow: theme.custom?.colors?.shadows?.sm,
-                  cursor: item?.label === "Overall Elo" ? "pointer" : "default",
+                  cursor: item?.onClick ? "pointer" : "default",
                 }}
-                onClick={item?.label === "Overall Elo" ? handleViewLeaderboard : undefined}
+                onClick={item?.onClick}
               >
                 <CardContent sx={{ py: 2 }}>
                   {heroStatsLoading ? (
@@ -433,26 +483,36 @@ function HomeScreen() {
                   Mode breakdown
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid
+                    item
+                    xs={6}
+                    onClick={() => handleSelectEloMode("singles")}
+                    sx={{ cursor: "pointer" }}
+                  >
                     <Typography color="text.secondary" variant="body2">
                       Singles
                     </Typography>
                     <Typography variant="h6" fontWeight={700}>
-                      {stats.singles_elo ?? "--"}
+                      {singlesEloValue ?? "--"}
                     </Typography>
                     <Typography color="text.secondary" variant="body2">
-                      {stats.singles_matches_played ?? 0} matches played
+                      {singlesMatchesPlayed} matches played
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid
+                    item
+                    xs={6}
+                    onClick={() => handleSelectEloMode("doubles")}
+                    sx={{ cursor: "pointer" }}
+                  >
                     <Typography color="text.secondary" variant="body2">
                       Doubles
                     </Typography>
                     <Typography variant="h6" fontWeight={700}>
-                      {stats.doubles_elo ?? "--"}
+                      {doublesEloValue ?? "--"}
                     </Typography>
                     <Typography color="text.secondary" variant="body2">
-                      {stats.doubles_matches_played ?? 0} matches played
+                      {doublesMatchesPlayed} matches played
                     </Typography>
                   </Grid>
                 </Grid>
@@ -461,7 +521,7 @@ function HomeScreen() {
           </CardContent>
         </Card>
 
-        <EloStockChart onRecordMatch={handleRecordMatch} />
+        <EloStockChart onRecordMatch={handleRecordMatch} overallElo={overallEloValue} />
         
         {/* Recent Matches */}
         {/* <Card variant="outlined" width="100%">
