@@ -19,12 +19,15 @@ import ProfileAvatar from "../../components/ProfileAvatar";
 import { normalizeProfileImage } from "../../utils/profileImage";
 import Avatar from "@mui/material/Avatar";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import EloModeToggle from "../../components/EloModeToggle";
+import { getEloForMode, getEloLabelForMode } from "../../utils/elo";
 
 function HomeScreen() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.auth.accessToken);
+  const eloMode = useSelector((state) => state.ui.eloMode || "singles");
   const [recentMatches, setRecentMatches] = useState([]);
   const [rivals, setRivals] = useState([]);
   const [stats, setStats] = useState(null);
@@ -62,18 +65,26 @@ function HomeScreen() {
     }
   }, [dispatch, token]);
 
+  const currentElo = useMemo(
+    () =>
+      getEloForMode(user, eloMode, {
+        fallback: stats?.current_elo ?? stats?.currentElo ?? 1000,
+      }),
+    [eloMode, stats?.currentElo, stats?.current_elo, user]
+  );
+
   const tier = useMemo(() => {
-    if (user?.elo === undefined || user?.elo === null) {
+    if (currentElo === undefined || currentElo === null) {
       return null;
     }
 
-    if (user.elo < 800) return { label: "Wood", color: "default" };
-    if (user.elo < 1000) return { label: "Bronze", color: "warning" };
-    if (user.elo < 1200) return { label: "Silver", color: "info" };
-    if (user.elo < 1400) return { label: "Gold", color: "warning" };
-    if (user.elo < 1600) return { label: "Platinum", color: "primary" };
+    if (currentElo < 800) return { label: "Wood", color: "default" };
+    if (currentElo < 1000) return { label: "Bronze", color: "warning" };
+    if (currentElo < 1200) return { label: "Silver", color: "info" };
+    if (currentElo < 1400) return { label: "Gold", color: "warning" };
+    if (currentElo < 1600) return { label: "Platinum", color: "primary" };
     return { label: "Diamond", color: "success" };
-  }, [user]);
+  }, [currentElo]);
 
   const topRivals = useMemo(() => {
     return [...rivals]
@@ -125,8 +136,8 @@ function HomeScreen() {
             : "--",
       },
       {
-        label: "Current Elo",
-        value: stats?.current_elo ?? "--",
+        label: getEloLabelForMode(eloMode),
+        value: currentElo ?? "--",
       },
       {
         label: "Win rate",
@@ -136,7 +147,7 @@ function HomeScreen() {
             : "--",
       },
     ],
-    [overallWinRate, stats]
+    [currentElo, eloMode, overallWinRate, stats]
   );
 
   return (
@@ -144,9 +155,12 @@ function HomeScreen() {
       maxWidth="sm"
     >
       <Stack spacing={3}>
-        {loading && (
-          <LoadingSpinner message="Refreshing your Courtside insights..." inline />
-        )}
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          {loading && (
+            <LoadingSpinner message="Refreshing your Courtside insights..." inline />
+          )}
+          <EloModeToggle hideLabel />
+        </Stack>
         {/* FULL-WIDTH HERO */}
         <Box sx={{ position: "relative", width: "100vw", left: "-5%", right: "0%" }}>
           <Box

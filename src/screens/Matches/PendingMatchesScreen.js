@@ -17,6 +17,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { getDisciplineFromMatch, getEloDeltaForMode, getEloForMode } from "../../utils/elo";
 
 export default function PendingMatchesScreen() {
   const navigate = useNavigate();
@@ -233,8 +234,12 @@ export default function PendingMatchesScreen() {
                 </Typography>
                 {confirmFeedback.updated_elos.updates.map((u, idx) => {
                   const playerLabel = getPlayerLabel(u);
-                  const delta = u.delta ?? u.change ?? u.elo_change ?? 0;
+                  const mode = getDisciplineFromMatch(
+                    confirmFeedback.updated_elos.discipline || confirmFeedback
+                  );
+                  const delta = getEloDeltaForMode(u, mode) ?? 0;
                   const formattedDelta = delta > 0 ? `+${delta}` : `${delta}`;
+                  const newElo = getEloForMode(u, mode, { fallback: u.new_elo });
                   return (
                     <Stack
                       key={`${playerLabel}-${idx}`}
@@ -250,11 +255,25 @@ export default function PendingMatchesScreen() {
                         }}
                       />
                       <Typography variant="body2">
-                        {u.new_elo ?? u.newElo ?? u.elo ?? ""} ({formattedDelta})
+                        {newElo ?? ""} ({formattedDelta})
                       </Typography>
                     </Stack>
                   );
                 })}
+              </Stack>
+            )}
+
+            {confirmFeedback?.updated_elos?.discipline === "doubles" && (
+              <Stack spacing={0.5}>
+                <Typography variant="subtitle1" fontWeight={700}>
+                  Team ELO Changes (Doubles)
+                </Typography>
+                <Typography variant="body2">
+                  Team A: {confirmFeedback?.elo_change_side_a ?? confirmFeedback?.team_a_delta ?? 0}
+                </Typography>
+                <Typography variant="body2">
+                  Team B: {confirmFeedback?.elo_change_side_b ?? confirmFeedback?.team_b_delta ?? 0}
+                </Typography>
               </Stack>
             )}
 

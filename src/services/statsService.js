@@ -13,9 +13,11 @@ const withAuth = (token) => ({
   ...(token ? { Authorization: `Bearer ${token}` } : {}),
 });
 
-export async function getEloSeries(range, token) {
+export async function getEloSeries(range, token, discipline = "singles") {
   const response = await fetch(
-    `${base}/api/stats/elo-series?range=${encodeURIComponent(range)}`,
+    `${base}/api/stats/elo-series?range=${encodeURIComponent(
+      range
+    )}&discipline=${encodeURIComponent(discipline)}`,
     {
       method: "GET",
       headers: withAuth(token),

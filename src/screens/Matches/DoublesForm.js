@@ -32,8 +32,13 @@ function DoublesForm({ onRecorded, onClose }) {
 
   const isValid = useMemo(
     () =>
-      partnerId && opponent1Id && opponent2Id && autoWinner && areSetsWithinRange(sets),
-    [autoWinner, opponent1Id, opponent2Id, partnerId, sets]
+      partnerId &&
+      opponent1Id &&
+      opponent2Id &&
+      autoWinner &&
+      areSetsWithinRange(sets) &&
+      new Set([userId, partnerId, opponent1Id, opponent2Id].map(String)).size === 4,
+    [autoWinner, opponent1Id, opponent2Id, partnerId, sets, userId]
   );
 
   useEffect(() => {
@@ -106,11 +111,18 @@ function DoublesForm({ onRecorded, onClose }) {
         return;
       }
 
+      const teamAIds = [userId, partner.auth_id || partner.id];
+      const teamBIds = [
+        opponent1.auth_id || opponent1.id,
+        opponent2.auth_id || opponent2.id,
+      ];
+
       const recordedMatch = await dispatch(
         recordMatch({
+          discipline: "doubles",
           match_type: "doubles",
-          players_team_A: [userId, partner.auth_id || partner.id],
-          players_team_B: [opponent1.auth_id || opponent1.id, opponent2.auth_id || opponent2.id],
+          team_a_auth_ids: teamAIds,
+          team_b_auth_ids: teamBIds,
           score: formattedScore,
           winner_team: winnerToSubmit,
         })
