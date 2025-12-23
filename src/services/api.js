@@ -132,6 +132,18 @@ export async function getMatchDetail(matchId, token) {
   return handleResponse(response);
 }
 
+export async function addMatchVideo(matchId, videoLink, token) {
+  const response = await fetch(`${base}/api/matches/${matchId}/video`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...withAuth(token),
+    },
+    body: JSON.stringify({ video_link: videoLink }),
+  });
+  return handleResponse(response);
+}
+
 export async function createMatch(payload, token) {
   const response = await fetch(`${base}/api/matches/create`, {
     method: "POST",
@@ -201,6 +213,7 @@ export default {
   getOtherUsers,
   getMatchHistory,
   getMatchDetail,
+  addMatchVideo,
   createMatch,
   getRecentActivity,
   getH2H,

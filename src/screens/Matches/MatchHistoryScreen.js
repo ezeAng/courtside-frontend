@@ -16,15 +16,20 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import InboxIcon from "@mui/icons-material/Inbox";
+import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
+import Tooltip from "@mui/material/Tooltip";
+import Box from "@mui/material/Box";
 import { useNavigate } from "react-router-dom";
 import RecordMatchModal from "./RecordMatchModal";
 import MatchSuccessModal from "./MatchSuccessModal";
+import AddMatchVideoModal from "./AddMatchVideoModal";
 import { fetchMatchHistory } from "../../features/matches/matchSlice";
 import { getPendingMatches } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getDisciplineFromMatch, getEloForMode } from "../../utils/elo";
+import { extractYouTubeId, isYouTubeLink } from "../../utils/video";
 
 const getOutcomeFromWinnerTeam = (winnerTeam, teamKey) => {
   if (winnerTeam === "draw" || winnerTeam === null) return "draw";
@@ -122,6 +127,8 @@ function MatchHistoryScreen() {
   const [pendingCount, setPendingCount] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [recordedMatch, setRecordedMatch] = useState(null);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [videoModalMatch, setVideoModalMatch] = useState(null);
   useEffect(() => {
     if (userId) {
       dispatch(fetchMatchHistory(userId));
@@ -169,6 +176,40 @@ function MatchHistoryScreen() {
   const getTeamPlayers = (match, teamKey) =>
     match?.players?.[teamKey] || match?.[`players_${teamKey}`] || [];
 
+  const handleOpenVideoModal = (match) => {
+    if (!match) return;
+    const matchId = match.match_id || match.id;
+    setVideoModalMatch({
+      id: matchId,
+      link: match.video_link || "",
+    });
+    setVideoModalOpen(true);
+  };
+
+  const handleAddVideoFromSuccess = () => {
+    setShowSuccessModal(false);
+    handleOpenVideoModal(recordedMatch);
+  };
+
+  const handleVideoSaved = async () => {
+    if (userId) {
+      try {
+        const data = await dispatch(fetchMatchHistory(userId)).unwrap();
+        const refreshedMatches = data?.matches || data || [];
+        const updatedMatch = refreshedMatches.find(
+          (item) => (item.match_id || item.id) === videoModalMatch?.id
+        );
+        if (updatedMatch) {
+          setSelectedMatch(updatedMatch);
+        }
+      } catch (err) {
+        console.error("Failed to refresh matches after saving video", err);
+      }
+    }
+    setVideoModalOpen(false);
+    setVideoModalMatch(null);
+  };
+
   const renderMatchDetail = () => {
     if (!selectedMatch) return null;
 
@@ -184,6 +225,9 @@ function MatchHistoryScreen() {
       : winnerTeam
       ? `Team ${winnerTeam}`
       : "";
+
+    const videoLink = selectedMatch.video_link;
+    const youtubeId = videoLink && isYouTubeLink(videoLink) ? extractYouTubeId(videoLink) : null;
 
     return (
       <Dialog
@@ -206,6 +250,90 @@ function MatchHistoryScreen() {
                   ? new Date(selectedMatch.played_at).toLocaleDateString()
                   : ""}
               </Typography>
+            </Stack>
+
+            <Stack spacing={1}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="subtitle1" fontWeight={700}>
+                  Match video
+                </Typography>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => handleOpenVideoModal(selectedMatch)}
+                >
+                  {videoLink ? "Edit video link" : "Add match video"}
+                </Button>
+              </Stack>
+              {!videoLink ? (
+                <Button variant="contained" onClick={() => handleOpenVideoModal(selectedMatch)}>
+                  Add match video
+                </Button>
+              ) : youtubeId ? (
+                <Box
+                  sx={{
+                    position: "relative",
+                    width: "100%",
+                    pt: "56.25%",
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    boxShadow: 3,
+                  }}
+                >
+                  <Box
+                    component="iframe"
+                    src={`https://www.youtube.com/embed/${youtubeId}`}
+                    title="Match video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    sx={{
+                      position: "absolute",
+                      inset: 0,
+                      width: "100%",
+                      height: "100%",
+                      border: 0,
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  alignItems="center"
+                  sx={(theme) => ({
+                    p: 2,
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                  })}
+                >
+                  <VideoLibraryIcon color="primary" />
+                  <Stack spacing={0.25} flex={1}>
+                    <Typography fontWeight={700}>
+                      {(() => {
+                        try {
+                          return new URL(videoLink).hostname.replace(/^www\./, "");
+                        } catch (error) {
+                          return "External video link";
+                        }
+                      })()}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      External video link
+                    </Typography>
+                  </Stack>
+                  <Button
+                    variant="outlined"
+                    component="a"
+                    href={videoLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open video
+                  </Button>
+                </Stack>
+              )}
             </Stack>
 
             <TeamCard
@@ -272,6 +400,7 @@ function MatchHistoryScreen() {
               const winnerTeam = match.winner_team;
               const teamAOutcome = getOutcomeFromWinnerTeam(winnerTeam, "A");
               const teamBOutcome = getOutcomeFromWinnerTeam(winnerTeam, "B");
+              const hasVideo = Boolean(match.video_link);
 
               return (
                 <ListItemButton
@@ -332,6 +461,18 @@ function MatchHistoryScreen() {
                             ? new Date(match.played_at).toLocaleDateString()
                             : ""}
                         </Typography>
+                        {hasVideo && (
+                          <Stack direction="row" spacing={0.5} alignItems="center">
+                            <Tooltip title="Match video available">
+                              <span role="img" aria-label="Video available">
+                                🎥
+                              </span>
+                            </Tooltip>
+                            <Typography variant="caption" color="text.secondary">
+                              Video link added
+                            </Typography>
+                          </Stack>
+                        )}
                       </Stack>
                     }
                   />
@@ -353,6 +494,17 @@ function MatchHistoryScreen() {
         open={showSuccessModal}
         match={recordedMatch}
         onClose={handleCloseSuccess}
+        onAddVideo={recordedMatch ? handleAddVideoFromSuccess : undefined}
+      />
+      <AddMatchVideoModal
+        open={videoModalOpen}
+        onClose={() => {
+          setVideoModalOpen(false);
+          setVideoModalMatch(null);
+        }}
+        matchId={videoModalMatch?.id}
+        existingLink={videoModalMatch?.link}
+        onSaved={handleVideoSaved}
       />
       {renderMatchDetail()}
     </Container>

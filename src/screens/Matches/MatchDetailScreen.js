@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import Card from "@mui/material/Card";
@@ -8,11 +8,16 @@ import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
 import { alpha } from "@mui/material/styles";
 import { fetchMatchDetail } from "../../features/matches/matchSlice";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getDisciplineFromMatch, getEloForMode } from "../../utils/elo";
+import AddMatchVideoModal from "./AddMatchVideoModal";
+import { extractYouTubeId, isYouTubeLink } from "../../utils/video";
 
 const getOutcomeStyles = (theme, outcome) => {
   const isWinner = outcome === "winner";
@@ -104,12 +109,20 @@ function MatchDetailScreen() {
   const { match_id: matchId } = useParams();
   const dispatch = useDispatch();
   const { matchDetail, loading, error } = useSelector((state) => state.matches);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   useEffect(() => {
     if (matchId) {
       dispatch(fetchMatchDetail(matchId));
     }
   }, [dispatch, matchId]);
+
+  const handleVideoSaved = () => {
+    if (matchId) {
+      dispatch(fetchMatchDetail(matchId));
+    }
+    setVideoModalOpen(false);
+  };
 
   if (loading && !matchDetail) {
     return (
@@ -153,6 +166,10 @@ function MatchDetailScreen() {
     );
   }
 
+  if (!matchDetail) {
+    return null;
+  }
+
   const discipline = getDisciplineFromMatch(matchDetail);
   const winnerTeam = matchDetail.winner_team;
   const isDraw = winnerTeam === "draw" || winnerTeam === null;
@@ -161,6 +178,8 @@ function MatchDetailScreen() {
     : winnerTeam
     ? `Team ${winnerTeam}`
     : "";
+  const videoLink = matchDetail.video_link;
+  const youtubeId = videoLink && isYouTubeLink(videoLink) ? extractYouTubeId(videoLink) : null;
 
   const teamAOutcome = getOutcomeFromWinnerTeam(winnerTeam, "A");
   const teamBOutcome = getOutcomeFromWinnerTeam(winnerTeam, "B");
@@ -189,18 +208,106 @@ function MatchDetailScreen() {
           </CardContent>
         </Card>
 
+        <Stack spacing={1}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="subtitle1" fontWeight={700}>
+              Match video
+            </Typography>
+            <Button size="small" variant="text" onClick={() => setVideoModalOpen(true)}>
+              {videoLink ? "Edit video link" : "Add match video"}
+            </Button>
+          </Stack>
+          {!videoLink ? (
+            <Button variant="contained" onClick={() => setVideoModalOpen(true)}>
+              Add match video
+            </Button>
+          ) : youtubeId ? (
+            <Box
+              sx={{
+                position: "relative",
+                width: "100%",
+                pt: "56.25%",
+                borderRadius: 2,
+                overflow: "hidden",
+                boxShadow: 3,
+              }}
+            >
+              <Box
+                component="iframe"
+                src={`https://www.youtube.com/embed/${youtubeId}`}
+                title="Match video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  border: 0,
+                }}
+              />
+            </Box>
+          ) : (
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              sx={(theme) => ({
+                p: 2,
+                border: 1,
+                borderColor: "divider",
+                borderRadius: 2,
+                backgroundColor: alpha(theme.palette.primary.main, 0.04),
+              })}
+            >
+              <VideoLibraryIcon color="primary" />
+              <Stack spacing={0.25} flex={1}>
+                <Typography fontWeight={700}>
+                  {(() => {
+                    try {
+                      return new URL(videoLink).hostname.replace(/^www\./, "");
+                    } catch (error) {
+                      return "External video link";
+                    }
+                  })()}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  External video link
+                </Typography>
+              </Stack>
+              <Button
+                variant="outlined"
+                component="a"
+                href={videoLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open video
+              </Button>
+            </Stack>
+          )}
+        </Stack>
+
         <TeamCard
-        title="Team A"
-        players={matchDetail.players_team_A}
-        outcome={teamAOutcome}
-        discipline={discipline}
-      />
-      <TeamCard
-        title="Team B"
-        players={matchDetail.players_team_B}
-        outcome={teamBOutcome}
-        discipline={discipline}
-      />
+          title="Team A"
+          players={matchDetail.players_team_A}
+          outcome={teamAOutcome}
+          discipline={discipline}
+        />
+        <TeamCard
+          title="Team B"
+          players={matchDetail.players_team_B}
+          outcome={teamBOutcome}
+          discipline={discipline}
+        />
+
+        <AddMatchVideoModal
+          open={videoModalOpen}
+          onClose={() => setVideoModalOpen(false)}
+          matchId={matchId}
+          existingLink={videoLink}
+          onSaved={handleVideoSaved}
+        />
       </Stack>
     </Container>
   );
