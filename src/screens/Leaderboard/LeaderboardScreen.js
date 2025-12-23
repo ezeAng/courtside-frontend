@@ -23,7 +23,6 @@ import Divider from "@mui/material/Divider";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import ManIcon from "@mui/icons-material/Man";
 import WomanIcon from "@mui/icons-material/Woman";
-import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 import { setGender, fetchLeaderboard, setDiscipline } from "../../features/leaderboard/leaderboardSlice";
 import { normalizeProfileImage } from "../../utils/profileImage";
@@ -46,35 +45,21 @@ function LeaderboardScreen() {
         label: "Overall",
         icon: <LeaderboardIcon fontSize="small" />,
         gender: "mixed",
-        helper: "Top players across all match types",
+        helper: "Top players across singles and doubles",
       },
       {
-        value: "menSingles",
-        label: "Men's Singles",
+        value: "men",
+        label: "Men",
         icon: <ManIcon fontSize="small" />,
         gender: "male",
-        helper: "Single matches for men",
+        helper: "Top men competing in this discipline",
       },
       {
-        value: "womenSingles",
-        label: "Women's Singles",
+        value: "women",
+        label: "Women",
         icon: <WomanIcon fontSize="small" />,
         gender: "female",
-        helper: "Single matches for women",
-      },
-      {
-        value: "menDoubles",
-        label: "Men's Doubles",
-        icon: <PeopleAltIcon fontSize="small" />,
-        gender: "male",
-        helper: "Doubles play for men",
-      },
-      {
-        value: "womenDoubles",
-        label: "Women's Doubles",
-        icon: <PeopleAltIcon fontSize="small" />,
-        gender: "female",
-        helper: "Doubles play for women",
+        helper: "Top women competing in this discipline",
       },
     ],
     []
