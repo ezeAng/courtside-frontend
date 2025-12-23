@@ -84,6 +84,30 @@ export async function getLeaderboard(gender, token, discipline = "singles") {
   return handleResponse(response);
 }
 
+export async function getOverallLeaderboard(token) {
+  const response = await fetch(`${base}/api/leaderboard/overall`, {
+    headers: withAuth(token),
+  });
+
+  return handleResponse(response);
+}
+
+export async function getSinglesLeaderboard(token) {
+  const response = await fetch(`${base}/api/leaderboard/singles`, {
+    headers: withAuth(token),
+  });
+
+  return handleResponse(response);
+}
+
+export async function getDoublesLeaderboard(token) {
+  const response = await fetch(`${base}/api/leaderboard/doubles`, {
+    headers: withAuth(token),
+  });
+
+  return handleResponse(response);
+}
+
 export async function searchUsersAutocomplete(query, token) {
   const response = await fetch(
     `${base}/api/users/search/autocomplete?query=${encodeURIComponent(query)}`,
@@ -218,6 +242,9 @@ export default {
   getRecentActivity,
   getH2H,
   getHomeStats,
+  getOverallLeaderboard,
+  getSinglesLeaderboard,
+  getDoublesLeaderboard,
   getPlayerCardData,
   uploadAvatar,
   resendConfirmationEmail,

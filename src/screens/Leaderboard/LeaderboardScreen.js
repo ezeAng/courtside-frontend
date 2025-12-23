@@ -19,93 +19,117 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
-import ManIcon from "@mui/icons-material/Man";
-import WomanIcon from "@mui/icons-material/Woman";
-import SportsTennisIcon from "@mui/icons-material/SportsTennis";
-import { setGender, fetchLeaderboard, setDiscipline } from "../../features/leaderboard/leaderboardSlice";
-import { normalizeProfileImage } from "../../utils/profileImage";
+import { alpha, useTheme } from "@mui/material/styles";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import EloModeToggle from "../../components/EloModeToggle";
-import { getEloForMode, getEloLabelForMode } from "../../utils/elo";
+import { normalizeProfileImage } from "../../utils/profileImage";
+import {
+  getOverallLeaderboard,
+  getSinglesLeaderboard,
+  getDoublesLeaderboard,
+} from "../../services/api";
+import { fetchCurrentUser } from "../../features/user/userSlice";
+
+const tabs = ["overall", "singles", "doubles"];
 
 function LeaderboardScreen() {
   const dispatch = useDispatch();
-  const { data, loading, error } = useSelector((state) => state.leaderboard);
-  const eloMode = useSelector((state) => state.ui.eloMode || "singles");
+  const theme = useTheme();
+  const token = useSelector((state) => state.auth.accessToken);
+  const currentUserId = useSelector((state) => state.user.user?.auth_id);
 
-  const [category, setCategory] = useState("overall");
+  const [activeTab, setActiveTab] = useState("overall");
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
-  const categories = useMemo(
-    () => [
-      {
-        value: "overall",
-        label: "Overall",
-        icon: <LeaderboardIcon fontSize="small" />,
-        gender: "mixed",
-        helper: "Top players across singles and doubles",
-      },
-      {
-        value: "men",
-        label: "Men",
-        icon: <ManIcon fontSize="small" />,
-        gender: "male",
-        helper: "Top men competing in this discipline",
-      },
-      {
-        value: "women",
-        label: "Women",
-        icon: <WomanIcon fontSize="small" />,
-        gender: "female",
-        helper: "Top women competing in this discipline",
-      },
-    ],
-    []
-  );
-
-  const activeCategory = useMemo(
-    () => categories.find((item) => item.value === category) || categories[0],
-    [categories, category]
-  );
+  const scoreLabel = useMemo(() => {
+    if (activeTab === "overall") return "Overall Elo";
+    if (activeTab === "singles") return "Singles Elo";
+    return "Doubles Elo";
+  }, [activeTab]);
 
   useEffect(() => {
-    dispatch(
-      fetchLeaderboard({
-        gender: activeCategory.gender,
-        discipline: eloMode,
-      })
-    );
-    dispatch(setDiscipline(eloMode));
-  }, [dispatch, activeCategory, eloMode]);
+    if (!token || currentUserId) return;
+    dispatch(fetchCurrentUser(token));
+  }, [currentUserId, dispatch, token]);
 
-  const handleCategoryChange = (_event, newValue) => {
-    if (!newValue) return;
-    const newCategory = categories.find((item) => item.value === newValue);
-    if (newCategory) {
-      setCategory(newCategory.value);
-      dispatch(setGender(newCategory.gender));
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        let response;
+        if (activeTab === "overall") {
+          response = await getOverallLeaderboard(token);
+        } else if (activeTab === "singles") {
+          response = await getSinglesLeaderboard(token);
+        } else {
+          response = await getDoublesLeaderboard(token);
+        }
+
+        const leaders = Array.isArray(response?.leaders)
+          ? response.leaders
+          : Array.isArray(response)
+            ? response
+            : [];
+
+        if (mounted) {
+          setData(leaders);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError("Unable to load leaderboard.");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
     }
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [activeTab, token]);
+
+  const getRankForEntry = (entry, index) =>
+    activeTab === "overall"
+      ? entry?.overall_rank ?? entry?.rank ?? index + 1
+      : entry?.rank ?? index + 1;
+
+  const getEloForEntry = (entry) => {
+    if (activeTab === "overall") return entry?.overall_elo ?? entry?.elo;
+    if (activeTab === "singles") return entry?.singles_elo ?? entry?.elo;
+    return entry?.doubles_elo ?? entry?.elo;
   };
+
+  const getSecondary = (entry) =>
+    activeTab === "overall"
+      ? `S: ${entry?.singles_elo ?? "--"} • D: ${entry?.doubles_elo ?? "--"}`
+      : null;
 
   return (
     <Container maxWidth="md" sx={{ py: 4, pb: 10 }}>
       <Stack spacing={3}>
         <Stack spacing={1} alignItems="center">
           <Typography variant="h5" fontWeight={700} textAlign="center">
-            League Rankings
+            Leaderboards
           </Typography>
           <Typography variant="body2" color="text.secondary" textAlign="center">
-            Explore the top players across singles and doubles leaderboards.
+            Track overall, singles, and doubles rankings.
           </Typography>
-          <EloModeToggle label="Discipline" />
         </Stack>
 
         <Paper variant="outlined" sx={{ borderRadius: 2 }}>
           <Tabs
-            value={category}
-            onChange={handleCategoryChange}
+            value={activeTab}
+            onChange={(_, value) => value && setActiveTab(value)}
             variant="fullWidth"
             textColor="primary"
             indicatorColor="primary"
@@ -116,13 +140,13 @@ function LeaderboardScreen() {
               },
             }}
           >
-            {categories.map((item) => (
+            {tabs.map((tab) => (
               <Tab
-                key={item.value}
-                value={item.value}
-                icon={item.icon}
+                key={tab}
+                value={tab}
+                icon={<LeaderboardIcon fontSize="small" />}
                 iconPosition="top"
-                label={item.label}
+                label={tab.charAt(0).toUpperCase() + tab.slice(1)}
                 sx={{
                   minWidth: 15,
                   minHeight: 90,
@@ -146,12 +170,9 @@ function LeaderboardScreen() {
             <Typography variant="overline" color="text.secondary">
               TOP 100 PLAYERS ON COURTSIDE
             </Typography>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <SportsTennisIcon fontSize="small" color="primary" />
-              <Typography variant="body2" color="text.secondary">
-                {activeCategory.helper}
-              </Typography>
-            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              Explore rankings for the selected mode.
+            </Typography>
           </Stack>
         </Paper>
 
@@ -162,16 +183,16 @@ function LeaderboardScreen() {
             <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
               <Table>
                 <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: 80, fontWeight: 700 }}>Rank</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Player</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>
-                    {getEloLabelForMode(eloMode)}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {[...Array(6)].map((_, idx) => (
+                  <TableRow>
+                    <TableCell sx={{ width: 80, fontWeight: 700 }}>Rank</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Player</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>
+                      {scoreLabel}
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {[...Array(6)].map((_, idx) => (
                     <TableRow key={idx}>
                       <TableCell>
                         <Skeleton width={24} />
@@ -203,49 +224,79 @@ function LeaderboardScreen() {
                     <TableCell sx={{ width: 80, fontWeight: 700 }}>Rank</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Player</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>
-                      {getEloLabelForMode(eloMode)}
+                      {scoreLabel}
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {data.map((entry, index) => (
-                  <TableRow
-                    key={entry.id || `${entry.username}-${index}`}
-                    hover
-                    onClick={() =>
-                      setSelectedPlayer({
-                        ...entry,
-                        rank: entry.rank ?? index + 1,
-                      })
-                    }
-                    sx={{ cursor: "pointer" }}
-                  >
-                    <TableCell>
-                      <Typography fontWeight={700}>{entry.rank ?? index + 1}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <Avatar
-                          src={normalizeProfileImage(entry.profile_image_url)}
-                          imgProps={{ referrerPolicy: "no-referrer" }}
-                        >
-                          {entry.username?.charAt(0).toUpperCase() || "P"}
-                        </Avatar>
-                        <Box>
-                          <Typography fontWeight={700}>{entry.username}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {entry.gender ? `${entry.gender} player` : "Player"}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography fontWeight={700}>
-                        {getEloForMode(entry, eloMode, { fallback: entry.elo }) ?? "—"}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                  {data.map((entry, index) => {
+                    const rank = getRankForEntry(entry, index);
+                    const primaryElo = getEloForEntry(entry) ?? "—";
+                    const secondary = getSecondary(entry);
+                    const isCurrentUser =
+                      entry?.auth_id &&
+                      currentUserId &&
+                      String(entry.auth_id) === String(currentUserId);
+
+                    return (
+                      <TableRow
+                        key={entry?.id || `${entry?.username || "player"}-${index}`}
+                        hover
+                        onClick={() =>
+                          setSelectedPlayer({
+                            ...entry,
+                            rank,
+                            primaryElo,
+                            secondary,
+                            tab: activeTab,
+                          })
+                        }
+                        sx={{
+                          cursor: "pointer",
+                          backgroundColor: isCurrentUser
+                            ? alpha(theme.palette.primary.main, 0.08)
+                            : undefined,
+                          "&:hover": {
+                            backgroundColor: isCurrentUser
+                              ? alpha(theme.palette.primary.main, 0.12)
+                              : undefined,
+                          },
+                        }}
+                      >
+                        <TableCell>
+                          <Typography fontWeight={700}>{rank}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Stack direction="row" spacing={2} alignItems="center">
+                            <Avatar
+                              src={normalizeProfileImage(entry?.profile_image_url)}
+                              imgProps={{ referrerPolicy: "no-referrer" }}
+                            >
+                              {entry?.username?.charAt(0).toUpperCase() || "P"}
+                            </Avatar>
+                            <Box>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Typography fontWeight={700}>{entry?.username}</Typography>
+                                {isCurrentUser && <Chip label="You" size="small" color="primary" />}
+                              </Stack>
+                              {secondary ? (
+                                <Typography variant="body2" color="text.secondary">
+                                  {secondary}
+                                </Typography>
+                              ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                  Player
+                                </Typography>
+                              )}
+                            </Box>
+                          </Stack>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography fontWeight={700}>{primaryElo}</Typography>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 {!data.length && !error && (
                   <TableRow>
                     <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
@@ -281,7 +332,7 @@ function LeaderboardScreen() {
                   {selectedPlayer.username}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {selectedPlayer.gender ? `${selectedPlayer.gender} player` : "Player"}
+                  {selectedPlayer.secondary || "Player"}
                 </Typography>
               </Stack>
               <Stack direction="row" spacing={2} divider={<Divider orientation="vertical" flexItem />}>
@@ -295,10 +346,7 @@ function LeaderboardScreen() {
                   <Typography variant="body2" color="text.secondary">
                     Elo
                   </Typography>
-                  <Typography fontWeight={800}>
-                    {getEloForMode(selectedPlayer, eloMode, { fallback: selectedPlayer.elo }) ??
-                      "—"}
-                  </Typography>
+                  <Typography fontWeight={800}>{selectedPlayer.primaryElo ?? "—"}</Typography>
                 </Box>
               </Stack>
             </Stack>
