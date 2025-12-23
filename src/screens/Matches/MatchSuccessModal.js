@@ -22,15 +22,15 @@ function MatchSuccessModal({ open, onClose, match }) {
   const confettiPieces = useMemo(
     () =>
       Array.from({ length: 22 }, (_, idx) => ({
-        id: idx,
+        id: `${open}-${idx}`,
         left: Math.random() * 100,
-        delay: Math.random() * 0.4,
-        duration: 4 + Math.random() * 2,
+        delay: Math.random() * 0.3,
+        duration: 2.6 + Math.random() * 1.4,
         rotation: Math.random() * 180,
         size: 8 + Math.random() * 10,
         color: confettiColors[idx % confettiColors.length],
       })),
-    []
+    [open]
   );
 
   const matchTypeLabel = match?.match_type === "doubles" ? "Doubles match" : "Singles match";
@@ -58,12 +58,13 @@ function MatchSuccessModal({ open, onClose, match }) {
         {confettiPieces.map((piece) => (
           <motion.div
             key={piece.id}
-            initial={{ y: "-20%", rotate: piece.rotation }}
-            animate={{ y: "120%", rotate: piece.rotation + 180 }}
+            initial={{ y: "-20%", rotate: piece.rotation, opacity: 0 }}
+            animate={{ y: "120%", rotate: piece.rotation + 180, opacity: [1, 1, 0] }}
             transition={{
               duration: piece.duration,
               delay: piece.delay,
-              repeat: Infinity,
+              repeat: 0,
+              opacity: { duration: piece.duration, times: [0, 0.7, 1] },
               ease: "easeOut",
             }}
             style={{
@@ -85,6 +86,23 @@ function MatchSuccessModal({ open, onClose, match }) {
       </DialogTitle>
       <DialogContent sx={{ zIndex: 1, position: "relative" }}>
         <Stack spacing={2}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              alignSelf: "center",
+              width: 120,
+              height: 120,
+              borderRadius: "50%",
+              backgroundColor: (theme) => theme.palette.success.light,
+              color: (theme) => theme.palette.success.dark,
+              boxShadow: 3,
+            }}
+          >
+            <CheckCircleOutlineIcon sx={{ fontSize: 72 }} />
+          </Box>
+
           <Alert
             severity="success"
             icon={<CelebrationIcon fontSize="inherit" />}
