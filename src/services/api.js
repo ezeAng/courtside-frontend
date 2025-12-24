@@ -71,39 +71,61 @@ export async function deleteUser(token) {
 }
 
 export async function getLeaderboard(gender, token, discipline = "singles") {
+  const params = new URLSearchParams();
+  if (discipline) params.set("discipline", discipline);
+
   const response = await fetch(
-    `${base}/api/leaderboard/${gender}?discipline=${encodeURIComponent(
-      discipline
-    )}`,
+    `${base}/api/leaderboard/${gender}?${params.toString()}`,
     {
       headers: optionalAuthHeader(token),
     }
   );
-  return handleResponse(response);
+
+  const payload = await handleResponse(response);
+  const leaders =
+    payload?.leaders ||
+    payload?.items ||
+    (Array.isArray(payload) ? payload : []);
+
+  return { ...payload, leaders };
 }
 
-export async function getOverallLeaderboard(token) {
-  const response = await fetch(`${base}/api/leaderboard/overall`, {
-    headers: optionalAuthHeader(token),
-  });
+export async function getOverallLeaderboard(
+  token,
+  { limit = 100, offset = 0 } = {}
+) {
+  const params = new URLSearchParams();
+  if (limit !== undefined && limit !== null) params.set("limit", limit);
+  if (offset !== undefined && offset !== null) params.set("offset", offset);
 
-  return handleResponse(response);
+  const response = await fetch(
+    `${base}/api/leaderboard/overall?${params.toString()}`,
+    {
+      headers: optionalAuthHeader(token),
+    }
+  );
+
+  const payload = await handleResponse(response);
+  const leaders =
+    payload?.items ||
+    payload?.leaders ||
+    (Array.isArray(payload) ? payload : []);
+
+  return {
+    ...payload,
+    leaders,
+    limit: payload?.limit ?? (limit !== undefined ? Number(limit) : undefined),
+    offset:
+      payload?.offset ?? (offset !== undefined ? Number(offset) : undefined),
+  };
 }
 
 export async function getSinglesLeaderboard(token) {
-  const response = await fetch(`${base}/api/leaderboard/singles`, {
-    headers: optionalAuthHeader(token),
-  });
-
-  return handleResponse(response);
+  return getLeaderboard("mixed", token, "singles");
 }
 
 export async function getDoublesLeaderboard(token) {
-  const response = await fetch(`${base}/api/leaderboard/doubles`, {
-    headers: optionalAuthHeader(token),
-  });
-
-  return handleResponse(response);
+  return getLeaderboard("mixed", token, "doubles");
 }
 
 export async function searchUsersAutocomplete(query, token) {
