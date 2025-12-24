@@ -54,10 +54,11 @@ function HomeScreen() {
           getHomeStats(token),
           getOverallRank(token),
         ]);
+
         setRecentMatches(recent?.matches || []);
         setRivals(rivalsData?.rivals || []);
         setStats(statsData?.stats || null);
-        setOverall(overallRank || null);
+        setOverall(statsData?.stats?.ranks?.overall || null);
       } catch (err) {
         setError("Unable to load stats. Pull to refresh.");
       } finally {
@@ -78,44 +79,52 @@ function HomeScreen() {
 
   const overallEloValue = useMemo(
     () =>
-      overall?.overall_elo ?? stats?.overall?.elo ?? stats?.overall_elo ?? null,
-    [overall, stats]
+      stats?.elo?.overall ?? stats?.overall_elo ?? null,
+    [stats]
   );
 
   const overallRankValue = useMemo(
     () =>
-      overall?.overall_rank ?? stats?.overall?.rank ?? stats?.overall_rank ?? null,
-    [overall, stats]
+      stats?.ranks?.overall ?? null,
+    [stats]
+  );
+
+  const singlesRankValue = useMemo(
+    () =>
+      stats?.ranks?.singles ?? null,
+    [stats]
+  );
+
+  const doublesRankValue = useMemo(
+    () =>
+      stats?.ranks?.doubles ?? null,
+    [stats]
   );
 
   const singlesEloValue = useMemo(
     () =>
-      stats?.singles_elo ?? stats?.singlesElo ?? stats?.singles?.elo ??
+      stats?.elo.singles ??
       getEloForMode(user, "singles", { fallback: null }),
     [stats, user]
   );
 
   const doublesEloValue = useMemo(
     () =>
-      stats?.doubles_elo ?? stats?.doublesElo ?? stats?.doubles?.elo ??
+      stats?.elo.doubles ??
       getEloForMode(user, "doubles", { fallback: null }),
     [stats, user]
   );
 
   const singlesMatchesPlayed = useMemo(
     () =>
-      stats?.singles_matches_played ??
-      stats?.singlesMatchesPlayed ??
-      stats?.singles?.matches_played ??
+      stats?.stats.total_singles_matches ??
       0,
     [stats]
   );
 
   const doublesMatchesPlayed = useMemo(
     () =>
-      stats?.doubles_matches_played ??
-      stats?.doublesMatchesPlayed ??
-      stats?.doubles?.matches_played ??
+      stats?.stats.total_doubles_matches ??
       0,
     [stats]
   );
@@ -166,13 +175,13 @@ function HomeScreen() {
 
   const totalMatches = useMemo(() => {
     if (!stats) return 0;
-    return stats.total_matches || stats.totalMatches || 0;
+    return stats?.stats?.total_matches || stats.totalMatches || 0;
   }, [stats]);
 
   const overallWinRate = useMemo(() => {
     if (!stats) return null;
-    const wins = stats.wins ?? 0;
-    const losses = stats.losses ?? 0;
+    const wins = stats?.stats.wins ?? 0;
+    const losses = stats?.stats.losses ?? 0;
     const total = wins + losses;
     if (!total) return null;
     return Math.round((wins / total) * 100);
@@ -213,12 +222,30 @@ function HomeScreen() {
           },
       {
         label: "Singles Elo",
-        value: singlesEloValue ?? "--",
+        value: (
+              <Stack spacing={0.25} alignItems="center">
+                <Typography variant="h5" fontWeight={800} lineHeight={1}>
+                  {singlesEloValue}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Rank #{singlesRankValue ?? "--"}
+                </Typography>
+              </Stack>
+            ),
         onClick: () => handleSelectEloMode("singles"),
       },
       {
         label: "Doubles Elo",
-        value: doublesEloValue ?? "--",
+        value: (
+              <Stack spacing={0.25} alignItems="center">
+                <Typography variant="h5" fontWeight={800} lineHeight={1}>
+                  {doublesEloValue}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Rank #{doublesRankValue ?? "--"}
+                </Typography>
+              </Stack>
+            ),
         onClick: () => handleSelectEloMode("doubles"),
       },
     ],
@@ -420,7 +447,7 @@ function HomeScreen() {
                       Record
                     </Typography>
                     <Typography variant="h6" fontWeight={700}>
-                      {stats.wins ?? 0}W - {stats.losses ?? 0}L
+                      {stats?.stats.wins ?? 0}W - {stats?.stats.losses ?? 0}L
                     </Typography>
                     {overallWinRate !== null && (
                       <Typography color="text.secondary" variant="body2">

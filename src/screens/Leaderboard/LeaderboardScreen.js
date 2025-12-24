@@ -166,7 +166,7 @@ function LeaderboardScreen() {
           </Tabs>
 
           <Divider />
-          <Stack px={3} py={2} spacing={0.5}>
+          <Stack px={5} py={3} spacing={0.5}>
             <Typography variant="overline" color="text.secondary">
               TOP 100 PLAYERS ON COURTSIDE
             </Typography>
@@ -270,7 +270,6 @@ function LeaderboardScreen() {
                           <Stack direction="row" spacing={2} alignItems="center">
                             <Avatar
                               src={normalizeProfileImage(entry?.profile_image_url)}
-                              imgProps={{ referrerPolicy: "no-referrer" }}
                             >
                               {entry?.username?.charAt(0).toUpperCase() || "P"}
                             </Avatar>
@@ -323,7 +322,6 @@ function LeaderboardScreen() {
               <Avatar
                 sx={{ width: 72, height: 72 }}
                 src={normalizeProfileImage(selectedPlayer.profile_image_url)}
-                imgProps={{ referrerPolicy: "no-referrer" }}
               >
                 {selectedPlayer.username?.charAt(0).toUpperCase() || "P"}
               </Avatar>

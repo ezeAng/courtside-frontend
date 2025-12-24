@@ -145,7 +145,8 @@ function EloStockChart({ onRecordMatch, overallElo }) {
     }),
     [eloMode, gridColor]
   );
-
+  let dataPoints = data?.points ?? []
+  let currentElo = dataPoints[dataPoints.length-1]?.elo;
   const summary = data?.summary;
   const isEmpty =
     data && (data.has_data === false || !data.points?.length);
@@ -167,7 +168,7 @@ function EloStockChart({ onRecordMatch, overallElo }) {
       <CardContent>
         <Stack spacing={2}>
           <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1} alignItems={{ xs: "flex-start", sm: "center" }}>
-            <Stack spacing={0.5}>
+            <Stack>
               <Typography variant="h6" fontWeight={700}>
                 {chartTitle}
               </Typography>
@@ -235,10 +236,10 @@ function EloStockChart({ onRecordMatch, overallElo }) {
                 <Box>
                   <Typography color="text.secondary">Current {getEloLabelForMode(eloMode)}</Typography>
                   <Typography variant="h4" fontWeight={700}>
-                    {Math.round(summary?.endElo ?? "--")}
+                    {Math.round(currentElo ?? "--")}
                   </Typography>
                 </Box>
-                {summary &&
+                {/* {summary &&
                   summary.change !== null &&
                   summary.change !== undefined && (
                   <Box>
@@ -255,7 +256,7 @@ function EloStockChart({ onRecordMatch, overallElo }) {
                         ` (${formatPercent(summary.changePct)})`}
                     </Typography>
                   </Box>
-                )}
+                )} */}
               </Stack>
 
               <Box sx={{ height: 260 }}>
