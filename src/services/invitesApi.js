@@ -127,7 +127,7 @@ export async function createInvite(token, payload, creatorInfo) {
       ...requireAuthHeader(token),
     },
     body: JSON.stringify({
-      mode: payload?.mode || payload?.discipline || "singles",
+      mode: payload?.mode || payload?.discipline,
       players: normalizedPlayers,
     }),
   });
