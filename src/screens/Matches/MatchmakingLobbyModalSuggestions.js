@@ -181,7 +181,7 @@ function MatchmakingLobbyModalSuggestions({
     try {
       setIsSending(true);
       setErrorMessage(null);
-      await createInvite(token, payload);
+      await createInvite(token, payload, currentUserInfo);
       onInviteSent?.();
       onClose?.();
     } catch (err) {

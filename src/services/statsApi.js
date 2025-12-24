@@ -1,3 +1,5 @@
+import { requireAuthHeader } from "./authHeaders";
+
 const base = process.env.REACT_APP_BACKEND_URL;
 
 async function handleResponse(response) {
@@ -8,13 +10,9 @@ async function handleResponse(response) {
   return response.json();
 }
 
-const withAuth = (token) => ({
-  ...(token ? { Authorization: `Bearer ${token}` } : {}),
-});
-
 export async function getOverallRank(token) {
   const res = await fetch(`${base}/api/users/me/overall-rank`, {
-    headers: withAuth(token),
+    headers: requireAuthHeader(token),
   });
 
   return handleResponse(res);
