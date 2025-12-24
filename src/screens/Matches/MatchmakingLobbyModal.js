@@ -164,7 +164,7 @@ function MatchmakingLobbyModal({ open, onClose, onInviteCreated }) {
 
     try {
       setError(null);
-      await createInvite(token, basePayload);
+      await createInvite(token, basePayload, userInfo);
       setSuccessMessage("Invite sent");
       if (onInviteCreated) {
         onInviteCreated();

@@ -1,3 +1,5 @@
+import { requireAuthHeader } from "./authHeaders";
+
 const base = process.env.REACT_APP_BACKEND_URL;
 
 async function handleResponse(response) {
@@ -9,18 +11,14 @@ async function handleResponse(response) {
   return response.json();
 }
 
-const withAuth = (token) => ({
-  ...(token ? { Authorization: `Bearer ${token}` } : {}),
-});
-
-export async function getEloSeries(range, token, discipline = "singles") {
+export async function getEloSeries(token, range = "1M", discipline = "singles") {
   const response = await fetch(
     `${base}/api/stats/elo-series?range=${encodeURIComponent(
       range
     )}&discipline=${encodeURIComponent(discipline)}`,
     {
       method: "GET",
-      headers: withAuth(token),
+      headers: requireAuthHeader(token),
     }
   );
 

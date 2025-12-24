@@ -1,15 +1,17 @@
-export async function getEloSeries(token, range, eloType) {
-  const res = await fetch("/api/elo/series", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      range,
-      elo_type: eloType, // "singles" | "doubles" | "overall"
-    }),
-  });
+import { requireAuthHeader } from "./authHeaders";
+
+const base = process.env.REACT_APP_BACKEND_URL;
+
+export async function getEloSeries(token, range = "1M", eloType = "overall") {
+  const res = await fetch(
+    `${base}/api/stats/elo-series?range=${encodeURIComponent(
+      range
+    )}&discipline=${encodeURIComponent(eloType)}`,
+    {
+      method: "GET",
+      headers: requireAuthHeader(token),
+    }
+  );
 
   if (!res.ok) throw new Error("Failed to fetch elo series");
   return res.json();

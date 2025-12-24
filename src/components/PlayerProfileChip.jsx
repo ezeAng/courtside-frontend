@@ -145,7 +145,7 @@ export default function PlayerProfileChip({ player, chipProps = {} }) {
     try {
       setIsInviting(true);
       setInviteError(null);
-      await createInvite(token, payload);
+      await createInvite(token, payload, currentUser);
       setOpen(false);
     } catch (err) {
       setInviteError(err.message || "Unable to send invite.");

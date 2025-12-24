@@ -234,7 +234,7 @@ function InvitePlayerModal({ open, onClose, onInviteCreated }) {
     try {
       setIsSending(true);
       setInviteError(null);
-      await createInvite(token, payload);
+      await createInvite(token, payload, currentUser);
       onInviteCreated?.();
       setProfileModalOpen(false);
       onClose?.();

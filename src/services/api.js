@@ -1,3 +1,5 @@
+import { optionalAuthHeader, requireAuthHeader } from "./authHeaders";
+
 const base = process.env.REACT_APP_BACKEND_URL;
 
 async function handleResponse(response) {
@@ -12,10 +14,6 @@ async function handleResponse(response) {
 
   return response.json();
 }
-
-const withAuth = (token) => ({
-  ...(token ? { Authorization: `Bearer ${token}` } : {}),
-});
 
 export async function signup(email, password, username, gender) {
   const response = await fetch(`${base}/api/auth/signup`, {
@@ -46,7 +44,7 @@ export async function resendConfirmationEmail(email) {
 
 export async function getCurrentUser(token) {
   const response = await fetch(`${base}/api/users/me`, {
-    headers: withAuth(token),
+    headers: requireAuthHeader(token),
   });
   return handleResponse(response);
 }
@@ -56,7 +54,7 @@ export async function updateProfile(token, profileData) {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...requireAuthHeader(token),
     },
     body: JSON.stringify(profileData),
   });
@@ -66,7 +64,7 @@ export async function updateProfile(token, profileData) {
 export async function deleteUser(token) {
   const response = await fetch(`${base}/api/users/me`, {
     method: "DELETE",
-    headers: withAuth(token),
+    headers: requireAuthHeader(token),
   });
 
   return handleResponse(response);
@@ -78,7 +76,7 @@ export async function getLeaderboard(gender, token, discipline = "singles") {
       discipline
     )}`,
     {
-      headers: withAuth(token),
+      headers: optionalAuthHeader(token),
     }
   );
   return handleResponse(response);
@@ -86,7 +84,7 @@ export async function getLeaderboard(gender, token, discipline = "singles") {
 
 export async function getOverallLeaderboard(token) {
   const response = await fetch(`${base}/api/leaderboard/overall`, {
-    headers: withAuth(token),
+    headers: optionalAuthHeader(token),
   });
 
   return handleResponse(response);
@@ -94,7 +92,7 @@ export async function getOverallLeaderboard(token) {
 
 export async function getSinglesLeaderboard(token) {
   const response = await fetch(`${base}/api/leaderboard/singles`, {
-    headers: withAuth(token),
+    headers: optionalAuthHeader(token),
   });
 
   return handleResponse(response);
@@ -102,7 +100,7 @@ export async function getSinglesLeaderboard(token) {
 
 export async function getDoublesLeaderboard(token) {
   const response = await fetch(`${base}/api/leaderboard/doubles`, {
-    headers: withAuth(token),
+    headers: optionalAuthHeader(token),
   });
 
   return handleResponse(response);
@@ -112,7 +110,7 @@ export async function searchUsersAutocomplete(query, token) {
   const response = await fetch(
     `${base}/api/users/search/autocomplete?query=${encodeURIComponent(query)}`,
     {
-      headers: withAuth(token),
+      headers: requireAuthHeader(token),
     }
   );
   const payload = await handleResponse(response);
@@ -129,7 +127,7 @@ export async function getUserProfile(username, token) {
   const response = await fetch(
     `${base}/api/users/search/profile?username=${encodeURIComponent(username)}`,
     {
-      headers: withAuth(token),
+      headers: requireAuthHeader(token),
     }
   );
   return handleResponse(response);
@@ -137,21 +135,21 @@ export async function getUserProfile(username, token) {
 
 export async function getOtherUsers(token) {
   const response = await fetch(`${base}/api/users/others`, {
-    headers: withAuth(token),
+    headers: requireAuthHeader(token),
   });
   return handleResponse(response);
 }
 
 export async function getMatchHistory(userId, token) {
   const response = await fetch(`${base}/api/matches/user/${userId}`, {
-    headers: withAuth(token),
+    headers: requireAuthHeader(token),
   });
   return handleResponse(response);
 }
 
 export async function getMatchDetail(matchId, token) {
   const response = await fetch(`${base}/api/matches/${matchId}`, {
-    headers: withAuth(token),
+    headers: requireAuthHeader(token),
   });
   return handleResponse(response);
 }
@@ -161,7 +159,7 @@ export async function addMatchVideo(matchId, videoLink, token) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...withAuth(token),
+      ...requireAuthHeader(token),
     },
     body: JSON.stringify({ video_link: videoLink }),
   });
@@ -173,7 +171,7 @@ export async function createMatch(payload, token) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...withAuth(token),
+      ...requireAuthHeader(token),
     },
     body: JSON.stringify(payload),
   });
@@ -183,7 +181,7 @@ export async function createMatch(payload, token) {
 export async function getRecentActivity(token) {
   const response = await fetch(`${base}/api/matches/recent`, {
     method: "GET",
-    headers: withAuth(token),
+    headers: requireAuthHeader(token),
   });
   return handleResponse(response);
 }
@@ -194,7 +192,7 @@ export async function uploadAvatar(token, file) {
 
   const response = await fetch(`${base}/api/profile/upload-avatar`, {
     method: "POST",
-    headers: withAuth(token),
+    headers: requireAuthHeader(token),
     body: formData,
   });
 
@@ -204,7 +202,7 @@ export async function uploadAvatar(token, file) {
 export async function getH2H(token) {
   const response = await fetch(`${base}/api/matches/h2h`, {
     method: "GET",
-    headers: withAuth(token),
+    headers: requireAuthHeader(token),
   });
   return handleResponse(response);
 }
@@ -212,7 +210,7 @@ export async function getH2H(token) {
 export async function getHomeStats(token) {
   const response = await fetch(`${base}/api/users/home-stats`, {
     method: "GET",
-    headers: withAuth(token),
+    headers: requireAuthHeader(token),
   });
   return handleResponse(response);
 }
@@ -220,7 +218,7 @@ export async function getHomeStats(token) {
 export async function getPlayerCardData(token) {
   const response = await fetch(`${base}/api/users/card-data`, {
     method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: requireAuthHeader(token),
   });
 
   return handleResponse(response);
