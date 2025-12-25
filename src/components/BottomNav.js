@@ -40,6 +40,8 @@ function BottomNav() {
         borderTop: `1px solid ${theme.palette.divider}`,
         backgroundColor: theme.palette.background.paper,
         boxShadow: theme.custom?.colors?.shadows?.sm,
+        height: "10vh",
+        
       }}
       elevation={3}
     >
@@ -47,11 +49,12 @@ function BottomNav() {
         value={currentValue}
         onChange={(event, newValue) => navigate(newValue)}
         showLabels
+        
         sx={{
           "& .MuiBottomNavigationAction-root": {
             color: theme.palette.text.secondary,
             fontWeight: 600,
-            paddingTop: theme.spacing(1),
+            paddingTop: theme.spacing(3),
             paddingBottom: theme.spacing(1),
             minWidth: 64,
             gap: theme.spacing(0.5),

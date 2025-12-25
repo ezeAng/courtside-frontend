@@ -75,7 +75,7 @@ const PlayerCard = forwardRef(({ card }, ref) => {
   const winRate = card.win_rate_last_10 || 0;
   const stars = card.star_rating || 0;
 
-  const eloTheme = getEloBase(card.elo);
+  const eloTheme = getEloBase(card.overall_elo);
   const glowStrength = getWinRateGlow(winRate);
   const border = getTierBorder(card.tier, eloTheme.accent);
 
@@ -123,7 +123,7 @@ const PlayerCard = forwardRef(({ card }, ref) => {
         <span style={{ fontSize: 13, letterSpacing: 1, opacity: 0.8 }}>
           PLAYER CARD
         </span>
-        <span style={{ fontSize: 18, fontWeight: 700 }}>{card.elo} ELO</span>
+        <span style={{ fontSize: 18, fontWeight: 700 }}>{card.overall_elo} ELO</span>
       </div>
 
       {/* IMAGE FRAME */}

@@ -12,6 +12,7 @@ export default function PlayerCardModal({ token, onClose }) {
     (async () => {
       try {
         const res = await getPlayerCardData(token);
+        console.log(res.card)
         setCard(res.card);
       } catch (err) {
         setError(err.message || "Failed to load player card");

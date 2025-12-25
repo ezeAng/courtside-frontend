@@ -19,6 +19,7 @@ export async function getEloSeries(
   });
 
   const data = await res.json().catch(() => ({}));
+
   if (!res.ok) {
     const message = data.error || data.message || "Failed to fetch elo series";
     throw new Error(message);
