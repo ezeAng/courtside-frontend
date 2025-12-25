@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import Badge from "@mui/material/Badge";
+import Chip from "@mui/material/Chip";
 import Container from "@mui/material/Container";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
@@ -27,6 +28,7 @@ import { fetchMatchHistory } from "../../features/matches/matchSlice";
 import { getPendingMatches } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getDisciplineFromMatch, getEloForMode } from "../../utils/elo";
 import { extractYouTubeId, isYouTubeLink } from "../../utils/video";
@@ -72,7 +74,7 @@ function TeamCard({ title, players, outcome, discipline }) {
 
   return (
     <Stack
-      spacing={1}
+      spacing={4}
       sx={(theme) => ({
         border: 1,
         borderColor: isWinner
@@ -80,8 +82,8 @@ function TeamCard({ title, players, outcome, discipline }) {
           : outcome === "loser"
           ? alpha(theme.palette.error.main, 0.4)
           : "divider",
-        borderRadius: 2,
-        p: 2,
+        borderRadius: 1,
+        p: 5,
         boxShadow: isWinner
           ? `0 6px 14px ${alpha(theme.palette.success.main, 0.16)}`
           : "none",
@@ -212,7 +214,8 @@ function MatchHistoryScreen() {
 
   const renderMatchDetail = () => {
     if (!selectedMatch) return null;
-
+  
+    const matchStatus = selectedMatch?.status
     const discipline = getDisciplineFromMatch(selectedMatch);
     const teamAPlayers = getTeamPlayers(selectedMatch, "team_A");
     const teamBPlayers = getTeamPlayers(selectedMatch, "team_B");
@@ -266,9 +269,7 @@ function MatchHistoryScreen() {
                 </Button>
               </Stack>
               {!videoLink ? (
-                <Button variant="contained" onClick={() => handleOpenVideoModal(selectedMatch)}>
-                  Add match video
-                </Button>
+                <Typography sx={{margin:"20px"}}>No match video.</Typography>
               ) : youtubeId ? (
                 <Box
                   sx={{
@@ -357,11 +358,11 @@ function MatchHistoryScreen() {
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
       <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1.5}>
-          <Typography variant="h5" fontWeight={700}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={2} padding={4}>
+          <Typography variant="h5" fontWeight={500}>
             Match History
           </Typography>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" justifyContent="flex-end">
+          <Stack direction="row" spacing={5} alignItems="center" flexWrap="wrap" justifyContent="space-evenly">
             <IconButton onClick={() => navigate("/matches/pending")}> 
               <Badge
                 color="error"
@@ -369,17 +370,19 @@ function MatchHistoryScreen() {
                 overlap="circular"
                 showZero
               >
-                <InboxIcon />
+              <InboxIcon />
               </Badge>
             </IconButton>
-            <Button variant="outlined" onClick={() => navigate("/matches/invites")}>
+            {/* <Button variant="outlined" onClick={() => navigate("/matches/invites")}>
               Invite Player
-            </Button>
+            </Button> */}
             <Button variant="contained" onClick={() => setOpenModal(true)}>
               Record Match
             </Button>
           </Stack>
         </Stack>
+
+        <Box></Box>
 
         {loading ? (
           <Stack spacing={2}>
@@ -401,32 +404,57 @@ function MatchHistoryScreen() {
               const teamAOutcome = getOutcomeFromWinnerTeam(winnerTeam, "A");
               const teamBOutcome = getOutcomeFromWinnerTeam(winnerTeam, "B");
               const hasVideo = Boolean(match.video_link);
+              const thisMatchStatus = match.status;
 
               return (
                 <ListItemButton
                   key={match.match_id || match.id}
                   divider
                   onClick={() => handleMatchClick(match)}
+                  sx={{
+                    alignItems: "flex-start",
+                    position: "relative",
+                    py: 1.5,
+                  }}
                 >
+                  {/* Status chip – top right */}
+                  <Box sx={{ position: "absolute", top: 12, right: 16 }}>
+                    <Chip
+                      size="small"
+                      label={thisMatchStatus}
+                      color={thisMatchStatus === "confirmed" ? "success" : "default"}
+                    />
+                  </Box>
+
                   <ListItemText
-                    primary={`${discipline === "doubles" ? "Doubles" : "Singles"} • ${(() => {
-                      const wt = match.winner_team;
-                      if (wt === "draw" || wt === null) return "Draw";
-                      if (wt) return `Winner: Team ${wt}`;
-                      return "Result pending";
-                    })()}`}
-                    primaryTypographyProps={{ component: "span" }}
-                    secondaryTypographyProps={{ component: "div" }}
+                    primary={
+                      <Typography variant="body2" fontWeight={600}>
+                        {discipline === "doubles" ? "Doubles" : "Singles"} •{" "}
+                        {(() => {
+                          const wt = match.winner_team;
+                          if (wt === "draw" || wt === null) return "Draw";
+                          if (wt) return `Winner: Team ${wt}`;
+                          return "Result pending";
+                        })()}
+                      </Typography>
+                    }
                     secondary={
-                      <Stack spacing={0.5}>
-                        <Typography variant="body2" color="text.primary">
+                      <Stack spacing={2} mt={0.75}>
+                        {/* Score */}
+                        <Typography variant="body1" color="text.primary">
                           Score: {match.score}
                         </Typography>
+
+                        {/* Team A */}
                         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                          <Typography variant="body2" fontWeight={700}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={700}
+                            sx={{ minWidth: 64 }}
+                          >
                             Team A:
                           </Typography>
-                          <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
+                          <Stack direction="row" spacing={0.75} flexWrap="wrap">
                             {(match.players?.team_A || []).map((player) => (
                               <PlayerProfileChip
                                 key={player.auth_id || player.id || player.username}
@@ -434,16 +462,23 @@ function MatchHistoryScreen() {
                                 chipProps={{
                                   sx: (theme) => getOutcomeStyles(theme, teamAOutcome),
                                   variant: "outlined",
+                                  size: "small",
                                 }}
                               />
                             ))}
                           </Stack>
                         </Stack>
+
+                        {/* Team B */}
                         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                          <Typography variant="body2" fontWeight={700}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={700}
+                            sx={{ minWidth: 64 }}
+                          >
                             Team B:
                           </Typography>
-                          <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
+                          <Stack direction="row" spacing={0.75} flexWrap="wrap">
                             {(match.players?.team_B || []).map((player) => (
                               <PlayerProfileChip
                                 key={player.auth_id || player.id || player.username}
@@ -451,32 +486,34 @@ function MatchHistoryScreen() {
                                 chipProps={{
                                   sx: (theme) => getOutcomeStyles(theme, teamBOutcome),
                                   variant: "outlined",
+                                  size: "small",
                                 }}
                               />
                             ))}
                           </Stack>
                         </Stack>
-                        <Typography variant="caption" color="text.secondary">
-                          {match.played_at
-                            ? new Date(match.played_at).toLocaleDateString()
-                            : ""}
-                        </Typography>
-                        {hasVideo && (
-                          <Stack direction="row" spacing={0.5} alignItems="center">
+
+                        {/* Meta row */}
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography variant="caption" color="text.secondary">
+                            {match.played_at
+                              ? new Date(match.played_at).toLocaleDateString()
+                              : ""}
+                          </Typography>
+
+                          {hasVideo && (
                             <Tooltip title="Match video available">
-                              <span role="img" aria-label="Video available">
-                                🎥
-                              </span>
+                              <Typography variant="caption" color="text.secondary">
+                                🎥 Video
+                              </Typography>
                             </Tooltip>
-                            <Typography variant="caption" color="text.secondary">
-                              Video link added
-                            </Typography>
-                          </Stack>
-                        )}
+                          )}
+                        </Stack>
                       </Stack>
                     }
                   />
                 </ListItemButton>
+
               );
             })}
           </List>

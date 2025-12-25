@@ -7,11 +7,11 @@ import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
 function EmptyState({ title, description, actionLabel, onAction, icon, children }) {
   return (
     <Stack
-      spacing={1.5}
+      spacing={2}
       alignItems="center"
       textAlign="center"
       sx={(theme) => ({
-        borderRadius: theme.custom?.colors?.radii?.md || theme.shape.borderRadius,
+        borderRadius: "5%",
         border: `1px dashed ${theme.palette.divider}`,
         backgroundColor: theme.palette.mode === "dark"
           ? theme.palette.background.default
@@ -21,9 +21,6 @@ function EmptyState({ title, description, actionLabel, onAction, icon, children 
     >
       <Box
         sx={(theme) => ({
-          width: 48,
-          height: 48,
-          borderRadius: "50%",
           backgroundColor: theme.palette.action.hover,
           display: "grid",
           placeItems: "center",

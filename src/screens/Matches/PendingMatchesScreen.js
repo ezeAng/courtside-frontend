@@ -11,14 +11,10 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate } from "react-router-dom";
 import { confirmMatch, getPendingMatches, rejectMatch } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
+import MatchConfirmedDialog from "../../components/MatchConfirmedDialog";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
 import EmptyState from "../../components/EmptyState";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import { getDisciplineFromMatch, getEloDeltaForMode, getEloForMode } from "../../utils/elo";
 
 export default function PendingMatchesScreen() {
   const navigate = useNavigate();
@@ -28,23 +24,24 @@ export default function PendingMatchesScreen() {
   const [error, setError] = useState(null);
   const [confirmFeedback, setConfirmFeedback] = useState(null);
 
-  const getPlayerLabel = (player) => {
-    if (!player) return "Player";
+  /* ---------------- helpers ---------------- */
 
-    const names = [
-      player.username,
-      player.display_name,
-      player.name,
-      player.player_name,
-      player.player_username,
-      player.playerId,
-      player.player_id,
-      player.player_auth_id,
-      player.auth_id,
-    ];
-
-    return names.find(Boolean) || "Player";
+  const getMatchPlayers = (match) => {
+    if (Array.isArray(match.match_players) && match.match_players.length > 0) {
+      return match.match_players.map((mp) => mp.user || mp);
+    }
+    if (match.submitted_by_user) {
+      return [match.submitted_by_user];
+    }
+    return [];
   };
+
+  const getScoreLabel = (match) => {
+    if (!match.score) return "Score pending";
+    return `Score: ${match.score}`;
+  };
+
+  /* ---------------- data ---------------- */
 
   async function load() {
     try {
@@ -86,6 +83,8 @@ export default function PendingMatchesScreen() {
     }
   }
 
+  /* ---------------- states ---------------- */
+
   if (loading) {
     return (
       <Container maxWidth="sm" sx={{ py: 4 }}>
@@ -94,8 +93,8 @@ export default function PendingMatchesScreen() {
             <Paper key={idx} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
               <Stack spacing={1}>
                 <Skeleton width="50%" />
-                <Skeleton width="35%" />
-                <Skeleton variant="rectangular" height={18} />
+                <Skeleton width="70%" />
+                <Skeleton height={28} />
               </Stack>
             </Paper>
           ))}
@@ -113,37 +112,64 @@ export default function PendingMatchesScreen() {
     );
   }
 
+  /* ---------------- renderers ---------------- */
+
   const renderIncoming = () => (
     <Stack spacing={2}>
       <Typography variant="h6" fontWeight={700}>
         Matches You Need To Confirm
       </Typography>
+
       {incoming.length === 0 ? (
         <EmptyState
           title="Nothing to confirm"
-          description="You’ll see challenges that need your attention here. Record a match or wait for opponents to submit results."
+          description="You’ll see matches that need your confirmation here."
         />
       ) : (
         incoming.map((m) => (
-          <Paper
-            key={m.match_id}
-            variant="outlined"
-            sx={{ p: 2, borderRadius: 2 }}
-          >
+          <Paper key={m.match_id} variant="outlined" sx={{ p: 4, borderRadius: 1.5 }}>
             <Stack spacing={1.5}>
               <Typography variant="subtitle1" fontWeight={700}>
-                Match Type: {m.match_type}
+                {m.match_type.toUpperCase()}
               </Typography>
-              <Stack direction="row" alignItems="center" spacing={0.75}>
-                <Typography variant="body2">Submitted By:</Typography>
-                <PlayerProfileChip
-                  player={{ username: m.submitted_by }}
-                  chipProps={{ variant: "outlined" }}
-                />
+
+              {/* players */}
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {getMatchPlayers(m).length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Players not assigned
+                  </Typography>
+                ) : (
+                  getMatchPlayers(m).map((p, idx) => (
+                    <PlayerProfileChip
+                      key={idx}
+                      player={p}
+                      chipProps={{ size: "small", variant: "outlined" }}
+                    />
+                  ))
+                )}
               </Stack>
-              <Typography variant="body2" color="text.secondary">
-                Created At: {new Date(m.created_at).toLocaleString()}
+
+              {/* score */}
+              <Typography variant="body2" color={m.score ? "text.primary" : "text.secondary"}>
+                {getScoreLabel(m)}
               </Typography>
+
+              {/* submitted by */}
+              {m.submitted_by_user && (
+                <Stack direction="row" spacing={0.75} alignItems="center">
+                  <Typography variant="body2">Submitted by</Typography>
+                  <PlayerProfileChip
+                    player={m.submitted_by_user}
+                    chipProps={{ size: "small" }}
+                  />
+                </Stack>
+              )}
+
+              <Typography variant="caption" color="text.secondary">
+                {new Date(m.created_at).toLocaleString()}
+              </Typography>
+
               <Stack direction="row" spacing={1}>
                 <Button
                   variant="contained"
@@ -153,7 +179,7 @@ export default function PendingMatchesScreen() {
                   Confirm
                 </Button>
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   color="error"
                   onClick={() => handleReject(m.match_id)}
                 >
@@ -172,27 +198,42 @@ export default function PendingMatchesScreen() {
       <Typography variant="h6" fontWeight={700}>
         Matches You Submitted
       </Typography>
+
       {outgoing.length === 0 ? (
         <EmptyState
           title="No pending submissions"
-          description="Submit a match to see opponents confirm results. Keep competing to build your streak."
+          description="Submit a match and wait for opponents to confirm."
         />
       ) : (
         outgoing.map((m) => (
-          <Paper
-            key={m.match_id}
-            variant="outlined"
-            sx={{ p: 2, borderRadius: 2 }}
-          >
-            <Stack spacing={1}>
+          <Paper key={m.match_id} variant="outlined" sx={{ p: 4, borderRadius: 1.5 }}>
+            <Stack spacing={1.25}>
               <Typography variant="subtitle1" fontWeight={700}>
-                Match Type: {m.match_type}
+                {m.match_type.toUpperCase()}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Status: Waiting for opponents to confirm
+
+              {/* players */}
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {getMatchPlayers(m).map((p, idx) => (
+                  <PlayerProfileChip
+                    key={idx}
+                    player={p}
+                    chipProps={{ size: "small", variant: "outlined" }}
+                  />
+                ))}
+              </Stack>
+
+              {/* score */}
+              <Typography variant="body2" color={m.score ? "text.primary" : "text.secondary"}>
+                {getScoreLabel(m)}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Created At: {new Date(m.created_at).toLocaleString()}
+
+              <Typography variant="body2" color="warning.main">
+                Waiting for confirmation
+              </Typography>
+
+              <Typography variant="caption" color="text.secondary">
+                {new Date(m.created_at).toLocaleString()}
               </Typography>
             </Stack>
           </Paper>
@@ -201,128 +242,18 @@ export default function PendingMatchesScreen() {
     </Stack>
   );
 
+  /* ---------------- layout ---------------- */
+
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
-      <Dialog
+      <MatchConfirmedDialog
         open={Boolean(confirmFeedback)}
+        confirmFeedback={confirmFeedback}
         onClose={() => setConfirmFeedback(null)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Match Confirmed</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={1.5}>
-            {confirmFeedback?.upset && (
-              <Alert
-                severity={confirmFeedback.upset.is_upset ? "warning" : "info"}
-                variant="filled"
-              >
-                {confirmFeedback.upset.is_upset ? "Upset! " : "Match result"}
-                {confirmFeedback.upset.winner_avg_elo &&
-                  confirmFeedback.upset.opponent_avg_elo &&
-                  confirmFeedback.upset.elo_gap !== undefined && (
-                    <>
-                      {" "}Winner avg ELO: {confirmFeedback.upset.winner_avg_elo}, Opponent
-                      avg ELO: {confirmFeedback.upset.opponent_avg_elo} (gap {" "}
-                      {confirmFeedback.upset.elo_gap}).
-                    </>
-                  )}
-              </Alert>
-            )}
+      />
 
-            {confirmFeedback?.updated_elos?.updates?.length > 0 && (
-              <Stack spacing={0.5}>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  ELO Updates
-                </Typography>
-                {confirmFeedback.updated_elos.updates.map((u, idx) => {
-                  const playerLabel = getPlayerLabel(u);
-                  const mode = getDisciplineFromMatch(
-                    confirmFeedback.updated_elos.discipline || confirmFeedback
-                  );
-                  const delta = getEloDeltaForMode(u, mode) ?? 0;
-                  const formattedDelta = delta > 0 ? `+${delta}` : `${delta}`;
-                  const newElo = getEloForMode(u, mode, { fallback: u.new_elo });
-                  return (
-                    <Stack
-                      key={`${playerLabel}-${idx}`}
-                      direction="row"
-                      alignItems="center"
-                      spacing={0.75}
-                      flexWrap="wrap"
-                    >
-                      <PlayerProfileChip
-                        player={u}
-                        chipProps={{
-                          variant: "outlined",
-                        }}
-                      />
-                      <Typography variant="body2">
-                        {newElo ?? ""} ({formattedDelta})
-                      </Typography>
-                    </Stack>
-                  );
-                })}
-              </Stack>
-            )}
-
-            {confirmFeedback?.updated_elos?.discipline === "doubles" && (
-              <Stack spacing={0.5}>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Team ELO Changes (Doubles)
-                </Typography>
-                <Typography variant="body2">
-                  Team A: {confirmFeedback?.elo_change_side_a ?? confirmFeedback?.team_a_delta ?? 0}
-                </Typography>
-                <Typography variant="body2">
-                  Team B: {confirmFeedback?.elo_change_side_b ?? confirmFeedback?.team_b_delta ?? 0}
-                </Typography>
-              </Stack>
-            )}
-
-            {confirmFeedback?.ranks?.length > 0 && (
-              <Stack spacing={0.5}>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Rank Changes
-                </Typography>
-                {confirmFeedback.ranks.map((r, idx) => {
-                  const playerLabel = getPlayerLabel(r);
-                  const movement = r.rankChange ?? 0;
-                  const direction = movement > 0 ? "up" : movement < 0 ? "down" : "no";
-                  const movementText =
-                    direction === "no"
-                      ? "No movement"
-                      : `Moved ${direction} ${Math.abs(movement)} spots`;
-                  return (
-                    <Stack
-                      key={`${playerLabel}-${idx}`}
-                      direction="row"
-                      alignItems="center"
-                      spacing={0.75}
-                      flexWrap="wrap"
-                    >
-                      <PlayerProfileChip
-                        player={r}
-                        chipProps={{
-                          variant: "outlined",
-                        }}
-                      />
-                      <Typography variant="body2">
-                        {movementText} (from {r.previousRank ?? "?"} to {r.newRank ?? "?"})
-                      </Typography>
-                    </Stack>
-                  );
-                })}
-              </Stack>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmFeedback(null)}>Dismiss</Button>
-        </DialogActions>
-      </Dialog>
-      <Stack spacing={3}>
-        <Stack direction="row" alignItems="center" spacing={1}>
+      <Stack spacing={5}>
+        <Stack direction="row" alignItems="center" spacing={2}>
           <Button
             startIcon={<ArrowBackIcon />}
             onClick={() => navigate("/matches")}
@@ -334,6 +265,7 @@ export default function PendingMatchesScreen() {
             Pending Matches
           </Typography>
         </Stack>
+
         {renderIncoming()}
 
         <Divider />

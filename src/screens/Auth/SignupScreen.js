@@ -11,8 +11,10 @@ import Typography from "@mui/material/Typography";
 import MenuItem from "@mui/material/MenuItem";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
 import { signup, resendConfirmationEmail } from "../../features/auth/authSlice";
 import OnboardingModal from "../../components/OnboardingModal/OnboardingModal";
+import logo from "../../logo.svg";
 
 function SignupScreen() {
   const dispatch = useDispatch();
@@ -28,6 +30,7 @@ function SignupScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); // 👈 NEW
   const [username, setUsername] = useState("");
   const [gender, setGender] = useState("male");
   const [submitError, setSubmitError] = useState(null);
@@ -57,7 +60,17 @@ function SignupScreen() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitError(null);
-    const result = await dispatch(signup({ email, password, username, gender }));
+
+    // 🔒 Password confirmation guard
+    if (password !== confirmPassword) {
+      setSubmitError("Passwords do not match.");
+      return;
+    }
+
+    const result = await dispatch(
+      signup({ email, password, username, gender })
+    );
+
     if (signup.rejected.match(result)) {
       setSubmitError(result.payload || result.error?.message);
     }
@@ -78,8 +91,12 @@ function SignupScreen() {
   return (
     <>
       {!hasSeenOnboarding && !accessToken && (
-        <OnboardingModal open={showOnboarding} onDismiss={handleOnboardingDismiss} />
+        <OnboardingModal
+          open={showOnboarding}
+          onDismiss={handleOnboardingDismiss}
+        />
       )}
+
       <Container
         maxWidth="sm"
         sx={{ display: "flex", alignItems: "center", minHeight: "100vh", py: 6 }}
@@ -87,7 +104,18 @@ function SignupScreen() {
         <Card sx={{ width: "100%" }} variant="outlined">
           <CardContent>
             <Stack spacing={3} component="form" onSubmit={handleSubmit}>
-              <Stack spacing={1}>
+
+              {/* Logo */}
+              <Box display="flex" justifyContent="center">
+                <Box
+                  component="img"
+                  src={logo}
+                  alt="App logo"
+                  sx={{ height: 128, mb: 1 }}
+                />
+              </Box>
+
+              <Stack spacing={1} textAlign="center">
                 <Typography variant="h4" fontWeight={700}>
                   Create Account
                 </Typography>
@@ -99,6 +127,7 @@ function SignupScreen() {
               {(submitError || error) && (
                 <Alert severity="error">{submitError || error}</Alert>
               )}
+
               {signupMessage && (
                 <Stack spacing={1}>
                   <Alert severity="success">{signupMessage}</Alert>
@@ -107,7 +136,11 @@ function SignupScreen() {
                     size="small"
                     onClick={handleResend}
                     disabled={resendLoading || !email}
-                    startIcon={resendLoading ? <CircularProgress size={16} color="inherit" /> : null}
+                    startIcon={
+                      resendLoading ? (
+                        <CircularProgress size={16} color="inherit" />
+                      ) : null
+                    }
                   >
                     Resend confirmation email
                   </Button>
@@ -124,6 +157,7 @@ function SignupScreen() {
                 required
                 fullWidth
               />
+
               <TextField
                 label="Password"
                 type="password"
@@ -132,6 +166,23 @@ function SignupScreen() {
                 required
                 fullWidth
               />
+
+              {/* 🔒 Confirm Password */}
+              <TextField
+                label="Confirm Password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                fullWidth
+                error={Boolean(confirmPassword && password !== confirmPassword)}
+                helperText={
+                  confirmPassword && password !== confirmPassword
+                    ? "Passwords do not match"
+                    : ""
+                }
+              />
+
               <TextField
                 label="Username"
                 value={username}
@@ -139,6 +190,7 @@ function SignupScreen() {
                 required
                 fullWidth
               />
+
               <TextField
                 select
                 label="Gender"
@@ -156,7 +208,9 @@ function SignupScreen() {
                 size="large"
                 onClick={handleOnboardingOpen}
                 disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+                startIcon={
+                  loading ? <CircularProgress size={20} color="inherit" /> : null
+                }
               >
                 {loading ? "Signing up..." : "Sign Up"}
               </Button>
@@ -167,6 +221,7 @@ function SignupScreen() {
                   Log in
                 </Button>
               </Typography>
+
             </Stack>
           </CardContent>
         </Card>

@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
@@ -17,12 +16,10 @@ import { useNavigate } from "react-router-dom";
 import { getH2H, getHomeStats, getRecentActivity } from "../../services/api";
 import { fetchCurrentUser } from "../../features/user/userSlice";
 import EloStockChart from "../../components/home/EloStockChart";
-import ProfileAvatar from "../../components/ProfileAvatar";
 import { normalizeProfileImage } from "../../utils/profileImage";
 import Avatar from "@mui/material/Avatar";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getEloForMode } from "../../utils/elo";
-import { getOverallRank } from "../../services/statsApi";
 import { setEloMode } from "../../features/ui/uiSlice";
 
 function HomeScreen() {
@@ -48,11 +45,10 @@ function HomeScreen() {
       try {
         setLoading(true);
         setError(null);
-        const [recent, rivalsData, statsData, overallRank] = await Promise.all([
+        const [recent, rivalsData, statsData] = await Promise.all([
           getRecentActivity(token),
           getH2H(token),
-          getHomeStats(token),
-          getOverallRank(token),
+          getHomeStats(token)
         ]);
 
         setRecentMatches(recent?.matches || []);
@@ -156,22 +152,11 @@ function HomeScreen() {
       .slice(0, 5);
   }, [rivals]);
 
-  const formatRelativeDate = (dateString) => {
-    if (!dateString) return "";
-    const created = new Date(dateString).getTime();
-    const diffDays = Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24));
-    if (diffDays <= 0) return "Today";
-    if (diffDays === 1) return "1d";
-    return `${diffDays}d`;
-  };
 
   const handleRecordMatch = () => {
     navigate("/matches");
   };
 
-  const handleViewLeaderboard = () => {
-    navigate("/leaderboard");
-  };
 
   const totalMatches = useMemo(() => {
     if (!stats) return 0;
@@ -215,7 +200,7 @@ function HomeScreen() {
             label: "Overall Elo",
             value: (
               <Typography variant="body2" color="text.secondary" textAlign="center">
-                Play 5 matches to unlock overall Elo
+                Play 5 matches to unlock.
               </Typography>
             ),
             onClick: () => handleSelectEloMode("overall"),
@@ -255,6 +240,7 @@ function HomeScreen() {
   return (
     <Container
       maxWidth="sm"
+      sx={{"padding" : 0}}
     >
       <Stack spacing={3}>
         {loading && (
@@ -279,9 +265,8 @@ function HomeScreen() {
               position: "relative",
               display: "flex",
               alignItems: "flex-end",
-              px: { xs: 2.5, sm: 4 },
               pb: 10,
-              borderRadius: { xs: theme.shape.borderRadius, sm: theme.shape.borderRadius * 1.25 },
+              mx: 0,
               overflow: "hidden",
             }}
           >
@@ -307,7 +292,7 @@ function HomeScreen() {
               alignItems="center"
               sx={{ position: "relative", zIndex: 2 }}
             >
-              {user ? (
+              {/* {user ? (
                 <ProfileAvatar
                   user={user}
                   size={96}
@@ -320,9 +305,9 @@ function HomeScreen() {
                 />
               ) : (
                 <Skeleton variant="circular" width={96} height={96} />
-              )}
+              )} */}
 
-              <Box>
+              <Box paddingLeft={10}>
                 {user ? (
                   <>
                     <Typography variant="h5" fontWeight={800} color={alpha(theme.palette.common.white, 0.94)}>
@@ -350,205 +335,273 @@ function HomeScreen() {
             </Stack>
           </Box>
 
-        {/* FLOATING STAT CARDS */}
-        <Container maxWidth="sm" sx={{ position: "relative", mt: -6, pb: 2 }}>
-          <Grid container spacing={2} paddingLeft={1}>
-            {(heroStatsLoading ? [...Array(3)] : topHeroStats).map((item, idx) => (
-              <Card
-                key={item?.label || idx}
-                sx={{
-                  margin: "auto",
-                  width: "30%",
-                  borderRadius: theme.shape.borderRadius,
-                  textAlign: "center",
-                  boxShadow: theme.custom?.colors?.shadows?.sm,
-                  cursor: item?.onClick ? "pointer" : "default",
-                }}
-                onClick={item?.onClick}
-              >
-                <CardContent sx={{ py: 2 }}>
-                  {heroStatsLoading ? (
-                    <Stack spacing={1} alignItems="center">
-                      <Skeleton variant="text" width="60%" />
-                      <Skeleton variant="text" width="50%" />
-                    </Stack>
-                  ) : (
-                    <Stack spacing={1} alignItems="center">
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ letterSpacing: 0.5 }}
-                      >
-                        {item.label}
-                      </Typography>
-                      {typeof item.value === "string" || typeof item.value === "number" ? (
-                        <Typography variant="h5" fontWeight={800}>
-                          {item.value}
+          {/* FLOATING STAT CARDS */}
+          <Container maxWidth="sm" sx={{ position: "relative", mt: -6, pb: 2 }}>
+            <Grid container spacing={2}>
+              {(heroStatsLoading ? [...Array(3)] : topHeroStats).map((item, idx) => (
+                <Card
+                  key={item?.label || idx}
+                  sx={{
+                    margin: "auto",
+                    paddingY: "2%",
+                    width: "30%",
+                    maxHeight: "125px",
+                    height: "125px",
+                    borderRadius: 1,
+                    textAlign: "center",
+                    boxShadow: theme.custom?.colors?.shadows?.sm,
+                    cursor: item?.onClick ? "pointer" : "default",
+                  }}
+                  onClick={item?.onClick}
+                >
+                  <CardContent>
+                    {heroStatsLoading ? (
+                      <Stack spacing={1} alignItems="center">
+                        <Skeleton variant="text" width="60%" />
+                        <Skeleton variant="text" width="50%" />
+                      </Stack>
+                    ) : (
+                      <Stack spacing={1} alignItems="center">
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ letterSpacing: 0.5 }}
+                        >
+                          {item.label}
                         </Typography>
-                      ) : (
-                        item.value
+                        {typeof item.value === "string" || typeof item.value === "number" ? (
+                          <Typography variant="h5" fontWeight={800}>
+                            {item.value}
+                          </Typography>
+                        ) : (
+                          item.value
+                        )}
+                      </Stack>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </Grid>
+          </Container>
+        </Box>
+        
+        <Container sx={{ height: "100%", paddingHorizontal: "5%", paddingBottom: "15%" }}>
+          <Stack spacing="5%">
+            <Card variant="outlined" sx={{ height: "100%", padding: "2px"}}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  Performance snapshot
+                </Typography>
+                {loading && !stats && (
+                  <Stack spacing={2}>
+                    {[...Array(2)].map((_, idx) => (
+                      <Grid container spacing={2} key={idx}>
+                        <Grid item xs={6}>
+                          <Skeleton variant="text" width="60%" />
+                          <Skeleton variant="text" width="50%" />
+                          <Skeleton variant="text" width="70%" />
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Skeleton variant="text" width="55%" />
+                          <Skeleton variant="text" width="40%" />
+                          <Skeleton variant="text" width="70%" />
+                        </Grid>
+                      </Grid>
+                    ))}
+                    <Stack spacing={1}>
+                      <Skeleton variant="text" width="40%" />
+                      <Skeleton variant="rounded" height={12} />
+                    </Stack>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Skeleton variant="text" width="30%" />
+                      <Skeleton variant="rounded" height={28} width={90} />
+                      <Skeleton variant="rounded" height={28} width={70} />
+                    </Stack>
+                  </Stack>
+                )}
+                {!loading && !stats && (
+                  <Typography color="text.secondary">No stats available.</Typography>
+                )}
+                {stats && (
+                  <Stack spacing={3}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Typography color="text.secondary" variant="body2">
+                          Record
+                        </Typography>
+                        <Typography variant="h6" fontWeight={700}>
+                          {stats?.stats.wins ?? 0}W - {stats?.stats.losses ?? 0}L
+                        </Typography>
+                        {overallWinRate !== null && (
+                          <Typography color="text.secondary" variant="body2">
+                            {overallWinRate}% win rate overall
+                          </Typography>
+                        )}
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography color="text.secondary" variant="body2">
+                          Total Matches
+                        </Typography>
+                        <Typography variant="h6" fontWeight={700}>
+                          {totalMatches}
+                        </Typography>
+                        {totalMatches > 0 && (
+                          <Typography color="text.secondary" variant="body2">
+                            Last 10: {winRateLast10}% wins
+                          </Typography>
+                        )}
+                      </Grid>
+                    </Grid>
+
+                    <Stack spacing={1}>
+                      <Stack direction="row" alignItems="center" gap={1}>
+                        <Typography color="text.secondary">Weekly activity</Typography>
+                        <Chip
+                          label={`${stats.weekly_activity?.matches_this_week || 0}/${
+                            stats.weekly_activity?.weekly_target || 0
+                          } matches`}
+                          size="small"
+                        />
+                      </Stack>
+                      <LinearProgress
+                        variant="determinate"
+                        value={Math.min(
+                          stats.weekly_activity?.progress_pct || 0,
+                          100
+                        )}
+                      />
+                    </Stack>
+
+                    <Stack direction="row" alignItems="center" gap={1}>
+                      <Typography color="text.secondary">Activity streak:</Typography>
+                      <Chip
+                        label={`${stats.activity_streak?.current_streak_weeks || 0} weeks`}
+                        color={
+                          stats.activity_streak?.is_active_this_week
+                            ? "success"
+                            : "default"
+                        }
+                        size="small"
+                      />
+                      {tier && (
+                        <Chip label={tier.label} color={tier.color} size="small" />
                       )}
                     </Stack>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
 
-        <Stack direction="row" justifyContent="flex-end">
-          <Button variant="outlined" size="small" onClick={handleViewLeaderboard}>
-            View Leaderboard
-          </Button>
-        </Stack>
-
-
-        <Card variant="outlined" sx={{ height: "100%" }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-              Performance snapshot
-            </Typography>
-            {loading && !stats && (
-              <Stack spacing={2}>
-                {[...Array(2)].map((_, idx) => (
-                  <Grid container spacing={2} key={idx}>
-                    <Grid item xs={6}>
-                      <Skeleton variant="text" width="60%" />
-                      <Skeleton variant="text" width="50%" />
-                      <Skeleton variant="text" width="70%" />
+                    <Divider />
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      Mode breakdown
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid
+                        item
+                        xs={6}
+                        onClick={() => handleSelectEloMode("singles")}
+                        sx={{ cursor: "pointer" }}
+                      >
+                        <Typography color="text.secondary" variant="body2">
+                          Singles
+                        </Typography>
+                        <Typography variant="h6" fontWeight={700}>
+                          {singlesEloValue ?? "--"}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {singlesMatchesPlayed} matches played
+                        </Typography>
+                      </Grid>
+                      <Grid
+                        item
+                        xs={6}
+                        onClick={() => handleSelectEloMode("doubles")}
+                        sx={{ cursor: "pointer" }}
+                      >
+                        <Typography color="text.secondary" variant="body2">
+                          Doubles
+                        </Typography>
+                        <Typography variant="h6" fontWeight={700}>
+                          {doublesEloValue ?? "--"}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {doublesMatchesPlayed} matches played
+                        </Typography>
+                      </Grid>
                     </Grid>
-                    <Grid item xs={6}>
-                      <Skeleton variant="text" width="55%" />
-                      <Skeleton variant="text" width="40%" />
-                      <Skeleton variant="text" width="70%" />
-                    </Grid>
-                  </Grid>
-                ))}
-                <Stack spacing={1}>
-                  <Skeleton variant="text" width="40%" />
-                  <Skeleton variant="rounded" height={12} />
-                </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Skeleton variant="text" width="30%" />
-                  <Skeleton variant="rounded" height={28} width={90} />
-                  <Skeleton variant="rounded" height={28} width={70} />
-                </Stack>
-              </Stack>
-            )}
-            {!loading && !stats && (
-              <Typography color="text.secondary">No stats available.</Typography>
-            )}
-            {stats && (
-              <Stack spacing={3}>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Typography color="text.secondary" variant="body2">
-                      Record
-                    </Typography>
-                    <Typography variant="h6" fontWeight={700}>
-                      {stats?.stats.wins ?? 0}W - {stats?.stats.losses ?? 0}L
-                    </Typography>
-                    {overallWinRate !== null && (
-                      <Typography color="text.secondary" variant="body2">
-                        {overallWinRate}% win rate overall
-                      </Typography>
-                    )}
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography color="text.secondary" variant="body2">
-                      Total Matches
-                    </Typography>
-                    <Typography variant="h6" fontWeight={700}>
-                      {totalMatches}
-                    </Typography>
-                    {totalMatches > 0 && (
-                      <Typography color="text.secondary" variant="body2">
-                        Last 10: {winRateLast10}% wins
-                      </Typography>
-                    )}
-                  </Grid>
-                </Grid>
-
-                <Stack spacing={1}>
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <Typography color="text.secondary">Weekly activity</Typography>
-                    <Chip
-                      label={`${stats.weekly_activity?.matches_this_week || 0}/${
-                        stats.weekly_activity?.weekly_target || 0
-                      } matches`}
-                      size="small"
-                    />
                   </Stack>
-                  <LinearProgress
-                    variant="determinate"
-                    value={Math.min(
-                      stats.weekly_activity?.progress_pct || 0,
-                      100
-                    )}
-                  />
-                </Stack>
-
-                <Stack direction="row" alignItems="center" gap={1}>
-                  <Typography color="text.secondary">Activity streak:</Typography>
-                  <Chip
-                    label={`${stats.activity_streak?.current_streak_weeks || 0} weeks`}
-                    color={
-                      stats.activity_streak?.is_active_this_week
-                        ? "success"
-                        : "default"
-                    }
-                    size="small"
-                  />
-                  {tier && (
-                    <Chip label={tier.label} color={tier.color} size="small" />
-                  )}
-                </Stack>
-
-                <Divider />
-                <Typography variant="subtitle2" fontWeight={700}>
-                  Mode breakdown
+                )}
+              </CardContent>
+            </Card>
+            <EloStockChart sx={{ height: "100%", padding: "2px" }} onRecordMatch={handleRecordMatch} overallElo={overallEloValue} />
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" fontWeight={700} mb={2}>
+                  H2H Rivals
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid
-                    item
-                    xs={6}
-                    onClick={() => handleSelectEloMode("singles")}
-                    sx={{ cursor: "pointer" }}
-                  >
-                    <Typography color="text.secondary" variant="body2">
-                      Singles
-                    </Typography>
-                    <Typography variant="h6" fontWeight={700}>
-                      {singlesEloValue ?? "--"}
-                    </Typography>
-                    <Typography color="text.secondary" variant="body2">
-                      {singlesMatchesPlayed} matches played
-                    </Typography>
-                  </Grid>
-                  <Grid
-                    item
-                    xs={6}
-                    onClick={() => handleSelectEloMode("doubles")}
-                    sx={{ cursor: "pointer" }}
-                  >
-                    <Typography color="text.secondary" variant="body2">
-                      Doubles
-                    </Typography>
-                    <Typography variant="h6" fontWeight={700}>
-                      {doublesEloValue ?? "--"}
-                    </Typography>
-                    <Typography color="text.secondary" variant="body2">
-                      {doublesMatchesPlayed} matches played
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Stack>
-            )}
-          </CardContent>
-        </Card>
+                {error && (
+                  <Typography color="error" variant="body2" mb={1}>
+                    {error}
+                  </Typography>
+                )}
+                {!loading && !error && topRivals.length === 0 && (
+                  <Typography color="text.secondary">
+                    No head-to-head data yet.
+                  </Typography>
+                )}
+                {topRivals.length > 0 && (
+                  <Stack divider={<Divider flexItem />} spacing={1}>
+                    {topRivals.map((rival, index) => {
+                      const totalMatches = (rival?.wins || 0) + (rival?.losses || 0);
+                      const winRate = totalMatches
+                        ? Math.round((rival.wins / totalMatches) * 100)
+                        : 0;
+                      const key =
+                        rival.opponent_auth_id ||
+                        `${rival.opponent_username || "rival"}-${index}`;
+                      return (
+                        <Stack
+                          key={key}
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          spacing={2}
+                          sx={{ py: 0.5 }}
+                        >
+                          <Stack direction="row" spacing={1.5} alignItems="center" minWidth={0}>
+                            <Avatar sx={{ width: 40, height: 40 }}>
+                              {rival.opponent_username?.slice(0, 1)?.toUpperCase() || "?"}
+                            </Avatar>
+                            <Box minWidth={0}>
+                              <Typography fontWeight={700} noWrap>
+                                {rival.opponent_username}
+                              </Typography>
+                              <Typography color="text.secondary" variant="body2">
+                                {totalMatches} matches
+                              </Typography>
+                            </Box>
+                          </Stack>
+                          <Stack spacing={0.5} alignItems="flex-end">
+                            <Chip
+                              label={`W ${rival.wins} - L ${rival.losses}`}
+                              color="secondary"
+                              size="small"
+                              variant="outlined"
+                            />
+                            <Typography color="text.secondary" variant="body2">
+                              {winRate}% win rate
+                            </Typography>
+                          </Stack>
+                        </Stack>
+                      );
+                    })}
+                  </Stack>
+                )}
+              </CardContent>
+            </Card>
+          </Stack>
+          
+        </Container>
 
-        <EloStockChart onRecordMatch={handleRecordMatch} overallElo={overallEloValue} />
+        
+
         
         {/* Recent Matches */}
         {/* <Card variant="outlined" width="100%">
@@ -643,71 +696,7 @@ function HomeScreen() {
           </CardContent>
         </Card> */}
 
-        <Card variant="outlined">
-            <CardContent>
-              <Typography variant="h6" fontWeight={700} mb={2}>
-                H2H Rivals
-              </Typography>
-              {error && (
-                <Typography color="error" variant="body2" mb={1}>
-                  {error}
-                </Typography>
-              )}
-              {!loading && !error && topRivals.length === 0 && (
-                <Typography color="text.secondary">
-                  No head-to-head data yet.
-                </Typography>
-              )}
-              {topRivals.length > 0 && (
-                <Stack divider={<Divider flexItem />} spacing={1}>
-                  {topRivals.map((rival, index) => {
-                    const totalMatches = (rival?.wins || 0) + (rival?.losses || 0);
-                    const winRate = totalMatches
-                      ? Math.round((rival.wins / totalMatches) * 100)
-                      : 0;
-                    const key =
-                      rival.opponent_auth_id ||
-                      `${rival.opponent_username || "rival"}-${index}`;
-                    return (
-                      <Stack
-                        key={key}
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        spacing={2}
-                        sx={{ py: 0.5 }}
-                      >
-                        <Stack direction="row" spacing={1.5} alignItems="center" minWidth={0}>
-                          <Avatar sx={{ width: 40, height: 40 }}>
-                            {rival.opponent_username?.slice(0, 1)?.toUpperCase() || "?"}
-                          </Avatar>
-                          <Box minWidth={0}>
-                            <Typography fontWeight={700} noWrap>
-                              {rival.opponent_username}
-                            </Typography>
-                            <Typography color="text.secondary" variant="body2">
-                              {totalMatches} matches
-                            </Typography>
-                          </Box>
-                        </Stack>
-                        <Stack spacing={0.5} alignItems="flex-end">
-                          <Chip
-                            label={`W ${rival.wins} - L ${rival.losses}`}
-                            color="secondary"
-                            size="small"
-                            variant="outlined"
-                          />
-                          <Typography color="text.secondary" variant="body2">
-                            {winRate}% win rate
-                          </Typography>
-                        </Stack>
-                      </Stack>
-                    );
-                  })}
-                </Stack>
-              )}
-            </CardContent>
-          </Card>
+
         
       </Stack>
     </Container>

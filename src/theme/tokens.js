@@ -154,6 +154,6 @@ export const getThemeColors = (mode = "light") => {
 export const themeColors = getThemeColors();
 
 export const themeFonts = {
-  body: "'Inter', sans-serif",
-  accent: "'Verdana', sans-serif",
+  body: "'Ubuntu', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+  accent: "'Ubuntu', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
 };

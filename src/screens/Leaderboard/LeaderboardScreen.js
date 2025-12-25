@@ -104,7 +104,7 @@ function LeaderboardScreen() {
       : entry?.rank ?? index + 1;
 
   const getEloForEntry = (entry) => {
-    if (activeTab === "overall") return entry?.overall_elo ?? entry?.elo;
+    if (activeTab === "overall") return entry?.overall_elo ?? 0;
     if (activeTab === "singles") return entry?.singles_elo ?? entry?.elo;
     return entry?.doubles_elo ?? entry?.elo;
   };
@@ -221,9 +221,9 @@ function LeaderboardScreen() {
             <Table>
               <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: 80, fontWeight: 700 }}>Rank</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Player</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>
+                    <TableCell sx={{ width: 80, fontWeight: 400 }}>Rank</TableCell>
+                    <TableCell sx={{ fontWeight: 400 }}>Player</TableCell>
+                    <TableCell align="right" sx={{  fontWeight: 400 }}>
                       {scoreLabel}
                     </TableCell>
                   </TableRow>
@@ -263,11 +263,11 @@ function LeaderboardScreen() {
                           },
                         }}
                       >
-                        <TableCell>
+                        <TableCell align="center">
                           <Typography fontWeight={700}>{rank}</Typography>
                         </TableCell>
                         <TableCell>
-                          <Stack direction="row" spacing={2} alignItems="center">
+                          <Stack direction="row" spacing={4} alignItems="center">
                             <Avatar
                               src={normalizeProfileImage(entry?.profile_image_url)}
                             >
@@ -275,10 +275,10 @@ function LeaderboardScreen() {
                             </Avatar>
                             <Box>
                               <Stack direction="row" spacing={1} alignItems="center">
-                                <Typography fontWeight={700}>{entry?.username}</Typography>
+                                <Typography fontWeight={400}>{entry?.username}</Typography>
                                 {isCurrentUser && <Chip label="You" size="small" color="primary" />}
                               </Stack>
-                              {secondary ? (
+                              {/* {secondary ? (
                                 <Typography variant="body2" color="text.secondary">
                                   {secondary}
                                 </Typography>
@@ -286,7 +286,7 @@ function LeaderboardScreen() {
                                 <Typography variant="body2" color="text.secondary">
                                   Player
                                 </Typography>
-                              )}
+                              )} */}
                             </Box>
                           </Stack>
                         </TableCell>
@@ -315,7 +315,7 @@ function LeaderboardScreen() {
         fullWidth
         maxWidth="xs"
       >
-        <DialogTitle>Player Profile</DialogTitle>
+        <DialogTitle align="center">Player Profile</DialogTitle>
         <DialogContent>
           {selectedPlayer && (
             <Stack spacing={2} alignItems="center" py={1}>
@@ -326,12 +326,10 @@ function LeaderboardScreen() {
                 {selectedPlayer.username?.charAt(0).toUpperCase() || "P"}
               </Avatar>
               <Stack spacing={0.5} alignItems="center">
-                <Typography variant="h6" fontWeight={800}>
+                <Typography variant="h6" fontWeight={500}>
                   {selectedPlayer.username}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {selectedPlayer.secondary || "Player"}
-                </Typography>
+
               </Stack>
               <Stack direction="row" spacing={2} divider={<Divider orientation="vertical" flexItem />}>
                 <Box textAlign="center">

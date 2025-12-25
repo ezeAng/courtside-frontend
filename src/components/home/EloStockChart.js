@@ -40,12 +40,6 @@ ChartJS.register(
 
 const RANGE_OPTIONS = ["1W", "1M", "3M", "6M", "1Y"];
 
-const formatChange = (v) =>
-  v === null || v === undefined ? null : `${v > 0 ? "+" : ""}${Math.round(v)}`;
-
-const formatPercent = (v) =>
-  v === null || v === undefined ? null : `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
-
 function EloStockChart({ onRecordMatch, overallElo }) {
   const token = useSelector((state) => state.auth.accessToken);
   const eloMode = useSelector((state) => state.ui.eloMode || "overall");
@@ -147,7 +141,7 @@ function EloStockChart({ onRecordMatch, overallElo }) {
   );
   let dataPoints = data?.points ?? []
   let currentElo = dataPoints[dataPoints.length-1]?.elo;
-  const summary = data?.summary;
+
   const isEmpty =
     data && (data.has_data === false || !data.points?.length);
   const isOverallLocked =
@@ -166,7 +160,7 @@ function EloStockChart({ onRecordMatch, overallElo }) {
   return (
     <Card variant="outlined">
       <CardContent>
-        <Stack spacing={2}>
+        <Stack spacing={5}>
           <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1} alignItems={{ xs: "flex-start", sm: "center" }}>
             <Stack>
               <Typography variant="h6" fontWeight={700}>
@@ -177,6 +171,7 @@ function EloStockChart({ onRecordMatch, overallElo }) {
                 exclusive
                 size="small"
                 onChange={(_, value) => value && dispatch(setEloMode(value))}
+                sx={{marginY: "2%"}}
               >
                 <ToggleButton value="overall">Overall</ToggleButton>
                 <ToggleButton value="singles">Singles</ToggleButton>

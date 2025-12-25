@@ -7,7 +7,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { normalizeProfileImage } from "../utils/profileImage";
 import { uploadUserAvatar } from "../features/user/userSlice";
 
-function ProfileAvatar({ user, size = 80, editable = false, sx }) {
+function ProfileAvatar({
+  user,
+  size = 80,
+  editable = false,
+  sx,
+  onUploadSuccess
+}) {
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
   const { avatarUploading } = useSelector((state) => state.user);
@@ -18,7 +24,7 @@ function ProfileAvatar({ user, size = 80, editable = false, sx }) {
   }, [user]);
 
   const handleSelectFile = () => {
-    if (!editable || !fileInputRef.current) return;
+    if (!editable || avatarUploading || !fileInputRef.current) return;
     fileInputRef.current.click();
   };
 
@@ -27,15 +33,21 @@ function ProfileAvatar({ user, size = 80, editable = false, sx }) {
     if (!file) return;
 
     const result = await dispatch(uploadUserAvatar(file));
+
     if (uploadUserAvatar.fulfilled.match(result)) {
       const updatedImage =
         result.payload?.profileImageUrl ||
         result.payload?.profile_image_url ||
         result.payload?.profile?.profile_image_url;
+
       if (updatedImage) {
         setImageUrl(updatedImage);
       }
+
+      // ✅ Notify parent (if provided)
+      onUploadSuccess?.();
     }
+
     event.target.value = "";
   };
 

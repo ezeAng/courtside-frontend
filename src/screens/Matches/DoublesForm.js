@@ -1,44 +1,51 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
-import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import FormLabel from "@mui/material/FormLabel";
 import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
-import { getOtherUsers } from "../../services/api";
 import ScoreSetsInput from "./ScoreSetsInput";
 import { formatSetsScore } from "./scoreFormatting";
 import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import PlayerSearchAutocomplete from "../../components/PlayerSearchAutocomplete";
 
 function DoublesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
-  const token = useSelector((state) => state.auth.accessToken);
   const currentUser = useSelector((state) => state.user.user);
-  const [partnerId, setPartnerId] = useState("");
-  const [opponent1Id, setOpponent1Id] = useState("");
-  const [opponent2Id, setOpponent2Id] = useState("");
-  const [sets, setSets] = useState([{ your: "", opponent: "" }]);
-  const [winnerTeam, setWinnerTeam] = useState("");
-  const [users, setUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-  const [error, setError] = useState(null);
-
   const userId = currentUser?.auth_id;
 
-  const autoWinner = useMemo(() => determineOutcomeFromSets(sets), [sets]);
+  const [partner, setPartner] = useState(null);
+  const [opponent1, setOpponent1] = useState(null);
+  const [opponent2, setOpponent2] = useState(null);
+  const [sets, setSets] = useState([{ your: "", opponent: "" }]);
+  const [winnerTeam, setWinnerTeam] = useState("");
+  const [error, setError] = useState(null);
+
+  const autoWinner = useMemo(
+    () => determineOutcomeFromSets(sets),
+    [sets]
+  );
+
+  const allPlayerIds = useMemo(() => {
+    const ids = [
+      userId,
+      partner?.auth_id,
+      opponent1?.auth_id,
+      opponent2?.auth_id,
+    ].filter(Boolean);
+    return new Set(ids.map(String));
+  }, [userId, partner, opponent1, opponent2]);
 
   const isValid = useMemo(
     () =>
-      partnerId &&
-      opponent1Id &&
-      opponent2Id &&
+      partner &&
+      opponent1 &&
+      opponent2 &&
       autoWinner &&
       areSetsWithinRange(sets) &&
-      new Set([userId, partnerId, opponent1Id, opponent2Id].map(String)).size === 4,
-    [autoWinner, opponent1Id, opponent2Id, partnerId, sets, userId]
+      allPlayerIds.size === 4,
+    [partner, opponent1, opponent2, autoWinner, sets, allPlayerIds]
   );
 
   useEffect(() => {
@@ -48,85 +55,38 @@ function DoublesForm({ onRecorded, onClose }) {
     }
   }, [autoWinner, winnerTeam]);
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        setLoadingUsers(true);
-        const res = await getOtherUsers(token);
-
-        // FIX: extract the array correctly
-        const list = Array.isArray(res)
-          ? res
-          : Array.isArray(res.results)
-          ? res.results
-          : [];
-
-        setUsers(list);
-      } catch (err) {
-        setError(err.message);
-        setUsers([]);
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-
-
-    if (token) {
-      loadUsers();
-    }
-  }, [token]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (!partnerId || !opponent1Id || !opponent2Id || !userId) return;
 
-    const uniqueIds = new Set([userId, partnerId, opponent1Id, opponent2Id].map(String));
-
-    if (uniqueIds.size < 4) {
-      setError("Each player must be unique");
-      return;
-    }
-
-    const partner = users.find((user) => String(user.auth_id) === String(partnerId));
-    const opponent1 = users.find((user) => String(user.auth_id) === String(opponent1Id));
-    const opponent2 = users.find((user) => String(user.auth_id) === String(opponent2Id));
-
-    if (!partner || !opponent1 || !opponent2) {
-      setError("Please select valid players for all positions");
-      return;
-    }
+    if (!isValid) return;
 
     try {
-      if (!areSetsWithinRange(sets)) {
-        setError("Scores must be between 0 and 30 for each set");
+      if (!winnerTeam) {
+        setError("Enter valid set scores to determine the result automatically");
         return;
       }
 
       const formattedScore = formatSetsScore(sets);
       const winnerToSubmit = winnerTeam === "draw" ? null : winnerTeam;
 
-      if (!winnerTeam) {
-        setError("Enter valid set scores to determine the result automatically");
-        return;
-      }
-
-      const teamAIds = [userId, partner.auth_id || partner.id];
-      const teamBIds = [
-        opponent1.auth_id || opponent1.id,
-        opponent2.auth_id || opponent2.id,
-      ];
-
       const recordedMatch = await dispatch(
         recordMatch({
           discipline: "doubles",
           match_type: "doubles",
-          team_a_auth_ids: teamAIds,
-          team_b_auth_ids: teamBIds,
+          players_team_A: [
+            userId,
+            partner.auth_id || partner.id,
+          ],
+          players_team_B: [
+            opponent1.auth_id || opponent1.id,
+            opponent2.auth_id || opponent2.id,
+          ],
           score: formattedScore,
           winner_team: winnerToSubmit,
         })
       ).unwrap();
+
       onRecorded?.(recordedMatch);
       onClose?.();
     } catch (err) {
@@ -134,48 +94,61 @@ function DoublesForm({ onRecorded, onClose }) {
     }
   };
 
-  const createPlayerSelect = (label, value, setValue) => (
-    <TextField
-      select
-      label={label}
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      required
-      disabled={loadingUsers}
-    >
-      {users.map((user) => (
-        <MenuItem key={user.auth_id || user.auth_id} value={user.auth_id || user.auth_id}>
-          {user.username}
-        </MenuItem>
-      ))}
-    </TextField>
-  );
-
   return (
     <form onSubmit={handleSubmit}>
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
-        {loadingUsers && <LoadingSpinner message="Loading players..." inline size={20} />}
-        {createPlayerSelect("Partner", partnerId, setPartnerId)}
-        {createPlayerSelect("Opponent 1", opponent1Id, setOpponent1Id)}
-        {createPlayerSelect("Opponent 2", opponent2Id, setOpponent2Id)}
+
+        <PlayerSearchAutocomplete
+          label="Partner"
+          value={partner}
+          onSelect={setPartner}
+          excludeAuthId={userId}
+          helperText="Select your doubles partner"
+        />
+
+        <PlayerSearchAutocomplete
+          label="Opponent 1"
+          value={opponent1}
+          onSelect={setOpponent1}
+          excludeAuthId={userId}
+          helperText="Select first opponent"
+        />
+
+        <PlayerSearchAutocomplete
+          label="Opponent 2"
+          value={opponent2}
+          onSelect={setOpponent2}
+          excludeAuthId={userId}
+          helperText="Select second opponent"
+        />
+
+        {allPlayerIds.size < 4 &&
+          (partner || opponent1 || opponent2) && (
+            <Alert severity="warning">
+              All four players must be unique.
+            </Alert>
+          )}
+
         <ScoreSetsInput sets={sets} onChange={setSets} />
+
         <Stack spacing={1}>
           <FormLabel>Result</FormLabel>
           {winnerTeam ? (
             <Alert severity="info">
               {winnerTeam === "draw"
-                ? "The match will be recorded as a draw based on the entered scores."
+                ? "The match will be recorded as a draw."
                 : winnerTeam === "A"
                 ? "Winner: Team A (You + Partner)"
                 : "Winner: Team B (Opponents)"}
             </Alert>
           ) : (
             <Alert severity="warning">
-              Enter complete set scores to automatically determine the winner or draw.
+              Enter complete set scores to determine the result.
             </Alert>
           )}
         </Stack>
+
         <Button type="submit" variant="contained" disabled={!isValid}>
           Record Match
         </Button>

@@ -35,7 +35,7 @@ export default function CompetitionsScreen() {
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
       <Stack spacing={3}>
-        <Typography variant="h5" fontWeight={700}>
+        <Typography align="center" variant="h5" fontWeight={700}>
           Competitions
         </Typography>
 

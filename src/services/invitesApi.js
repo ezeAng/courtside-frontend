@@ -86,7 +86,7 @@ export async function fetchBadgeCounts(token) {
   return handleResponse(response);
 }
 
-// Invite: { match_id: string; status: "invite"; created_by: string; accepted_by?: string | null; created_at: string; players: { team_A?: Array<Player>; team_B?: Array<Player> } | Array<Player> }
+// Invite: { match_id: string; status: "invite"; submitted_by: string; accepted_by?: string | null; created_at: string; players: { team_A?: Array<Player>; team_B?: Array<Player> } | Array<Player> }
 export async function fetchInvites(token, type) {
   const response = await fetch(`${base}/api/matches/invites?type=${type}`, {
     headers: requireAuthHeader(token),

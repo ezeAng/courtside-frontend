@@ -17,6 +17,7 @@ import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import { normalizeProfileImage } from "../utils/profileImage";
 
 function extractStats(profile) {
+  
   if (!profile) return {};
   const profileDetails = profile.profile || profile;
   const stats = profile.stats || profile.statistics || profileDetails.stats || profileDetails;
@@ -32,10 +33,11 @@ function extractStats(profile) {
     (wins !== null && losses !== null && wins + losses > 0
       ? Math.round((wins / (wins + losses)) * 100)
       : null);
-  const elo = stats?.elo ?? stats?.rating ?? stats?.current_elo ?? profileDetails?.elo ?? null;
-
+  const elo = profile.overall_elo ?? profile.singles_elo ?? profile.doubles_elo ?? null;
+  const region = profile.region ?? "Singapore"
   return {
     profileDetails,
+    region,
     wins,
     losses,
     matches: calculatedMatches,
@@ -54,8 +56,8 @@ export default function PlayerProfileInviteModal({
   inviteError,
   isInviting,
 }) {
-  const { profileDetails, wins, losses, matches, winRate, elo } = extractStats(profile);
-
+  const { profileDetails, wins, losses, matches, winRate, elo, region } = extractStats(profile);
+  
   const username =
     profileDetails?.username ||
     profileDetails?.display_name ||
@@ -66,7 +68,7 @@ export default function PlayerProfileInviteModal({
   const avatarSrc = normalizeProfileImage(profileDetails?.profile_image_url);
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={onClose} maxWidth="sm">
       <DialogTitle>Player Profile</DialogTitle>
       <DialogContent dividers>
         {loading ? (
@@ -77,8 +79,8 @@ export default function PlayerProfileInviteModal({
         ) : error ? (
           <Alert severity="error">{error}</Alert>
         ) : profileDetails ? (
-          <Stack spacing={2}>
-            <Stack direction="row" spacing={2} alignItems="center">
+          <Stack spacing={4} paddingTop={4}>
+            <Stack direction="row" spacing={4} alignItems="center">
               <Avatar src={avatarSrc} sx={{ width: 64, height: 64 }}>
                 {username?.slice(0, 1)?.toUpperCase() || "U"}
               </Avatar>
@@ -113,7 +115,14 @@ export default function PlayerProfileInviteModal({
               </Grid>
               <Grid item xs={6} sm={3}>
                 <Chip
-                  label={`Matches: ${matches ?? "—"}`}
+                  label={`Matches Played: ${matches ?? "—"}`}
+                  variant="outlined"
+                  sx={{ width: "100%" }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Chip
+                  label={`Region: ${region ?? "—"}`}
                   variant="outlined"
                   sx={{ width: "100%" }}
                 />
@@ -130,14 +139,14 @@ export default function PlayerProfileInviteModal({
         <Button onClick={onClose} color="inherit">
           Close
         </Button>
-        <Button
+        {/* <Button
           variant="contained"
           startIcon={<PersonAddAlt1Icon />}
           onClick={() => onInvite?.(profileDetails)}
-          disabled={!profileDetails || isInviting}
+          disabled={true || !profileDetails || isInviting}
         >
           {isInviting ? <CircularProgress size={20} color="inherit" /> : "Invite to game"}
-        </Button>
+        </Button> */}
       </DialogActions>
     </Dialog>
   );

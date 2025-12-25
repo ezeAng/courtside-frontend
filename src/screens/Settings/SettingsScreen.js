@@ -29,6 +29,8 @@ import { useNavigate } from "react-router-dom";
 import PlayerCardModal from "../../components/PlayerCardModal";
 import ProfileAvatar from "../../components/ProfileAvatar";
 import { clearAuth } from "../../features/auth/authSlice";
+import Snackbar from "@mui/material/Snackbar";
+
 import {
   clearUser,
   fetchCurrentUser,
@@ -43,6 +45,7 @@ function SettingsScreen() {
     user,
     updateLoading,
     updateError,
+    avatarUploading,
   } = useSelector((state) => state.user);
 
   const token = useSelector((state) => state.auth.accessToken);
@@ -56,6 +59,8 @@ function SettingsScreen() {
   const [editOpen, setEditOpen] = useState(false);
   const [showCard, setShowCard] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [closeAfterAvatarUpload, setCloseAfterAvatarUpload] = useState(false);
+
 
   useEffect(() => {
     if (token && !user) {
@@ -73,9 +78,33 @@ function SettingsScreen() {
     }
   }, [user]);
 
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
+  const showToast = (message) => {
+    setToastMessage(message);
+    setToastOpen(true);
+  };
+
+
+  useEffect(() => {
+    if (closeAfterAvatarUpload && !avatarUploading) {
+      dispatch(fetchCurrentUser(token));
+
+      setEditOpen(false);
+      setCloseAfterAvatarUpload(false);
+
+      showToast("Profile updated. Changes may take a moment to reflect.");
+    }
+  }, [closeAfterAvatarUpload, avatarUploading, dispatch, token]);
+
+
+
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSuccessMessage(null);
+
     const payload = {
       username,
       gender,
@@ -84,12 +113,17 @@ function SettingsScreen() {
       bio,
       profile_image_url: user?.profile_image_url || null,
     };
+
     const result = await dispatch(updateUserProfile(payload));
+
     if (updateUserProfile.fulfilled.match(result)) {
       dispatch(fetchCurrentUser(token));
-      setSuccessMessage("Profile updated successfully.");
+      setEditOpen(false);
+      showToast("Profile updated successfully. Changes may take a moment to reflect.");
     }
+
   };
+
 
   const handleLogout = () => {
     dispatch(clearAuth());
@@ -116,7 +150,7 @@ function SettingsScreen() {
         <Card variant="outlined">
           <CardContent>
             <Stack spacing={2} alignItems="center" textAlign="center">
-              <ProfileAvatar user={user} size={80} editable />
+              <ProfileAvatar user={user} size={80} editable={false} />
               <Box>
                 <Typography variant="h6" fontWeight={700}>
                   {user?.username || "Loading user..."}
@@ -187,14 +221,50 @@ function SettingsScreen() {
         </Card>
       </Stack>
 
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} fullWidth maxWidth="sm">
+      <Dialog 
+        open={editOpen}
+        fullWidth maxWidth="sm" 
+        onClose={avatarUploading || updateLoading ? undefined : () => setEditOpen(false)}
+        disableEscapeKeyDown={avatarUploading || updateLoading}
+      >
         <DialogTitle>Edit Profile</DialogTitle>
-        <DialogContent>
-          <Stack spacing={3} component="form" onSubmit={handleSubmit} sx={{ pt: 1 }}>
+        <DialogContent sx={{ position: "relative" }}>
+          <Stack
+            spacing={3}
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{
+              pt: 1,
+              pointerEvents: avatarUploading ? "none" : "auto",
+              opacity: avatarUploading ? 0.6 : 1,
+              transition: "opacity 0.2s ease",
+            }}
+          >
+            {avatarUploading && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: "rgba(255,255,255,0.6)",
+                  zIndex: 1,
+                }}
+              >
+                <Stack spacing={1} alignItems="center">
+                  <CircularProgress />
+                  <Typography variant="body2" color="text.secondary">
+                    Uploading profile photo…
+                  </Typography>
+                </Stack>
+              </Box>
+            )}
+
             {updateError && <Alert severity="error">{updateError}</Alert>}
 
             <Stack spacing={1} alignItems="center" textAlign="center">
-              <ProfileAvatar user={user} size={72} editable />
+              <ProfileAvatar user={user} size={72} editable onUploadSuccess={() => setCloseAfterAvatarUpload(true)}/>
               <Typography color="text.secondary">
                 Tap your avatar to upload a new profile photo.
               </Typography>
@@ -257,7 +327,7 @@ function SettingsScreen() {
               type="submit"
               variant="contained"
               size="large"
-              disabled={updateLoading}
+              disabled={updateLoading || avatarUploading}
               startIcon={
                 updateLoading ? <CircularProgress size={20} color="inherit" /> : null
               }
@@ -274,6 +344,22 @@ function SettingsScreen() {
         onClose={() => setFeedbackOpen(false)}
         token={token}
       />
+      <Snackbar
+        open={toastOpen}
+        autoHideDuration={4000}
+        onClose={() => setToastOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setToastOpen(false)}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {toastMessage}
+        </Alert>
+      </Snackbar>
+
     </Container>
   );
 }

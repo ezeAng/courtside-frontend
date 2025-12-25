@@ -39,6 +39,7 @@ import { normalizeProfileImage } from "../../utils/profileImage";
 import { formatTeamNames, normalizeMatchPlayers } from "../../utils/matchPlayers";
 import PlayerProfileInviteModal from "../../components/PlayerProfileInviteModal";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import PlayerSearchAutocomplete from "../../components/PlayerSearchAutocomplete";
 
 const tabOptions = [
   { label: "Received", value: "received" },
@@ -269,88 +270,13 @@ function InvitePlayerModal({ open, onClose, onInviteCreated }) {
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
         <DialogTitle>Invite a Player</DialogTitle>
         <DialogContent dividers>
-          <Stack spacing={2}>
-            <Autocomplete
-              freeSolo
-              options={suggestions}
-              loading={loadingSuggestions}
-              inputValue={query}
-              value={selectedUser}
-              onChange={handleOptionSelect}
-              onInputChange={(_, value) => {
-                setQuery(value);
-                setSearchError(null);
-              }}
-              getOptionLabel={(option) =>
-                typeof option === "string"
-                  ? option
-                  : option.username || option.display_name || option.name || ""
-              }
-              isOptionEqualToValue={(option, value) => {
-                if (!option || !value) return false;
-                if (option.auth_id && value.auth_id) return option.auth_id === value.auth_id;
-                return (
-                  option.username === value.username ||
-                  option.display_name === value.display_name ||
-                  option.name === value.name
-                );
-              }}
-              renderOption={(props, option) => {
-                const optionData =
-                  typeof option === "string"
-                    ? { username: option }
-                    : option || {};
-                const optionKey =
-                  optionData.auth_id ||
-                  optionData.id ||
-                  optionData.username ||
-                  optionData.display_name ||
-                  optionData.name ||
-                  option;
+          <PlayerSearchAutocomplete
+            value={selectedUser}
+            onSelect={handleOptionSelect}
+            helperText="Select a player to view their profile"
+            excludeAuthId={currentUser?.auth_id}
+          />
 
-                return (
-                  <li {...props} key={optionKey}>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Avatar src={normalizeProfileImage(optionData.profile_image_url)}>
-                        {optionData.username?.slice(0, 1)?.toUpperCase() || "U"}
-                      </Avatar>
-                      <Box>
-                        <Typography fontWeight={700}>
-                          {optionData.username || optionData.display_name || optionData.name || "User"}
-                        </Typography>
-                        <Typography color="text.secondary" variant="body2">
-                          Elo: {optionData.elo ?? optionData.rating ?? "N/A"}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </li>
-                );
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Search by username"
-                  placeholder="Start typing a username"
-                  InputProps={{
-                    ...params.InputProps,
-                    endAdornment: (
-                      <>
-                        {loadingSuggestions ? <CircularProgress color="success" size={20} /> : null}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
-                  }}
-                  helperText="Select a player from the suggestions to view their profile."
-                  fullWidth
-                />
-              )}
-            />
-
-            {searchError && <Alert severity="error">{searchError}</Alert>}
-            {!suggestions.length && query.trim() && !loadingSuggestions && !searchError && (
-              <Alert severity="info">No players match that username yet. Try another search.</Alert>
-            )}
-          </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose} color="inherit">
@@ -515,7 +441,7 @@ function InvitesScreen() {
             ))}
           </Tabs>
           <Divider />
-          <Box p={2}>
+          <Box p={4}>
             {loading ? (
               <Stack spacing={2} py={1}>
                 {[...Array(3)].map((_, idx) => (

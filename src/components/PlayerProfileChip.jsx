@@ -156,7 +156,7 @@ export default function PlayerProfileChip({ player, chipProps = {} }) {
 
   const { sx, label: chipLabel, size, ...restChipProps } = chipProps;
   const combinedSx = mergeSx(
-    { cursor: "pointer", fontWeight: 700 },
+    { cursor: "pointer", fontWeight: 400 },
     sx
   );
 
@@ -167,7 +167,7 @@ export default function PlayerProfileChip({ player, chipProps = {} }) {
         clickable
         label={chipLabel || label}
         onClick={handleOpen}
-        size={size || "small"}
+        size={size || "medium"}
         sx={combinedSx}
       />
       <PlayerProfileInviteModal

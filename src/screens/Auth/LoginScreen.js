@@ -10,9 +10,10 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
 import { clearAuth, login } from "../../features/auth/authSlice";
 import { fetchCurrentUser } from "../../features/user/userSlice";
-
+import logo from "../../logo.svg";
 function LoginScreen() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -55,7 +56,21 @@ function LoginScreen() {
       <Card sx={{ width: "100%" }} variant="outlined">
         <CardContent>
           <Stack spacing={3} component="form" onSubmit={handleSubmit}>
-            <Stack spacing={1}>
+            
+            {/* Logo */}
+            <Box display="flex" justifyContent="center">
+              <Box
+                component="img"
+                src={logo}
+                alt="App logo"
+                sx={{
+                  height: 128,
+                  mb: 1,
+                }}
+              />
+            </Box>
+
+            <Stack spacing={1} textAlign="center">
               <Typography variant="h4" fontWeight={700}>
                 Welcome Back
               </Typography>

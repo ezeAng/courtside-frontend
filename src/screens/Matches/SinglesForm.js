@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
-import MenuItem from "@mui/material/MenuItem";
+import PlayerSearchAutocomplete from "../../components/PlayerSearchAutocomplete";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import FormLabel from "@mui/material/FormLabel";
 import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
-import { getOtherUsers } from "../../services/api";
 import ScoreSetsInput from "./ScoreSetsInput";
 import { formatSetsScore } from "./scoreFormatting";
 import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
@@ -17,20 +16,23 @@ function SinglesForm({ onRecorded, onClose }) {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.accessToken);
   const currentUser = useSelector((state) => state.user.user);
-  const [opponentId, setOpponentId] = useState("");
+  const [selectedOpponent, setSelectedOpponent] = useState(null);
+
   const [sets, setSets] = useState([{ your: "", opponent: "" }]);
   const [winnerTeam, setWinnerTeam] = useState("");
-  const [users, setUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState(null);
   const userId = currentUser?.auth_id;
 
   const autoWinner = useMemo(() => determineOutcomeFromSets(sets), [sets]);
 
   const isValid = useMemo(
-    () => opponentId && autoWinner && areSetsWithinRange(sets),
-    [autoWinner, opponentId, sets]
+    () =>
+      selectedOpponent &&
+      autoWinner &&
+      areSetsWithinRange(sets),
+    [selectedOpponent, autoWinner, sets]
   );
+
 
   useEffect(() => {
     const desiredWinner = autoWinner || "";
@@ -39,39 +41,24 @@ function SinglesForm({ onRecorded, onClose }) {
     }
   }, [autoWinner, winnerTeam]);
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        setLoadingUsers(true);
-        const results = await getOtherUsers(token);
-        setUsers(results?.results || []);
-
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-
-    if (token) {
-      loadUsers();
-    }
-  }, [token]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (!opponentId || !userId) return;
 
-    if (String(opponentId) === String(userId)) {
-      setError("You cannot select yourself as the opponent");
+    if (!selectedOpponent || !userId) return;
+
+    const opponentAuthId =
+      selectedOpponent.auth_id ||
+      selectedOpponent.user_id ||
+      selectedOpponent.id;
+
+    if (!opponentAuthId) {
+      setError("Please select a valid opponent");
       return;
     }
 
-    const opponent = users.find((user) => String(user.auth_id) === String(opponentId));
-
-    if (!opponent) {
-      setError("Please select a valid opponent");
+    if (String(opponentAuthId) === String(userId)) {
+      setError("You cannot select yourself as the opponent");
       return;
     }
 
@@ -80,28 +67,26 @@ function SinglesForm({ onRecorded, onClose }) {
       return;
     }
 
-    try {
-      if (!winnerTeam) {
-        setError("Enter valid set scores to determine the result automatically");
-        return;
-      }
+    if (!winnerTeam) {
+      setError("Enter valid set scores to determine the result automatically");
+      return;
+    }
 
+    try {
       const formattedScore = formatSetsScore(sets);
       const winnerToSubmit = winnerTeam === "draw" ? null : winnerTeam;
-
-      const teamAIds = [userId];
-      const teamBIds = [opponent.auth_id || opponent.id];
 
       const recordedMatch = await dispatch(
         recordMatch({
           discipline: "singles",
           match_type: "singles",
-          team_a_auth_ids: teamAIds,
-          team_b_auth_ids: teamBIds,
+          players_team_A: [userId],
+          players_team_B: [opponentAuthId],
           score: formattedScore,
           winner_team: winnerToSubmit,
         })
       ).unwrap();
+
       onRecorded?.(recordedMatch);
       onClose?.();
     } catch (err) {
@@ -109,25 +94,19 @@ function SinglesForm({ onRecorded, onClose }) {
     }
   };
 
+
   return (
     <form onSubmit={handleSubmit}>
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
-        {loadingUsers && <LoadingSpinner message="Loading opponents..." inline size={20} />}
-        <TextField
-          select
+        <PlayerSearchAutocomplete
+          value={selectedOpponent}
+          onSelect={setSelectedOpponent}
           label="Opponent"
-          value={opponentId}
-          onChange={(e) => setOpponentId(e.target.value)}
-          required
-          disabled={loadingUsers}
-        >
-          {users.map((user) => (
-            <MenuItem key={user.auth_id} value={user.auth_id}>
-              {user.username}
-            </MenuItem>
-          ))}
-        </TextField>
+          helperText="Search and select the opponent you played against"
+          excludeAuthId={userId}
+        />
+
         <ScoreSetsInput sets={sets} onChange={setSets} />
         <Stack spacing={1}>
           <FormLabel>Result</FormLabel>
