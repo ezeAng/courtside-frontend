@@ -373,9 +373,6 @@ function MatchHistoryScreen() {
               <InboxIcon />
               </Badge>
             </IconButton>
-            {/* <Button variant="outlined" onClick={() => navigate("/matches/invites")}>
-              Invite Player
-            </Button> */}
             <Button variant="contained" onClick={() => setOpenModal(true)}>
               Record Match
             </Button>

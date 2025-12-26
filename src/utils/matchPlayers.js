@@ -94,39 +94,6 @@ export function normalizeMatchPlayers(rawPlayers) {
   return { teamA, teamB };
 }
 
-export function buildInvitePlayers(teamA, teamB, creatorInfo) {
-  const players = [];
-
-  const push = (player, team) => {
-    const authId = getPlayerAuthId(player);
-    if (!authId) return;
-    players.push({
-      auth_id: authId,
-      username: getPlayerDisplayName(player),
-      team,
-    });
-  };
-
-  teamA.forEach((player) => push(player, "A"));
-  teamB.forEach((player) => push(player, "B"));
-
-  const creatorId = creatorInfo?.auth_id;
-  const hasCreator = creatorId
-    ? players.some((p) => String(p.auth_id) === String(creatorId))
-    : false;
-
-  if (creatorId && !hasCreator) {
-    const targetTeam = teamA.length <= teamB.length ? "A" : "B";
-    players.push({
-      auth_id: creatorId,
-      username: creatorInfo?.username || "You",
-      team: targetTeam,
-    });
-  }
-
-  return players;
-}
-
 export function formatTeamNames(team, currentUserId) {
   return team
     .map((player) =>
