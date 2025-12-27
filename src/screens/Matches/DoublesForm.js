@@ -10,15 +10,24 @@ import { formatSetsScore } from "./scoreFormatting";
 import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
 import PlayerSearchAutocomplete from "../../components/PlayerSearchAutocomplete";
 
-function DoublesForm({ onRecorded, onClose }) {
+function DoublesForm({ onRecorded, onClose, open, initialValues }) {
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.user.user);
   const userId = currentUser?.auth_id;
 
-  const [partner, setPartner] = useState(null);
-  const [opponent1, setOpponent1] = useState(null);
-  const [opponent2, setOpponent2] = useState(null);
-  const [sets, setSets] = useState([{ your: "", opponent: "" }]);
+  const [partner, setPartner] = useState(initialValues?.partner || null);
+  const [opponent1, setOpponent1] = useState(initialValues?.opponent1 || null);
+  const [opponent2, setOpponent2] = useState(initialValues?.opponent2 || null);
+  const resolvedInitialSets = useMemo(() => {
+    if (Array.isArray(initialValues?.sets) && initialValues.sets.length > 0) {
+      return initialValues.sets.map((set) => ({
+        your: set?.your ?? "",
+        opponent: set?.opponent ?? "",
+      }));
+    }
+    return [{ your: "", opponent: "" }];
+  }, [initialValues]);
+  const [sets, setSets] = useState(resolvedInitialSets);
   const [winnerTeam, setWinnerTeam] = useState("");
   const [error, setError] = useState(null);
 
@@ -30,9 +39,9 @@ function DoublesForm({ onRecorded, onClose }) {
   const allPlayerIds = useMemo(() => {
     const ids = [
       userId,
-      partner?.auth_id,
-      opponent1?.auth_id,
-      opponent2?.auth_id,
+      partner?.auth_id || partner?.id,
+      opponent1?.auth_id || opponent1?.id,
+      opponent2?.auth_id || opponent2?.id,
     ].filter(Boolean);
     return new Set(ids.map(String));
   }, [userId, partner, opponent1, opponent2]);
@@ -54,6 +63,17 @@ function DoublesForm({ onRecorded, onClose }) {
       setWinnerTeam(desiredWinner);
     }
   }, [autoWinner, winnerTeam]);
+
+  useEffect(() => {
+    if (open) {
+      setPartner(initialValues?.partner || null);
+      setOpponent1(initialValues?.opponent1 || null);
+      setOpponent2(initialValues?.opponent2 || null);
+      setSets(resolvedInitialSets);
+      setWinnerTeam("");
+      setError(null);
+    }
+  }, [open, initialValues, resolvedInitialSets]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

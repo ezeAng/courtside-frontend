@@ -20,6 +20,7 @@ import InboxIcon from "@mui/icons-material/Inbox";
 import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
 import Tooltip from "@mui/material/Tooltip";
 import Box from "@mui/material/Box";
+import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
 import RecordMatchModal from "./RecordMatchModal";
 import MatchSuccessModal from "./MatchSuccessModal";
@@ -240,7 +241,19 @@ function MatchHistoryScreen() {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Match Detail</DialogTitle>
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            pr: 1,
+          }}
+        >
+          Match Detail
+          <IconButton aria-label="Close" onClick={handleCloseMatchDetail}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={2} py={1}>
             <Stack spacing={0.5}>

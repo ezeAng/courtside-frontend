@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -16,18 +16,32 @@ function TabPanel({ children, value, index }) {
   );
 }
 
-function RecordMatchModal({ open, onClose, onRecorded }) {
-  const [tab, setTab] = useState(0);
+function RecordMatchModal({
+  open,
+  onClose,
+  onRecorded,
+  initialSinglesValues,
+  initialDoublesValues,
+  initialTab = 0,
+}) {
+  const startingTab = initialDoublesValues ? 1 : initialSinglesValues ? 0 : initialTab;
+  const [tab, setTab] = useState(startingTab);
 
   const handleClose = () => {
-    setTab(0);
+    setTab(startingTab);
     onClose?.();
   };
 
   const handleRecorded = (matchData) => {
     onRecorded?.(matchData);
-    setTab(0);
+    setTab(startingTab);
   };
+
+  useEffect(() => {
+    if (open) {
+      setTab(startingTab);
+    }
+  }, [open, startingTab]);
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
@@ -38,10 +52,20 @@ function RecordMatchModal({ open, onClose, onRecorded }) {
           <Tab label="Doubles" />
         </Tabs>
         <TabPanel value={tab} index={0}>
-          <SinglesForm onRecorded={handleRecorded} onClose={handleClose} />
+          <SinglesForm
+            onRecorded={handleRecorded}
+            onClose={handleClose}
+            open={open}
+            initialValues={initialSinglesValues}
+          />
         </TabPanel>
         <TabPanel value={tab} index={1}>
-          <DoublesForm onRecorded={handleRecorded} onClose={handleClose} />
+          <DoublesForm
+            onRecorded={handleRecorded}
+            onClose={handleClose}
+            open={open}
+            initialValues={initialDoublesValues}
+          />
         </TabPanel>
       </DialogContent>
     </Dialog>
