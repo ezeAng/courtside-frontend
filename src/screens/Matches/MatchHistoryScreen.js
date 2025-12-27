@@ -28,10 +28,11 @@ import { fetchMatchHistory } from "../../features/matches/matchSlice";
 import { getPendingMatches } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getDisciplineFromMatch, getEloForMode } from "../../utils/elo";
 import { extractYouTubeId, isYouTubeLink } from "../../utils/video";
+import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 
 const getOutcomeFromWinnerTeam = (winnerTeam, teamKey) => {
   if (winnerTeam === "draw" || winnerTeam === null) return "draw";
@@ -362,18 +363,26 @@ function MatchHistoryScreen() {
           <Typography variant="h5" fontWeight={500}>
             Match History
           </Typography>
-          <Stack direction="row" spacing={5} alignItems="center" flexWrap="wrap" justifyContent="space-evenly">
-            <IconButton onClick={() => navigate("/matches/pending")}> 
+          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" justifyContent="space-evenly">
+            <IconButton onClick={() => navigate("/matches/pending")}>
               <Badge
                 color="error"
                 badgeContent={pendingCount}
                 overlap="circular"
                 showZero
               >
-              <InboxIcon />
+                <InboxIcon />
               </Badge>
             </IconButton>
-            <Button variant="contained" onClick={() => setOpenModal(true)}>
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<PersonSearchIcon />}
+              onClick={() => navigate("/connections")}
+            >
+              Find Players
+            </Button>
+            <Button variant="outlined" onClick={() => setOpenModal(true)}>
               Record Match
             </Button>
           </Stack>

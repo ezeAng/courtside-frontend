@@ -5,6 +5,7 @@ import userReducer from "../features/user/userSlice";
 import leaderboardReducer from "../features/leaderboard/leaderboardSlice";
 import matchReducer from "../features/matches/matchSlice";
 import uiReducer from "../features/ui/uiSlice";
+import connectionsReducer from "../features/connections/connectionsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -14,5 +15,6 @@ export const store = configureStore({
     leaderboard: leaderboardReducer,
     matches: matchReducer,
     ui: uiReducer,
+    connections: connectionsReducer,
   },
 });

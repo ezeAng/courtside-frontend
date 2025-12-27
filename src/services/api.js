@@ -6,7 +6,9 @@ async function handleResponse(response) {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     const message = errorData.error || errorData.message || response.statusText;
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
   if (response.status === 204) {
     return null;
@@ -208,6 +210,123 @@ export async function getRecentActivity(token) {
   return handleResponse(response);
 }
 
+export async function searchUsers(query, token) {
+  const params = new URLSearchParams();
+  if (query) params.set("query", query);
+
+  const response = await fetch(
+    `${base}/api/users/search?${params.toString()}`,
+    {
+      headers: requireAuthHeader(token),
+    }
+  );
+
+  const payload = await handleResponse(response);
+  return (
+    payload?.results ||
+    payload?.users ||
+    payload?.data ||
+    (Array.isArray(payload) ? payload : [])
+  );
+}
+
+export async function fetchRecommendedPlayers(filters = {}, token) {
+  const params = new URLSearchParams();
+  if (filters.gender) params.set("gender", filters.gender);
+  if (filters.mode) params.set("mode", filters.mode);
+  if (filters.region) params.set("region", filters.region);
+
+  const response = await fetch(
+    `${base}/api/users/recommended?${params.toString()}`,
+    {
+      headers: requireAuthHeader(token),
+    }
+  );
+
+  const payload = await handleResponse(response);
+  return (
+    payload?.results ||
+    payload?.users ||
+    payload?.data ||
+    (Array.isArray(payload) ? payload : [])
+  );
+}
+
+export async function sendConnectionRequest(authId, token) {
+  const response = await fetch(`${base}/api/connections/request`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...requireAuthHeader(token),
+    },
+    body: JSON.stringify({ auth_id: authId }),
+  });
+
+  return handleResponse(response);
+}
+
+export async function cancelConnectionRequest(authId, token) {
+  const response = await fetch(`${base}/api/connections/request/cancel`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...requireAuthHeader(token),
+    },
+    body: JSON.stringify({ auth_id: authId }),
+  });
+
+  return handleResponse(response);
+}
+
+export async function acceptConnectionRequest(authId, token) {
+  const response = await fetch(`${base}/api/connections/request/accept`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...requireAuthHeader(token),
+    },
+    body: JSON.stringify({ auth_id: authId }),
+  });
+
+  return handleResponse(response);
+}
+
+export async function fetchIncomingRequests(token) {
+  const response = await fetch(`${base}/api/connections/requests/incoming`, {
+    method: "GET",
+    headers: requireAuthHeader(token),
+  });
+
+  return handleResponse(response);
+}
+
+export async function fetchOutgoingRequests(token) {
+  const response = await fetch(`${base}/api/connections/requests/outgoing`, {
+    method: "GET",
+    headers: requireAuthHeader(token),
+  });
+
+  return handleResponse(response);
+}
+
+export async function fetchConnections(token) {
+  const response = await fetch(`${base}/api/connections`, {
+    method: "GET",
+    headers: requireAuthHeader(token),
+  });
+
+  return handleResponse(response);
+}
+
+export async function fetchUserContact(authId, token) {
+  const response = await fetch(`${base}/api/users/${authId}/contact`, {
+    method: "GET",
+    headers: requireAuthHeader(token),
+  });
+
+  return handleResponse(response);
+}
+
 export async function uploadAvatar(token, file) {
   const formData = new FormData();
   formData.append("file", file);
@@ -269,4 +388,13 @@ export default {
   uploadAvatar,
   resendConfirmationEmail,
   deleteUser,
+  searchUsers,
+  fetchRecommendedPlayers,
+  sendConnectionRequest,
+  cancelConnectionRequest,
+  acceptConnectionRequest,
+  fetchIncomingRequests,
+  fetchOutgoingRequests,
+  fetchConnections,
+  fetchUserContact,
 };
