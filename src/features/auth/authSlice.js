@@ -3,6 +3,7 @@ import {
   login as loginRequest,
   signup as signupRequest,
   resendConfirmationEmail as resendConfirmationEmailRequest,
+  requestPasswordReset as requestPasswordResetRequest,
 } from "../../services/api";
 import {
   clearStoredToken,
@@ -20,6 +21,9 @@ const initialState = {
   resendMessage: null,
   resendError: null,
   resendLoading: false,
+  resetLoading: false,
+  resetMessage: null,
+  resetError: null,
 };
 
 export const signup = createAsyncThunk(
@@ -63,6 +67,21 @@ export const resendConfirmationEmail = createAsyncThunk(
   }
 );
 
+export const requestPasswordReset = createAsyncThunk(
+  "auth/requestPasswordReset",
+  async ({ identifier }, { rejectWithValue }) => {
+    try {
+      const data = await requestPasswordResetRequest(identifier);
+      return (
+        data?.message ||
+        "If the account exists, a password reset email has been sent."
+      );
+    } catch (error) {
+      return rejectWithValue(error.message || "Password reset request failed");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -78,6 +97,9 @@ const authSlice = createSlice({
       state.resendMessage = null;
       state.resendError = null;
       state.resendLoading = false;
+      state.resetLoading = false;
+      state.resetMessage = null;
+      state.resetError = null;
       clearStoredToken();
     },
   },
@@ -130,6 +152,19 @@ const authSlice = createSlice({
       .addCase(resendConfirmationEmail.rejected, (state, action) => {
         state.resendLoading = false;
         state.resendError = action.payload || "Resend confirmation failed";
+      })
+      .addCase(requestPasswordReset.pending, (state) => {
+        state.resetLoading = true;
+        state.resetMessage = null;
+        state.resetError = null;
+      })
+      .addCase(requestPasswordReset.fulfilled, (state, action) => {
+        state.resetLoading = false;
+        state.resetMessage = action.payload;
+      })
+      .addCase(requestPasswordReset.rejected, (state, action) => {
+        state.resetLoading = false;
+        state.resetError = action.payload || "Password reset request failed";
       });
   },
 });

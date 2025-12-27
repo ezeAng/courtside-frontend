@@ -25,6 +25,7 @@ import SearchUsersScreen from "./screens/Connections/SearchUsersScreen";
 import RecommendedPlayersScreen from "./screens/Connections/RecommendedPlayersScreen";
 import ConnectionRequestsScreen from "./screens/Connections/ConnectionRequestsScreen";
 import MyConnectionsScreen from "./screens/Connections/MyConnectionsScreen";
+import ForgotPasswordScreen from "./screens/Auth/ForgotPasswordScreen";
 import BottomNav from "./components/BottomNav";
 import { clearAuth } from "./features/auth/authSlice";
 import { clearUser, fetchCurrentUser } from "./features/user/userSlice";
@@ -73,6 +74,7 @@ function App() {
         <Route path="/" element={<SplashScreen />} />
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/signup" element={<SignupScreen />} />
+        <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/home" element={<HomeScreen />} />
           <Route path="/matches" element={<MatchHistoryScreen />} />

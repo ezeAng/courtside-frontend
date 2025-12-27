@@ -101,6 +101,15 @@ function LoginScreen() {
             />
 
             <Button
+              component={RouterLink}
+              to="/forgot-password"
+              size="small"
+              sx={{ alignSelf: "flex-end" }}
+            >
+              Forgot password?
+            </Button>
+
+            <Button
               type="submit"
               variant="contained"
               size="large"
