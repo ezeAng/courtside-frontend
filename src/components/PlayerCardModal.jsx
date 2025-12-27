@@ -3,7 +3,7 @@ import html2canvas from "html2canvas";
 import { getPlayerCardData } from "../services/api";
 import PlayerCard3D from "../components/PlayerCard3D";
 
-export default function PlayerCardModal({ token, onClose }) {
+export default function PlayerCardModal({ token, targetAuthId, onClose }) {
   const [card, setCard] = useState(null);
   const [error, setError] = useState(null);
   const cardRef = useRef(null);
@@ -11,14 +11,13 @@ export default function PlayerCardModal({ token, onClose }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await getPlayerCardData(token);
-        console.log(res.card)
+        const res = await getPlayerCardData(token, targetAuthId);
         setCard(res.card);
       } catch (err) {
         setError(err.message || "Failed to load player card");
       }
     })();
-  }, [token]);
+  }, [token, targetAuthId]);
 
   async function getCardCanvas() {
     if (!cardRef.current) return null;

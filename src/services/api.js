@@ -366,8 +366,9 @@ export async function getHomeStats(token) {
   return handleResponse(response);
 }
 
-export async function getPlayerCardData(token) {
-  const response = await fetch(`${base}/api/users/card-data`, {
+export async function getPlayerCardData(token, targetAuthId) {
+  const query = targetAuthId ? `?auth_id=${encodeURIComponent(targetAuthId)}` : "";
+  const response = await fetch(`${base}/api/users/card-data${query}`, {
     method: "GET",
     headers: requireAuthHeader(token),
   });

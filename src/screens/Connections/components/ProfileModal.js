@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -22,13 +22,16 @@ import {
   sendConnectionRequestThunk,
 } from "../../../features/connections/connectionsSlice";
 import ContactSection from "./ContactSection";
+import PlayerCardModal from "../../../components/PlayerCardModal";
 
 const getId = (player) => player?.auth_id || player?.id || player?.user_id;
 
 function ProfileModal({ open, onClose, player }) {
   const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.accessToken);
   const authUserId = useSelector((state) => state.user.user?.auth_id);
   const { statusMap, actionLoading } = useSelector((state) => state.connections);
+  const [showCard, setShowCard] = useState(false);
 
   const playerId = getId(player);
   const status = playerId ? statusMap[playerId] : null;
@@ -48,6 +51,12 @@ function ProfileModal({ open, onClose, player }) {
       dispatch(fetchContactThunk(playerId));
     }
   }, [dispatch, open, playerId, status]);
+
+  useEffect(() => {
+    if (!open) {
+      setShowCard(false);
+    }
+  }, [open]);
 
   const handleConnect = () => {
     if (!playerId) return;
@@ -114,68 +123,83 @@ function ProfileModal({ open, onClose, player }) {
   if (!player) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{player.username || "Player"}</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={2} alignItems="center" textAlign="center">
-          <ProfileAvatar user={player} size={90} editable={false} />
-          <Typography variant="h6" fontWeight={700}>
-            {player.username}
-          </Typography>
-          <Typography color="text.secondary">{player.region || "Unknown region"}</Typography>
-          {player.bio && (
-            <Typography variant="body2" color="text.secondary">
-              {player.bio}
+    <>
+      <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+        <DialogTitle>{player.username || "Player"}</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} alignItems="center" textAlign="center">
+            <ProfileAvatar user={player} size={90} editable={false} />
+            <Typography variant="h6" fontWeight={700}>
+              {player.username}
             </Typography>
-          )}
+            <Typography color="text.secondary">{player.region || "Unknown region"}</Typography>
+            {player.bio && (
+              <Typography variant="body2" color="text.secondary">
+                {player.bio}
+              </Typography>
+            )}
 
-          {actionArea}
+            {actionArea}
+            {playerId && token && (
+              <Button variant="outlined" onClick={() => setShowCard(true)}>
+                See player card
+              </Button>
+            )}
 
-          {status === "connected" && (
-            <ContactSection playerId={playerId} />
-          )}
+            {status === "connected" && (
+              <ContactSection playerId={playerId} />
+            )}
 
-          <Divider flexItem sx={{ width: "100%" }} />
+            <Divider flexItem sx={{ width: "100%" }} />
 
-          <Stack spacing={1} width="100%">
-            <Typography variant="subtitle1" fontWeight={700}>
-              Stats
-            </Typography>
-            <Stack direction="row" justifyContent="space-between">
-              <Box textAlign="left">
-                <Typography fontWeight={700}>Singles Elo</Typography>
-                <Typography color="text.secondary">
-                  {player.singles_elo ?? player.singlesElo ?? "N/A"}
-                </Typography>
-              </Box>
-              <Box textAlign="right">
-                <Typography>Matches</Typography>
-                <Typography color="text.secondary">
-                  {player.singles_matches ?? player.singlesMatches ?? "-"}
-                </Typography>
-              </Box>
-            </Stack>
-            <Stack direction="row" justifyContent="space-between">
-              <Box textAlign="left">
-                <Typography fontWeight={700}>Doubles Elo</Typography>
-                <Typography color="text.secondary">
-                  {player.doubles_elo ?? player.doublesElo ?? "N/A"}
-                </Typography>
-              </Box>
-              <Box textAlign="right">
-                <Typography>Matches</Typography>
-                <Typography color="text.secondary">
-                  {player.doubles_matches ?? player.doublesMatches ?? "-"}
-                </Typography>
-              </Box>
+            <Stack spacing={1} width="100%">
+              <Typography variant="subtitle1" fontWeight={700}>
+                Stats
+              </Typography>
+              <Stack direction="row" justifyContent="space-between">
+                <Box textAlign="left">
+                  <Typography fontWeight={700}>Singles Elo</Typography>
+                  <Typography color="text.secondary">
+                    {player.singles_elo ?? player.singlesElo ?? "N/A"}
+                  </Typography>
+                </Box>
+                <Box textAlign="right">
+                  <Typography>Matches</Typography>
+                  <Typography color="text.secondary">
+                    {player.singles_matches ?? player.singlesMatches ?? "-"}
+                  </Typography>
+                </Box>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between">
+                <Box textAlign="left">
+                  <Typography fontWeight={700}>Doubles Elo</Typography>
+                  <Typography color="text.secondary">
+                    {player.doubles_elo ?? player.doublesElo ?? "N/A"}
+                  </Typography>
+                </Box>
+                <Box textAlign="right">
+                  <Typography>Matches</Typography>
+                  <Typography color="text.secondary">
+                    {player.doubles_matches ?? player.doublesMatches ?? "-"}
+                  </Typography>
+                </Box>
+              </Stack>
             </Stack>
           </Stack>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {showCard && playerId && token && (
+        <PlayerCardModal
+          token={token}
+          targetAuthId={playerId}
+          onClose={() => setShowCard(false)}
+        />
+      )}
+    </>
   );
 }
 
