@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -28,9 +28,9 @@ const getId = (player) => player?.auth_id || player?.id || player?.user_id;
 
 function ProfileModal({ open, onClose, player }) {
   const dispatch = useDispatch();
-  const token = useSelector((state) => state.auth.accessToken);
   const authUserId = useSelector((state) => state.user.user?.auth_id);
   const { statusMap, actionLoading } = useSelector((state) => state.connections);
+
   const [showCard, setShowCard] = useState(false);
 
   const playerId = getId(player);
@@ -38,51 +38,56 @@ function ProfileModal({ open, onClose, player }) {
   const isOwn = playerId && playerId === authUserId;
   const loading = playerId ? actionLoading[playerId] : false;
 
+  // Ensure connection state is loaded when opening modal
   useEffect(() => {
-    if (open && playerId && !statusMap[playerId]) {
+    if (open && playerId && !status) {
       dispatch(fetchIncomingRequestsThunk());
       dispatch(fetchOutgoingRequestsThunk());
       dispatch(fetchConnectionsThunk());
     }
-  }, [dispatch, open, playerId, statusMap, statusMap?.[playerId]]);
+  }, [dispatch, open, playerId, status]);
 
+  // Fetch contact only when connected
   useEffect(() => {
     if (open && status === "connected" && playerId) {
       dispatch(fetchContactThunk(playerId));
     }
   }, [dispatch, open, playerId, status]);
 
+  // Reset local state on close
   useEffect(() => {
-    if (!open) {
-      setShowCard(false);
-    }
+    if (!open) setShowCard(false);
   }, [open]);
 
-  const handleConnect = () => {
+  const handleConnect = useCallback(() => {
     if (!playerId) return;
     dispatch(sendConnectionRequestThunk(playerId));
-  };
+  }, [dispatch, playerId]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     if (!playerId) return;
     dispatch(cancelConnectionRequestThunk(playerId));
-  };
+  }, [dispatch, playerId]);
 
-  const handleAccept = () => {
+  const handleAccept = useCallback(() => {
     if (!playerId) return;
     dispatch(acceptConnectionRequestThunk(playerId));
-  };
+  }, [dispatch, playerId]);
 
-  const actionArea = useMemo(() => {
-    if (isOwn) return null;
+  if (!player) return null;
 
+  let actionArea = null;
+
+  if (!isOwn) {
     switch (status) {
       case "connected":
-        return (
+        actionArea = (
           <Chip label="Connected" color="success" variant="outlined" />
         );
+        break;
+
       case "outgoing_request":
-        return (
+        actionArea = (
           <Stack direction="row" spacing={1} alignItems="center">
             <Chip label="Request Sent" color="info" />
             <Button
@@ -95,8 +100,10 @@ function ProfileModal({ open, onClose, player }) {
             </Button>
           </Stack>
         );
+        break;
+
       case "incoming_request":
-        return (
+        actionArea = (
           <Button
             variant="contained"
             onClick={handleAccept}
@@ -106,8 +113,10 @@ function ProfileModal({ open, onClose, player }) {
             {loading ? "Accepting..." : "Accept Request"}
           </Button>
         );
+        break;
+
       default:
-        return (
+        actionArea = (
           <Button
             variant="contained"
             onClick={handleConnect}
@@ -118,21 +127,25 @@ function ProfileModal({ open, onClose, player }) {
           </Button>
         );
     }
-  }, [handleAccept, handleCancel, handleConnect, isOwn, loading, status]);
-
-  if (!player) return null;
+  }
 
   return (
     <>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
         <DialogTitle>{player.username || "Player"}</DialogTitle>
+
         <DialogContent dividers>
           <Stack spacing={2} alignItems="center" textAlign="center">
             <ProfileAvatar user={player} size={90} editable={false} />
+
             <Typography variant="h6" fontWeight={700}>
               {player.username}
             </Typography>
-            <Typography color="text.secondary">{player.region || "Unknown region"}</Typography>
+
+            <Typography color="text.secondary">
+              {player.region || "Unknown region"}
+            </Typography>
+
             {player.bio && (
               <Typography variant="body2" color="text.secondary">
                 {player.bio}
@@ -140,7 +153,8 @@ function ProfileModal({ open, onClose, player }) {
             )}
 
             {actionArea}
-            {playerId && token && (
+
+            {playerId && (
               <Button variant="outlined" onClick={() => setShowCard(true)}>
                 See player card
               </Button>
@@ -156,6 +170,7 @@ function ProfileModal({ open, onClose, player }) {
               <Typography variant="subtitle1" fontWeight={700}>
                 Stats
               </Typography>
+
               <Stack direction="row" justifyContent="space-between">
                 <Box textAlign="left">
                   <Typography fontWeight={700}>Singles Elo</Typography>
@@ -170,6 +185,7 @@ function ProfileModal({ open, onClose, player }) {
                   </Typography>
                 </Box>
               </Stack>
+
               <Stack direction="row" justifyContent="space-between">
                 <Box textAlign="left">
                   <Typography fontWeight={700}>Doubles Elo</Typography>
@@ -187,14 +203,14 @@ function ProfileModal({ open, onClose, player }) {
             </Stack>
           </Stack>
         </DialogContent>
+
         <DialogActions>
           <Button onClick={onClose}>Close</Button>
         </DialogActions>
       </Dialog>
 
-      {showCard && playerId && token && (
+      {showCard && playerId && (
         <PlayerCardModal
-          token={token}
           targetAuthId={playerId}
           onClose={() => setShowCard(false)}
         />

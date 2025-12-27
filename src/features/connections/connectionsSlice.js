@@ -46,26 +46,29 @@ const initialState = {
 
 const getId = (player) => player?.auth_id || player?.id || player?.user_id;
 
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
 const refreshStatusMap = (state) => {
   const map = {};
 
-  state.connections.items.forEach((player) => {
+  asArray(state.connections.items).forEach((player) => {
     const id = getId(player);
     if (id) map[id] = "connected";
   });
 
-  state.requests.incoming.forEach((player) => {
+  asArray(state.requests.incoming).forEach((player) => {
     const id = getId(player);
     if (id) map[id] = "incoming_request";
   });
 
-  state.requests.outgoing.forEach((player) => {
+  asArray(state.requests.outgoing).forEach((player) => {
     const id = getId(player);
     if (id) map[id] = "outgoing_request";
   });
 
   state.statusMap = map;
 };
+
 
 const setActionLoading = (state, authId, value) => {
   if (!authId) return;
