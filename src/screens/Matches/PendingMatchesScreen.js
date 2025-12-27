@@ -358,9 +358,7 @@ export default function PendingMatchesScreen() {
               </Typography>
 
               <Stack direction="row" spacing={1}>
-                <Button variant="outlined" onClick={() => handleOpenEdit(m)}>
-                  Edit
-                </Button>
+                
                 <Button color="error" onClick={() => handleDelete(m.match_id)}>
                   Delete
                 </Button>
