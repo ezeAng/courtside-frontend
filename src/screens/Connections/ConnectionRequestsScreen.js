@@ -19,12 +19,21 @@ import {
   fetchOutgoingRequestsThunk,
 } from "../../features/connections/connectionsSlice";
 
-function RequestsTab({ type, items, loading, onAction, actionLabel, actionLoading }) {
+const getId = (p) => p?.auth_id || p?.id || p?.user_id;
+
+function RequestsTab({
+  type,
+  items,
+  loading,
+  onAction,
+  actionLabel,
+  actionLoading,
+}) {
   if (loading) {
     return <LoadingSpinner message="Loading requests..." />;
   }
 
-  if (!items?.length) {
+  if (!items.length) {
     return (
       <EmptyState
         title={type === "incoming" ? "No incoming requests" : "No outgoing requests"}
@@ -39,41 +48,66 @@ function RequestsTab({ type, items, loading, onAction, actionLabel, actionLoadin
 
   return (
     <Stack spacing={1.5}>
-      {items.map((player) => (
-        <Stack key={player.auth_id || player.id || player.username} direction="row" spacing={1} alignItems="center">
-          <PlayerChip player={player} onClick={() => onAction("view", player)} />
-          {actionLabel && (
-            <Button
-              variant={type === "incoming" ? "contained" : "outlined"}
-              size="small"
-              onClick={() => onAction(type === "incoming" ? "accept" : "cancel", player)}
-              disabled={Boolean(actionLoading?.[player.auth_id || player.id])}
-              startIcon={
-                actionLoading?.[player.auth_id || player.id] ? (
-                  <CircularProgress size={16} color="inherit" />
-                ) : null
-              }
-            >
-              {actionLabel}
-            </Button>
-          )}
-        </Stack>
-      ))}
+      {items.map((player) => {
+        const id = getId(player);
+        return (
+          <Stack
+            key={id}
+            direction="row"
+            spacing={1}
+            alignItems="center"
+          >
+            <PlayerChip
+              player={player}
+              onClick={() => onAction("view", player)}
+            />
+            {actionLabel && (
+              <Button
+                variant={type === "incoming" ? "contained" : "outlined"}
+                size="small"
+                onClick={() =>
+                  onAction(type === "incoming" ? "accept" : "cancel", player)
+                }
+                disabled={Boolean(actionLoading?.[id])}
+                startIcon={
+                  actionLoading?.[id] ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : null
+                }
+              >
+                {actionLabel}
+              </Button>
+            )}
+          </Stack>
+        );
+      })}
     </Stack>
   );
 }
 
 function ConnectionRequestsScreen() {
   const dispatch = useDispatch();
-  const { incoming, outgoing, loading } = useSelector((state) => state.connections.requests);
-  const actionLoading = useSelector((state) => state.connections.actionLoading);
+
+  const { incoming, outgoing, loading } = useSelector((state) => {
+    const req = state.connections.requests || {};
+    return {
+      incoming: Array.isArray(req.incoming) ? req.incoming : [],
+      outgoing: Array.isArray(req.outgoing) ? req.outgoing : [],
+      loading: Boolean(req.loading),
+    };
+  });
+
+  const actionLoading = useSelector(
+    (state) => state.connections.actionLoading
+  );
+
   const [tab, setTab] = useState("incoming");
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchIncomingRequestsThunk());
-    dispatch(fetchOutgoingRequestsThunk());
-  }, [dispatch]);
+    if (!incoming.length) dispatch(fetchIncomingRequestsThunk());
+    if (!outgoing.length) dispatch(fetchOutgoingRequestsThunk());
+  }, [dispatch, incoming.length, outgoing.length]);
 
   const handleAction = (action, player) => {
     if (action === "view") {
@@ -81,7 +115,7 @@ function ConnectionRequestsScreen() {
       return;
     }
 
-    const authId = player?.auth_id || player?.id;
+    const authId = getId(player);
     if (!authId) return;
 
     if (action === "accept") {
@@ -131,7 +165,12 @@ function ConnectionRequestsScreen() {
         </Box>
       </Stack>
 
-      <ProfileModal open={Boolean(selected)} onClose={() => setSelected(null)} player={selected} />
+      <ProfileModal
+        key={getId(selected) || "profile"}
+        open={Boolean(selected)}
+        onClose={() => setSelected(null)}
+        player={selected}
+      />
     </Container>
   );
 }
