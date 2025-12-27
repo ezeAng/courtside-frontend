@@ -24,6 +24,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
 import FeedbackIcon from "@mui/icons-material/Feedback";
+import PeopleIcon from "@mui/icons-material/People";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useNavigate } from "react-router-dom";
 import PlayerCardModal from "../../components/PlayerCardModal";
@@ -183,13 +184,36 @@ function SettingsScreen() {
                 </Button>
               </Stack>
             </Stack>
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
 
-        <Card variant="outlined">
-          <CardContent sx={{ p: 0 }}>
-            <List disablePadding>
-              <ListItemButton>
+      <Card variant="outlined">
+        <CardContent>
+          <Stack spacing={1} alignItems="flex-start">
+            <Stack direction="row" spacing={1} alignItems="center">
+              <PeopleIcon color="primary" />
+              <Typography variant="subtitle1" fontWeight={700}>
+                Connections
+              </Typography>
+            </Stack>
+            <Typography color="text.secondary">
+              Discover players, manage requests, and view your connections.
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => navigate("/connections")}
+              sx={{ textTransform: "none" }}
+            >
+              Find Players
+            </Button>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      <Card variant="outlined">
+        <CardContent sx={{ p: 0 }}>
+          <List disablePadding>
+            <ListItemButton>
                 <ListItemIcon>
                   <LanguageIcon />
                 </ListItemIcon>

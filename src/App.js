@@ -20,6 +20,11 @@ import LeaderboardScreen from "./screens/Leaderboard/LeaderboardScreen";
 import SettingsScreen from "./screens/Settings/SettingsScreen";
 import AppSettingsScreen from "./screens/Settings/AppSettingsScreen";
 import SplashScreen from "./screens/SplashScreen";
+import ConnectionsHomeScreen from "./screens/Connections/ConnectionsHomeScreen";
+import SearchUsersScreen from "./screens/Connections/SearchUsersScreen";
+import RecommendedPlayersScreen from "./screens/Connections/RecommendedPlayersScreen";
+import ConnectionRequestsScreen from "./screens/Connections/ConnectionRequestsScreen";
+import MyConnectionsScreen from "./screens/Connections/MyConnectionsScreen";
 import BottomNav from "./components/BottomNav";
 import { clearAuth } from "./features/auth/authSlice";
 import { clearUser, fetchCurrentUser } from "./features/user/userSlice";
@@ -77,6 +82,17 @@ function App() {
           <Route path="/leaderboard" element={<LeaderboardScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
           <Route path="/settings/preferences" element={<AppSettingsScreen />} />
+          <Route path="/connections" element={<ConnectionsHomeScreen />} />
+          <Route path="/connections/search" element={<SearchUsersScreen />} />
+          <Route
+            path="/connections/recommended"
+            element={<RecommendedPlayersScreen />}
+          />
+          <Route
+            path="/connections/requests"
+            element={<ConnectionRequestsScreen />}
+          />
+          <Route path="/connections/list" element={<MyConnectionsScreen />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
