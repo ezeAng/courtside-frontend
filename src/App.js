@@ -11,6 +11,7 @@ import {
 import Box from "@mui/material/Box";
 import LoginScreen from "./screens/Auth/LoginScreen";
 import SignupScreen from "./screens/Auth/SignupScreen";
+import ResendConfirmationScreen from "./screens/Auth/ResendConfirmationScreen";
 import HomeScreen from "./screens/Home/HomeScreen";
 import MatchHistoryScreen from "./screens/Matches/MatchHistoryScreen";
 import MatchDetailScreen from "./screens/Matches/MatchDetailScreen";
@@ -74,6 +75,7 @@ function App() {
         <Route path="/" element={<SplashScreen />} />
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/signup" element={<SignupScreen />} />
+        <Route path="/resend-confirmation" element={<ResendConfirmationScreen />} />
         <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/home" element={<HomeScreen />} />
