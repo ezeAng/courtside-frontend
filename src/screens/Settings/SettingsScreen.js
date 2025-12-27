@@ -28,11 +28,13 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import FeedbackIcon from "@mui/icons-material/Feedback";
 import PeopleIcon from "@mui/icons-material/People";
 import CircularProgress from "@mui/material/CircularProgress";
+import CheckIcon from "@mui/icons-material/Check";
 import { useNavigate } from "react-router-dom";
 import PlayerCardModal from "../../components/PlayerCardModal";
 import ProfileAvatar from "../../components/ProfileAvatar";
 import { clearAuth } from "../../features/auth/authSlice";
 import Snackbar from "@mui/material/Snackbar";
+import { countries } from "../../constants/countries";
 
 import {
   clearUser,
@@ -58,6 +60,7 @@ function SettingsScreen() {
   const [region, setRegion] = useState(user?.region || "");
   const [address, setAddress] = useState(user?.address || "");
   const [bio, setBio] = useState(user?.bio || "");
+  const [countryCode, setCountryCode] = useState(user?.country_code || null);
   const [isProfilePrivate, setIsProfilePrivate] = useState(
     Boolean(user?.is_profile_private)
   );
@@ -69,6 +72,12 @@ function SettingsScreen() {
   const [showCard, setShowCard] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [closeAfterAvatarUpload, setCloseAfterAvatarUpload] = useState(false);
+  const [countryDialogOpen, setCountryDialogOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
+  const [modalCountryCode, setModalCountryCode] = useState(
+    user?.country_code || null
+  );
+  const [savingCountry, setSavingCountry] = useState(false);
 
 
   useEffect(() => {
@@ -84,6 +93,8 @@ function SettingsScreen() {
       setRegion(user.region || "");
       setAddress(user.address || "");
       setBio(user.bio || "");
+      setCountryCode(user.country_code || null);
+      setModalCountryCode(user.country_code || null);
       setIsProfilePrivate(Boolean(user.is_profile_private));
       setShareContactWithConnection(Boolean(user.share_contact_with_connection));
     }
@@ -91,8 +102,10 @@ function SettingsScreen() {
 
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [toastSeverity, setToastSeverity] = useState("success");
 
-  const showToast = (message) => {
+  const showToast = (message, severity = "success") => {
+    setToastSeverity(severity);
     setToastMessage(message);
     setToastOpen(true);
   };
@@ -125,6 +138,7 @@ function SettingsScreen() {
       is_profile_private: isProfilePrivate,
       share_contact_with_connection: shareContactWithConnection,
       profile_image_url: user?.profile_image_url || null,
+      country_code: normalizedCountryCode,
     };
 
     const result = await dispatch(updateUserProfile(payload));
@@ -142,6 +156,62 @@ function SettingsScreen() {
     dispatch(clearAuth());
     dispatch(clearUser());
     navigate("/login", { replace: true });
+  };
+
+  const normalizedCountryCode = countryCode ? countryCode.toUpperCase() : null;
+  const normalizedModalCountryCode = modalCountryCode
+    ? modalCountryCode.toUpperCase()
+    : null;
+
+  const selectedCountry = countries.find(
+    (country) => country.code === normalizedCountryCode
+  );
+
+  const filteredCountries = countries.filter((country) => {
+    if (!countrySearch.trim()) return true;
+    const searchTerm = countrySearch.trim().toLowerCase();
+    return (
+      country.name.toLowerCase().includes(searchTerm) ||
+      country.code.toLowerCase().includes(searchTerm)
+    );
+  });
+
+  const openCountrySelector = () => {
+    setCountrySearch("");
+    setModalCountryCode(countryCode || null);
+    setCountryDialogOpen(true);
+  };
+
+  const handleCountrySelect = async (code) => {
+    if (savingCountry) return;
+
+    const normalizedCode = code ? code.toUpperCase() : null;
+    const previousCode = countryCode || null;
+    setModalCountryCode(normalizedCode);
+    setCountryCode(normalizedCode);
+    setSavingCountry(true);
+
+    const result = await dispatch(
+      updateUserProfile({ country_code: normalizedCode })
+    );
+
+    if (updateUserProfile.fulfilled.match(result)) {
+      const updatedCode = result.payload?.country_code ?? normalizedCode;
+      setCountryCode(updatedCode || null);
+      setModalCountryCode(updatedCode || null);
+      setCountryDialogOpen(false);
+      setCountrySearch("");
+      showToast("Country updated successfully.");
+    } else {
+      setCountryCode(previousCode);
+      setModalCountryCode(previousCode);
+      showToast(
+        result.payload || "Failed to update country. Please try again.",
+        "error"
+      );
+    }
+
+    setSavingCountry(false);
   };
 
   return (
@@ -196,36 +266,36 @@ function SettingsScreen() {
                 </Button>
               </Stack>
             </Stack>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card variant="outlined">
-        <CardContent>
-          <Stack spacing={1} alignItems="flex-start">
-            <Stack direction="row" spacing={1} alignItems="center">
-              <PeopleIcon color="primary" />
-              <Typography variant="subtitle1" fontWeight={700}>
-                Connections
+        <Card variant="outlined">
+          <CardContent>
+            <Stack spacing={1} alignItems="flex-start">
+              <Stack direction="row" spacing={1} alignItems="center">
+                <PeopleIcon color="primary" />
+                <Typography variant="subtitle1" fontWeight={700}>
+                  Connections
+                </Typography>
+              </Stack>
+              <Typography color="text.secondary">
+                Discover players, manage requests, and view your connections.
               </Typography>
+              <Button
+                variant="contained"
+                onClick={() => navigate("/connections")}
+                sx={{ textTransform: "none" }}
+              >
+                Find Players
+              </Button>
             </Stack>
-            <Typography color="text.secondary">
-              Discover players, manage requests, and view your connections.
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={() => navigate("/connections")}
-              sx={{ textTransform: "none" }}
-            >
-              Find Players
-            </Button>
-          </Stack>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card variant="outlined">
-        <CardContent sx={{ p: 0 }}>
-          <List disablePadding>
-            <ListItemButton>
+        <Card variant="outlined">
+          <CardContent sx={{ p: 0 }}>
+            <List disablePadding>
+              <ListItemButton>
                 <ListItemIcon>
                   <LanguageIcon />
                 </ListItemIcon>
@@ -359,6 +429,37 @@ function SettingsScreen() {
               fullWidth
             />
 
+            <List component="div" sx={{ border: 1, borderColor: "divider", borderRadius: 1, overflow: "hidden" }}>
+              <ListItemButton onClick={openCountrySelector}>
+                <ListItemText
+                  primary="Country"
+                  secondary={
+                    selectedCountry ? (
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                        <Typography fontSize={24} lineHeight={1}>
+                          {selectedCountry.flag}
+                        </Typography>
+                        <Typography variant="body2" color="text.primary">
+                          {selectedCountry.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {selectedCountry.code}
+                        </Typography>
+                      </Stack>
+                    ) : normalizedCountryCode ? (
+                      <Typography variant="body2" color="text.primary" sx={{ mt: 0.5 }}>
+                        {normalizedCountryCode}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Select country
+                      </Typography>
+                    )
+                  }
+                />
+              </ListItemButton>
+            </List>
+
             <Stack spacing={1}>
               <FormControlLabel
                 control={
@@ -412,6 +513,65 @@ function SettingsScreen() {
         onClose={() => setFeedbackOpen(false)}
         token={token}
       />
+      <Dialog
+        open={countryDialogOpen}
+        fullWidth
+        maxWidth="sm"
+        onClose={savingCountry ? undefined : () => setCountryDialogOpen(false)}
+      >
+        <DialogTitle>Select country</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <TextField
+              label="Search"
+              placeholder="Search by country or code"
+              value={countrySearch}
+              onChange={(event) => setCountrySearch(event.target.value)}
+              fullWidth
+              autoFocus
+            />
+            <Box sx={{ maxHeight: 360, overflowY: "auto" }}>
+              <List disablePadding>
+                <ListItemButton
+                  onClick={() => handleCountrySelect(null)}
+                  disabled={savingCountry}
+                  selected={normalizedModalCountryCode === null}
+                >
+                  <ListItemText
+                    primary="No country"
+                    secondary="Clear selection"
+                  />
+                  {normalizedModalCountryCode === null && (
+                    <CheckIcon color="primary" fontSize="small" />
+                  )}
+                </ListItemButton>
+                <Divider component="li" />
+                {filteredCountries.map((country) => (
+                  <ListItemButton
+                    key={country.code}
+                    onClick={() => handleCountrySelect(country.code)}
+                    disabled={savingCountry}
+                    selected={normalizedModalCountryCode === country.code}
+                  >
+                    <ListItemIcon sx={{ minWidth: 48 }}>
+                      <Typography fontSize={24} lineHeight={1}>
+                        {country.flag}
+                      </Typography>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={country.name}
+                      secondary={country.code}
+                    />
+                    {normalizedModalCountryCode === country.code && (
+                      <CheckIcon color="primary" fontSize="small" />
+                    )}
+                  </ListItemButton>
+                ))}
+              </List>
+            </Box>
+          </Stack>
+        </DialogContent>
+      </Dialog>
       <Snackbar
         open={toastOpen}
         autoHideDuration={4000}
@@ -420,7 +580,7 @@ function SettingsScreen() {
       >
         <Alert
           onClose={() => setToastOpen(false)}
-          severity="success"
+          severity={toastSeverity}
           variant="filled"
           sx={{ width: "100%" }}
         >
