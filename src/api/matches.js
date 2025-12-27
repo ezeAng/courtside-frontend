@@ -27,3 +27,16 @@ export async function rejectMatch(matchId, token) {
   if (!res.ok) throw new Error("Failed to reject match");
   return res.json();
 }
+
+export async function editMatch(matchId, payload, token) {
+  const res = await fetch(`${base}/api/matches/${matchId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...requireAuthHeader(token),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to edit match");
+  return res.json();
+}

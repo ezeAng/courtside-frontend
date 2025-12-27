@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import Paper from "@mui/material/Paper";
@@ -9,20 +10,28 @@ import Alert from "@mui/material/Alert";
 import Divider from "@mui/material/Divider";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate } from "react-router-dom";
-import { confirmMatch, getPendingMatches, rejectMatch } from "../../api/matches";
+import { confirmMatch, editMatch, getPendingMatches, rejectMatch } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
 import MatchConfirmedDialog from "../../components/MatchConfirmedDialog";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
 import EmptyState from "../../components/EmptyState";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import RecordMatchModal from "./RecordMatchModal";
+import { parseScoreToSets } from "./scoreFormatting";
+import { getPlayerAuthId } from "../../utils/matchPlayers";
 
 export default function PendingMatchesScreen() {
   const navigate = useNavigate();
+  const currentUser = useSelector((state) => state.user.user);
+  const currentUserId = currentUser?.auth_id;
   const [incoming, setIncoming] = useState([]);
   const [outgoing, setOutgoing] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [confirmFeedback, setConfirmFeedback] = useState(null);
+  const [editingMatch, setEditingMatch] = useState(null);
+  const [editSinglesValues, setEditSinglesValues] = useState(null);
+  const [editDoublesValues, setEditDoublesValues] = useState(null);
 
   /* ---------------- helpers ---------------- */
 
@@ -39,6 +48,100 @@ export default function PendingMatchesScreen() {
   const getScoreLabel = (match) => {
     if (!match.score) return "Score pending";
     return `Score: ${match.score}`;
+  };
+
+  const determineUserTeam = (match) => {
+    const teamAPlayers = match.players_team_A || [];
+    const teamBPlayers = match.players_team_B || [];
+
+    const isInTeam = (players) =>
+      players.some((player) => String(getPlayerAuthId(player)) === String(currentUserId));
+
+    if (isInTeam(teamAPlayers)) return "A";
+    if (isInTeam(teamBPlayers)) return "B";
+    return "A";
+  };
+
+  const buildInitialValues = (match) => {
+    const userTeam = determineUserTeam(match);
+    const scoreSets = parseScoreToSets(match.score);
+    const orientedSets =
+      scoreSets.length > 0
+        ? scoreSets.map((set) =>
+            userTeam === "A"
+              ? { your: set.teamA, opponent: set.teamB }
+              : { your: set.teamB, opponent: set.teamA }
+          )
+        : [{ your: "", opponent: "" }];
+
+    const matchType = (match.match_type || "").toLowerCase();
+
+    if (matchType === "singles") {
+      const opponent =
+        userTeam === "A"
+          ? (match.players_team_B || [])[0]
+          : (match.players_team_A || [])[0];
+      return {
+        singles: {
+          opponent,
+          sets: orientedSets,
+        },
+        doubles: null,
+      };
+    }
+
+    if (matchType !== "doubles") {
+      return { singles: null, doubles: null };
+    }
+
+    const teamA = match.players_team_A || [];
+    const teamB = match.players_team_B || [];
+    const isUserOnTeamA = userTeam === "A";
+    const myTeam = isUserOnTeamA ? teamA : teamB;
+    const otherTeam = isUserOnTeamA ? teamB : teamA;
+
+    const partner = myTeam.find(
+      (player) => String(getPlayerAuthId(player)) !== String(currentUserId)
+    );
+    const [opponent1, opponent2] = otherTeam;
+
+    return {
+      singles: null,
+      doubles: {
+        partner: partner || null,
+        opponent1: opponent1 || null,
+        opponent2: opponent2 || null,
+        sets: orientedSets,
+      },
+    };
+  };
+
+  const handleOpenEdit = (match) => {
+    const initialValues = buildInitialValues(match);
+    setEditingMatch(match);
+    setEditSinglesValues(initialValues.singles);
+    setEditDoublesValues(initialValues.doubles);
+  };
+
+  const handleCloseEdit = () => {
+    setEditingMatch(null);
+    setEditSinglesValues(null);
+    setEditDoublesValues(null);
+  };
+
+  const handleEditSubmit = async (payload) => {
+    if (!editingMatch) return null;
+    const token = getStoredToken();
+    const matchId = editingMatch.match_id || editingMatch.id;
+    try {
+      const result = await editMatch(matchId, payload, token);
+      await load();
+      handleCloseEdit();
+      return result;
+    } catch (err) {
+      alert(err.message || "Failed to edit match");
+      throw err;
+    }
   };
 
   /* ---------------- data ---------------- */
@@ -235,6 +338,12 @@ export default function PendingMatchesScreen() {
               <Typography variant="caption" color="text.secondary">
                 {new Date(m.created_at).toLocaleString()}
               </Typography>
+
+              <Stack direction="row" spacing={1}>
+                <Button variant="outlined" onClick={() => handleOpenEdit(m)}>
+                  Edit
+                </Button>
+              </Stack>
             </Stack>
           </Paper>
         ))
@@ -272,6 +381,18 @@ export default function PendingMatchesScreen() {
 
         {renderOutgoing()}
       </Stack>
+
+      <RecordMatchModal
+        open={Boolean(editingMatch)}
+        onClose={handleCloseEdit}
+        onRecorded={() => {}}
+        initialSinglesValues={editSinglesValues}
+        initialDoublesValues={editDoublesValues}
+        initialTab={editingMatch?.match_type === "doubles" ? 1 : 0}
+        submitLabel="Save changes"
+        onSinglesSubmit={handleEditSubmit}
+        onDoublesSubmit={handleEditSubmit}
+      />
     </Container>
   );
 }

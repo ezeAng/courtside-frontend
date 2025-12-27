@@ -10,9 +10,15 @@ import { recordMatch } from "../../features/matches/matchSlice";
 import ScoreSetsInput from "./ScoreSetsInput";
 import { formatSetsScore } from "./scoreFormatting";
 import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
-import LoadingSpinner from "../../components/LoadingSpinner";
 
-function SinglesForm({ onRecorded, onClose, open, initialValues }) {
+function SinglesForm({
+  onRecorded,
+  onClose,
+  open,
+  initialValues,
+  submitLabel = "Record Match",
+  onSubmit,
+}) {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.accessToken);
   const currentUser = useSelector((state) => state.user.user);
@@ -97,18 +103,20 @@ function SinglesForm({ onRecorded, onClose, open, initialValues }) {
       const formattedScore = formatSetsScore(sets);
       const winnerToSubmit = winnerTeam === "draw" ? null : winnerTeam;
 
-      const recordedMatch = await dispatch(
-        recordMatch({
-          discipline: "singles",
-          match_type: "singles",
-          players_team_A: [userId],
-          players_team_B: [opponentAuthId],
-          score: formattedScore,
-          winner_team: winnerToSubmit,
-        })
-      ).unwrap();
+      const payload = {
+        discipline: "singles",
+        match_type: "singles",
+        players_team_A: [userId],
+        players_team_B: [opponentAuthId],
+        score: formattedScore,
+        winner_team: winnerToSubmit,
+      };
 
-      onRecorded?.(recordedMatch);
+      const result = onSubmit
+        ? await onSubmit(payload)
+        : await dispatch(recordMatch(payload)).unwrap();
+
+      onRecorded?.(result);
       onClose?.();
     } catch (err) {
       setError(err.message || "Failed to record match");
@@ -146,7 +154,7 @@ function SinglesForm({ onRecorded, onClose, open, initialValues }) {
           )}
         </Stack>
         <Button type="submit" variant="contained" disabled={!isValid}>
-          Record Match
+          {submitLabel}
         </Button>
       </Stack>
     </form>
