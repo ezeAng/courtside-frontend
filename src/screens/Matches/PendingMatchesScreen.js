@@ -10,7 +10,13 @@ import Alert from "@mui/material/Alert";
 import Divider from "@mui/material/Divider";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate } from "react-router-dom";
-import { confirmMatch, editMatch, getPendingMatches, rejectMatch } from "../../api/matches";
+import {
+  confirmMatch,
+  deleteMatch,
+  editMatch,
+  getPendingMatches,
+  rejectMatch,
+} from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
 import MatchConfirmedDialog from "../../components/MatchConfirmedDialog";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
@@ -186,6 +192,18 @@ export default function PendingMatchesScreen() {
     }
   }
 
+  async function handleDelete(matchId) {
+    const confirmed = window.confirm("Delete this pending match?");
+    if (!confirmed) return;
+    try {
+      const token = getStoredToken();
+      await deleteMatch(matchId, token);
+      await load();
+    } catch (err) {
+      alert(err.message || "Failed to delete match");
+    }
+  }
+
   /* ---------------- states ---------------- */
 
   if (loading) {
@@ -342,6 +360,9 @@ export default function PendingMatchesScreen() {
               <Stack direction="row" spacing={1}>
                 <Button variant="outlined" onClick={() => handleOpenEdit(m)}>
                   Edit
+                </Button>
+                <Button color="error" onClick={() => handleDelete(m.match_id)}>
+                  Delete
                 </Button>
               </Stack>
             </Stack>

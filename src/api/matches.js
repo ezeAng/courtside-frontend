@@ -40,3 +40,13 @@ export async function editMatch(matchId, payload, token) {
   if (!res.ok) throw new Error("Failed to edit match");
   return res.json();
 }
+
+export async function deleteMatch(matchId, token) {
+  const res = await fetch(`${base}/api/matches/${matchId}`, {
+    method: "DELETE",
+    headers: requireAuthHeader(token),
+  });
+  if (!res.ok) throw new Error("Failed to delete match");
+  if (res.status === 204) return null;
+  return res.json();
+}
