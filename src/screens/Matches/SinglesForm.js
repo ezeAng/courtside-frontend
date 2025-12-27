@@ -12,13 +12,25 @@ import { formatSetsScore } from "./scoreFormatting";
 import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
-function SinglesForm({ onRecorded, onClose }) {
+function SinglesForm({ onRecorded, onClose, open, initialValues }) {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.accessToken);
   const currentUser = useSelector((state) => state.user.user);
-  const [selectedOpponent, setSelectedOpponent] = useState(null);
+  const [selectedOpponent, setSelectedOpponent] = useState(
+    initialValues?.opponent || null
+  );
 
-  const [sets, setSets] = useState([{ your: "", opponent: "" }]);
+  const resolvedInitialSets = useMemo(() => {
+    if (Array.isArray(initialValues?.sets) && initialValues.sets.length > 0) {
+      return initialValues.sets.map((set) => ({
+        your: set?.your ?? "",
+        opponent: set?.opponent ?? "",
+      }));
+    }
+    return [{ your: "", opponent: "" }];
+  }, [initialValues]);
+
+  const [sets, setSets] = useState(resolvedInitialSets);
   const [winnerTeam, setWinnerTeam] = useState("");
   const [error, setError] = useState(null);
   const userId = currentUser?.auth_id;
@@ -40,6 +52,15 @@ function SinglesForm({ onRecorded, onClose }) {
       setWinnerTeam(desiredWinner);
     }
   }, [autoWinner, winnerTeam]);
+
+  useEffect(() => {
+    if (open) {
+      setSelectedOpponent(initialValues?.opponent || null);
+      setSets(resolvedInitialSets);
+      setWinnerTeam("");
+      setError(null);
+    }
+  }, [open, initialValues, resolvedInitialSets]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
