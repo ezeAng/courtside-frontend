@@ -10,7 +10,14 @@ import { formatSetsScore } from "./scoreFormatting";
 import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
 import PlayerSearchAutocomplete from "../../components/PlayerSearchAutocomplete";
 
-function DoublesForm({ onRecorded, onClose, open, initialValues }) {
+function DoublesForm({
+  onRecorded,
+  onClose,
+  open,
+  initialValues,
+  submitLabel = "Record Match",
+  onSubmit,
+}) {
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.user.user);
   const userId = currentUser?.auth_id;
@@ -90,24 +97,26 @@ function DoublesForm({ onRecorded, onClose, open, initialValues }) {
       const formattedScore = formatSetsScore(sets);
       const winnerToSubmit = winnerTeam === "draw" ? null : winnerTeam;
 
-      const recordedMatch = await dispatch(
-        recordMatch({
-          discipline: "doubles",
-          match_type: "doubles",
-          players_team_A: [
-            userId,
-            partner.auth_id || partner.id,
-          ],
-          players_team_B: [
-            opponent1.auth_id || opponent1.id,
-            opponent2.auth_id || opponent2.id,
-          ],
-          score: formattedScore,
-          winner_team: winnerToSubmit,
-        })
-      ).unwrap();
+      const payload = {
+        discipline: "doubles",
+        match_type: "doubles",
+        players_team_A: [
+          userId,
+          partner.auth_id || partner.id,
+        ],
+        players_team_B: [
+          opponent1.auth_id || opponent1.id,
+          opponent2.auth_id || opponent2.id,
+        ],
+        score: formattedScore,
+        winner_team: winnerToSubmit,
+      };
 
-      onRecorded?.(recordedMatch);
+      const result = onSubmit
+        ? await onSubmit(payload)
+        : await dispatch(recordMatch(payload)).unwrap();
+
+      onRecorded?.(result);
       onClose?.();
     } catch (err) {
       setError(err.message || "Failed to record match");
@@ -170,7 +179,7 @@ function DoublesForm({ onRecorded, onClose, open, initialValues }) {
         </Stack>
 
         <Button type="submit" variant="contained" disabled={!isValid}>
-          Record Match
+          {submitLabel}
         </Button>
       </Stack>
     </form>

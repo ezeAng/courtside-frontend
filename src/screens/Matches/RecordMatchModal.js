@@ -23,6 +23,9 @@ function RecordMatchModal({
   initialSinglesValues,
   initialDoublesValues,
   initialTab = 0,
+  submitLabel = "Record Match",
+  onSinglesSubmit,
+  onDoublesSubmit,
 }) {
   const startingTab = initialDoublesValues ? 1 : initialSinglesValues ? 0 : initialTab;
   const [tab, setTab] = useState(startingTab);
@@ -57,6 +60,8 @@ function RecordMatchModal({
             onClose={handleClose}
             open={open}
             initialValues={initialSinglesValues}
+            submitLabel={submitLabel}
+            onSubmit={onSinglesSubmit}
           />
         </TabPanel>
         <TabPanel value={tab} index={1}>
@@ -65,6 +70,8 @@ function RecordMatchModal({
             onClose={handleClose}
             open={open}
             initialValues={initialDoublesValues}
+            submitLabel={submitLabel}
+            onSubmit={onDoublesSubmit}
           />
         </TabPanel>
       </DialogContent>
