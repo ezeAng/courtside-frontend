@@ -16,6 +16,8 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -56,6 +58,12 @@ function SettingsScreen() {
   const [region, setRegion] = useState(user?.region || "");
   const [address, setAddress] = useState(user?.address || "");
   const [bio, setBio] = useState(user?.bio || "");
+  const [isProfilePrivate, setIsProfilePrivate] = useState(
+    Boolean(user?.is_profile_private)
+  );
+  const [shareContactWithConnection, setShareContactWithConnection] = useState(
+    Boolean(user?.share_contact_with_connection)
+  );
   const [successMessage, setSuccessMessage] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [showCard, setShowCard] = useState(false);
@@ -76,6 +84,8 @@ function SettingsScreen() {
       setRegion(user.region || "");
       setAddress(user.address || "");
       setBio(user.bio || "");
+      setIsProfilePrivate(Boolean(user.is_profile_private));
+      setShareContactWithConnection(Boolean(user.share_contact_with_connection));
     }
   }, [user]);
 
@@ -112,6 +122,8 @@ function SettingsScreen() {
       region,
       address,
       bio,
+      is_profile_private: isProfilePrivate,
+      share_contact_with_connection: shareContactWithConnection,
       profile_image_url: user?.profile_image_url || null,
     };
 
@@ -346,6 +358,38 @@ function SettingsScreen() {
               minRows={3}
               fullWidth
             />
+
+            <Stack spacing={1}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isProfilePrivate}
+                    onChange={(event) => setIsProfilePrivate(event.target.checked)}
+                  />
+                }
+                label="Make profile private"
+              />
+              <Typography variant="body2" color="text.secondary" sx={{ ml: 5 }}>
+                When enabled, your profile visibility will be limited.
+              </Typography>
+            </Stack>
+
+            <Stack spacing={1}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={shareContactWithConnection}
+                    onChange={(event) =>
+                      setShareContactWithConnection(event.target.checked)
+                    }
+                  />
+                }
+                label="Share contact details with connections"
+              />
+              <Typography variant="body2" color="text.secondary" sx={{ ml: 5 }}>
+                Allow your confirmed connections to view your contact info.
+              </Typography>
+            </Stack>
 
             <Button
               type="submit"
