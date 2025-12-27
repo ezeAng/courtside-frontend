@@ -23,6 +23,12 @@ function LoginScreen() {
   const [password, setPassword] = useState("");
   const [submitError, setSubmitError] = useState(null);
 
+  const needsEmailConfirmation = (message) => {
+    if (!message) return false;
+    const lower = message.toLowerCase();
+    return lower.includes("confirm") || lower.includes("verify");
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitError(null);
@@ -37,8 +43,16 @@ function LoginScreen() {
         dispatch(clearAuth());
       }
     } else if (loginResult.payload) {
+      if (needsEmailConfirmation(loginResult.payload)) {
+        navigate("/resend-confirmation", { state: { email } });
+        return;
+      }
       setSubmitError(loginResult.payload || "Incorrect email or password");
     } else if (loginResult.error) {
+      if (needsEmailConfirmation(loginResult.error.message)) {
+        navigate("/resend-confirmation", { state: { email } });
+        return;
+      }
       setSubmitError(loginResult.error.message || "Incorrect email or password");
     }
   };
@@ -100,14 +114,19 @@ function LoginScreen() {
               fullWidth
             />
 
-            <Button
-              component={RouterLink}
-              to="/forgot-password"
-              size="small"
-              sx={{ alignSelf: "flex-end" }}
-            >
-              Forgot password?
-            </Button>
+            <Stack direction="row" justifyContent="space-between">
+              <Button component={RouterLink} to="/forgot-password" size="small">
+                Forgot password?
+              </Button>
+              <Button
+                component={RouterLink}
+                to="/resend-confirmation"
+                size="small"
+                sx={{ justifyContent: "flex-end" }}
+              >
+                Resend confirmation email
+              </Button>
+            </Stack>
 
             <Button
               type="submit"
