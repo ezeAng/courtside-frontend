@@ -6,14 +6,27 @@ const normalizeTeamValue = (value) => {
   return null;
 };
 
-export const getPlayerAuthId = (player = {}) =>
-  player.auth_id ||
-  player.user_id ||
-  player.id ||
-  player.profile_id ||
-  player.player_auth_id ||
-  player.player_id ||
-  player.user?.auth_id;
+export const getPlayerAuthId = (player) => {
+  if (player === null || player === undefined) return null;
+
+  if (typeof player === "string" || typeof player === "number") {
+    return player;
+  }
+
+  const source = player ?? {};
+
+  return (
+    source.auth_id ??
+    source.user_id ??
+    source.id ??
+    source.profile_id ??
+    source.player_auth_id ??
+    source.player_id ??
+    source.user?.auth_id ??
+    source.user?.id ??
+    null
+  );
+};
 
 export const getPlayerDisplayName = (player = {}) => {
   const names = [
