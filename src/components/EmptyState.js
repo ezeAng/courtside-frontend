@@ -4,7 +4,15 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
 
-function EmptyState({ title, description, actionLabel, onAction, icon, children }) {
+function EmptyState({
+  title,
+  description,
+  actionLabel,
+  onAction,
+  icon,
+  children,
+  actions,
+}) {
   return (
     <Stack
       spacing={2}
@@ -40,11 +48,15 @@ function EmptyState({ title, description, actionLabel, onAction, icon, children 
         )}
         {children}
       </Stack>
-      {actionLabel && onAction && (
-        <Button variant="contained" size="small" onClick={onAction}>
-          {actionLabel}
-        </Button>
-      )}
+      {(actionLabel && onAction) || actions ? (
+        actions ? (
+          actions
+        ) : (
+          <Button variant="contained" size="small" onClick={onAction}>
+            {actionLabel}
+          </Button>
+        )
+      ) : null}
     </Stack>
   );
 }
