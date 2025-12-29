@@ -77,7 +77,6 @@ function SettingsScreen() {
   const [modalCountryCode, setModalCountryCode] = useState(
     user?.country_code || null
   );
-  const [savingCountry, setSavingCountry] = useState(false);
 
 
   useEffect(() => {
@@ -183,35 +182,11 @@ function SettingsScreen() {
   };
 
   const handleCountrySelect = async (code) => {
-    if (savingCountry) return;
-
     const normalizedCode = code ? code.toUpperCase() : null;
-    const previousCode = countryCode || null;
     setModalCountryCode(normalizedCode);
     setCountryCode(normalizedCode);
-    setSavingCountry(true);
-
-    const result = await dispatch(
-      updateUserProfile({ country_code: normalizedCode })
-    );
-
-    if (updateUserProfile.fulfilled.match(result)) {
-      const updatedCode = result.payload?.country_code ?? normalizedCode;
-      setCountryCode(updatedCode || null);
-      setModalCountryCode(updatedCode || null);
-      setCountryDialogOpen(false);
-      setCountrySearch("");
-      showToast("Country updated successfully.");
-    } else {
-      setCountryCode(previousCode);
-      setModalCountryCode(previousCode);
-      showToast(
-        result.payload || "Failed to update country. Please try again.",
-        "error"
-      );
-    }
-
-    setSavingCountry(false);
+    setCountryDialogOpen(false);
+    setCountrySearch("");
   };
 
   return (
@@ -517,7 +492,7 @@ function SettingsScreen() {
         open={countryDialogOpen}
         fullWidth
         maxWidth="sm"
-        onClose={savingCountry ? undefined : () => setCountryDialogOpen(false)}
+        onClose={() => setCountryDialogOpen(false)}
       >
         <DialogTitle>Select country</DialogTitle>
         <DialogContent>
@@ -534,7 +509,6 @@ function SettingsScreen() {
               <List disablePadding>
                 <ListItemButton
                   onClick={() => handleCountrySelect(null)}
-                  disabled={savingCountry}
                   selected={normalizedModalCountryCode === null}
                 >
                   <ListItemText
@@ -550,7 +524,6 @@ function SettingsScreen() {
                   <ListItemButton
                     key={country.code}
                     onClick={() => handleCountrySelect(country.code)}
-                    disabled={savingCountry}
                     selected={normalizedModalCountryCode === country.code}
                   >
                     <ListItemIcon sx={{ minWidth: 48 }}>
