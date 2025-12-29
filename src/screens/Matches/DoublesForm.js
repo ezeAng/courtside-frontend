@@ -9,6 +9,7 @@ import ScoreSetsInput from "./ScoreSetsInput";
 import { formatSetsScore } from "./scoreFormatting";
 import { areSetsWithinRange, determineOutcomeFromSets } from "./scoreValidation";
 import PlayerSearchAutocomplete from "../../components/PlayerSearchAutocomplete";
+import { getPlayerAuthId } from "../../utils/matchPlayers";
 
 function DoublesForm({
   onRecorded,
@@ -46,9 +47,9 @@ function DoublesForm({
   const allPlayerIds = useMemo(() => {
     const ids = [
       userId,
-      partner?.auth_id || partner?.id,
-      opponent1?.auth_id || opponent1?.id,
-      opponent2?.auth_id || opponent2?.id,
+      getPlayerAuthId(partner),
+      getPlayerAuthId(opponent1),
+      getPlayerAuthId(opponent2),
     ].filter(Boolean);
     return new Set(ids.map(String));
   }, [userId, partner, opponent1, opponent2]);
@@ -102,11 +103,11 @@ function DoublesForm({
         match_type: "doubles",
         players_team_A: [
           userId,
-          partner.auth_id || partner.id,
+          getPlayerAuthId(partner),
         ],
         players_team_B: [
-          opponent1.auth_id || opponent1.id,
-          opponent2.auth_id || opponent2.id,
+          getPlayerAuthId(opponent1),
+          getPlayerAuthId(opponent2),
         ],
         score: formattedScore,
         winner_team: winnerToSubmit,
