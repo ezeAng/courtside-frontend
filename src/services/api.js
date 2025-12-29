@@ -269,33 +269,33 @@ export async function sendConnectionRequest(authId, token) {
       "Content-Type": "application/json",
       ...requireAuthHeader(token),
     },
-    body: JSON.stringify({ auth_id: authId }),
+    body: JSON.stringify({ receiver_auth_id: authId }),
   });
 
   return handleResponse(response);
 }
 
-export async function cancelConnectionRequest(authId, token) {
+export async function cancelConnectionRequest(requestId, token) {
   const response = await fetch(`${base}/api/connections/request/cancel`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...requireAuthHeader(token),
     },
-    body: JSON.stringify({ auth_id: authId }),
+    body: JSON.stringify({ request_id: requestId }),
   });
 
   return handleResponse(response);
 }
 
-export async function acceptConnectionRequest(authId, token) {
+export async function acceptConnectionRequest(requestId, token) {
   const response = await fetch(`${base}/api/connections/request/accept`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...requireAuthHeader(token),
     },
-    body: JSON.stringify({ auth_id: authId }),
+    body: JSON.stringify({ request_id: requestId }),
   });
 
   return handleResponse(response);
