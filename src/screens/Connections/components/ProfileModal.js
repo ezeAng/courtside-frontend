@@ -29,7 +29,9 @@ const getId = (player) => player?.auth_id || player?.id || player?.user_id;
 function ProfileModal({ open, onClose, player }) {
   const dispatch = useDispatch();
   const authUserId = useSelector((state) => state.user.user?.auth_id);
-  const { statusMap, actionLoading } = useSelector((state) => state.connections);
+  const { statusMap, actionLoading, requestIds } = useSelector(
+    (state) => state.connections
+  );
 
   const [showCard, setShowCard] = useState(false);
 
@@ -66,13 +68,26 @@ function ProfileModal({ open, onClose, player }) {
 
   const handleCancel = useCallback(() => {
     if (!playerId) return;
-    dispatch(cancelConnectionRequestThunk(playerId));
-  }, [dispatch, playerId]);
+    const requestId =
+      requestIds?.outgoing?.[playerId] || requestIds?.incoming?.[playerId];
+    dispatch(
+      cancelConnectionRequestThunk({
+        authId: playerId,
+        requestId,
+      })
+    );
+  }, [dispatch, playerId, requestIds]);
 
   const handleAccept = useCallback(() => {
     if (!playerId) return;
-    dispatch(acceptConnectionRequestThunk(playerId));
-  }, [dispatch, playerId]);
+    const requestId = requestIds?.incoming?.[playerId];
+    dispatch(
+      acceptConnectionRequestThunk({
+        authId: playerId,
+        requestId,
+      })
+    );
+  }, [dispatch, playerId, requestIds]);
 
   if (!player) return null;
 

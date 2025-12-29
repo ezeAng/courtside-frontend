@@ -100,6 +100,7 @@ function ConnectionRequestsScreen() {
   const actionLoading = useSelector(
     (state) => state.connections.actionLoading
   );
+  const requestIds = useSelector((state) => state.connections.requestIds);
 
   const [tab, setTab] = useState("incoming");
   const [selected, setSelected] = useState(null);
@@ -117,12 +118,28 @@ function ConnectionRequestsScreen() {
 
     const authId = getId(player);
     if (!authId) return;
+    const requestId =
+      player?.request_id ||
+      (action === "accept"
+        ? requestIds?.incoming?.[authId]
+        : requestIds?.outgoing?.[authId]);
+    if (!requestId) return;
 
     if (action === "accept") {
-      dispatch(acceptConnectionRequestThunk(authId));
+      dispatch(
+        acceptConnectionRequestThunk({
+          authId,
+          requestId,
+        })
+      );
     }
     if (action === "cancel") {
-      dispatch(cancelConnectionRequestThunk(authId));
+      dispatch(
+        cancelConnectionRequestThunk({
+          authId,
+          requestId,
+        })
+      );
     }
   };
 

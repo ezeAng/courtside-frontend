@@ -39,6 +39,10 @@ const initialState = {
     loading: false,
     error: null,
   },
+  requestIds: {
+    incoming: {},
+    outgoing: {},
+  },
   statusMap: {},
   actionLoading: {},
   contact: {},
@@ -50,6 +54,7 @@ const asArray = (value) => (Array.isArray(value) ? value : []);
 
 const refreshStatusMap = (state) => {
   const map = {};
+  const requestIds = { incoming: {}, outgoing: {} };
 
   asArray(state.connections.items).forEach((player) => {
     const id = getId(player);
@@ -58,15 +63,28 @@ const refreshStatusMap = (state) => {
 
   asArray(state.requests.incoming).forEach((player) => {
     const id = getId(player);
-    if (id) map[id] = "incoming_request";
+    if (id) {
+      map[id] = "incoming_request";
+      const requestId = player?.request_id || player?.requestId || player?.id;
+      if (requestId) {
+        requestIds.incoming[id] = requestId;
+      }
+    }
   });
 
   asArray(state.requests.outgoing).forEach((player) => {
     const id = getId(player);
-    if (id) map[id] = "outgoing_request";
+    if (id) {
+      map[id] = "outgoing_request";
+      const requestId = player?.request_id || player?.requestId || player?.id;
+      if (requestId) {
+        requestIds.outgoing[id] = requestId;
+      }
+    }
   });
 
   state.statusMap = map;
+  state.requestIds = requestIds;
 };
 
 
@@ -77,6 +95,39 @@ const setActionLoading = (state, authId, value) => {
     [authId]: value,
   };
 };
+
+const normalizeRequestUser = (request, type) => {
+  const requestId = request?.request_id || request?.id || request?.requestId;
+  const counterpart =
+    type === "incoming"
+      ? request?.sender || request?.from || request?.user || request?.requester
+      : request?.receiver || request?.to || request?.user || request?.requestee;
+
+  const fallbackId =
+    type === "incoming"
+      ? request?.sender_auth_id || request?.from_auth_id
+      : request?.receiver_auth_id || request?.to_auth_id;
+
+  const player = counterpart || {};
+  const authId = getId(player) || fallbackId;
+
+  if (!player.auth_id && authId) {
+    player.auth_id = authId;
+  }
+
+  return {
+    ...player,
+    request_id: requestId,
+  };
+};
+
+const normalizeRequests = (requests, type) =>
+  asArray(requests).map((request) => normalizeRequestUser(request, type));
+
+const parseRequestArg = (arg) =>
+  typeof arg === "object" && arg !== null
+    ? arg
+    : { authId: arg, requestId: arg };
 
 export const searchUsersThunk = createAsyncThunk(
   "connections/searchUsers",
@@ -110,7 +161,8 @@ export const fetchIncomingRequestsThunk = createAsyncThunk(
     try {
       const token = getState().auth.accessToken;
       const results = await fetchIncomingRequests(token);
-      return Array.isArray(results?.requests) ? results.requests : results;
+      const requests = Array.isArray(results?.requests) ? results.requests : results;
+      return normalizeRequests(requests, "incoming");
     } catch (error) {
       return rejectWithValue(error.message || "Failed to load incoming requests");
     }
@@ -123,7 +175,8 @@ export const fetchOutgoingRequestsThunk = createAsyncThunk(
     try {
       const token = getState().auth.accessToken;
       const results = await fetchOutgoingRequests(token);
-      return Array.isArray(results?.requests) ? results.requests : results;
+      const requests = Array.isArray(results?.requests) ? results.requests : results;
+      return normalizeRequests(requests, "outgoing");
     } catch (error) {
       return rejectWithValue(error.message || "Failed to load outgoing requests");
     }
@@ -145,15 +198,15 @@ export const fetchConnectionsThunk = createAsyncThunk(
 
 export const sendConnectionRequestThunk = createAsyncThunk(
   "connections/sendConnectionRequest",
-  async (authId, { dispatch, getState, rejectWithValue }) => {
+  async (receiverAuthId, { dispatch, getState, rejectWithValue }) => {
     try {
       const token = getState().auth.accessToken;
-      const response = await sendConnectionRequest(authId, token);
+      const response = await sendConnectionRequest(receiverAuthId, token);
       await Promise.all([
         dispatch(fetchOutgoingRequestsThunk()),
         dispatch(fetchConnectionsThunk()),
       ]);
-      return { authId, response };
+      return { authId: receiverAuthId, response };
     } catch (error) {
       return rejectWithValue(error.message || "Failed to send request");
     }
@@ -162,12 +215,16 @@ export const sendConnectionRequestThunk = createAsyncThunk(
 
 export const cancelConnectionRequestThunk = createAsyncThunk(
   "connections/cancelConnectionRequest",
-  async (authId, { dispatch, getState, rejectWithValue }) => {
+  async (payload, { dispatch, getState, rejectWithValue }) => {
     try {
+      const { requestId, authId } = parseRequestArg(payload);
+      if (!requestId) {
+        throw new Error("Missing request id");
+      }
       const token = getState().auth.accessToken;
-      const response = await cancelConnectionRequest(authId, token);
+      const response = await cancelConnectionRequest(requestId, token);
       await dispatch(fetchOutgoingRequestsThunk());
-      return { authId, response };
+      return { authId, requestId, response };
     } catch (error) {
       return rejectWithValue(error.message || "Failed to cancel request");
     }
@@ -176,15 +233,19 @@ export const cancelConnectionRequestThunk = createAsyncThunk(
 
 export const acceptConnectionRequestThunk = createAsyncThunk(
   "connections/acceptConnectionRequest",
-  async (authId, { dispatch, getState, rejectWithValue }) => {
+  async (payload, { dispatch, getState, rejectWithValue }) => {
     try {
+      const { requestId, authId } = parseRequestArg(payload);
+      if (!requestId) {
+        throw new Error("Missing request id");
+      }
       const token = getState().auth.accessToken;
-      const response = await acceptConnectionRequest(authId, token);
+      const response = await acceptConnectionRequest(requestId, token);
       await Promise.all([
         dispatch(fetchIncomingRequestsThunk()),
         dispatch(fetchConnectionsThunk()),
       ]);
-      return { authId, response };
+      return { authId, requestId, response };
     } catch (error) {
       return rejectWithValue(error.message || "Failed to accept request");
     }
@@ -306,7 +367,7 @@ const connectionsSlice = createSlice({
         state.requests.error = action.payload || "Failed to send request";
       })
       .addCase(cancelConnectionRequestThunk.pending, (state, action) => {
-        const authId = action.meta.arg;
+        const { authId } = parseRequestArg(action.meta.arg);
         setActionLoading(state, authId, true);
       })
       .addCase(cancelConnectionRequestThunk.fulfilled, (state, action) => {
@@ -315,12 +376,12 @@ const connectionsSlice = createSlice({
         refreshStatusMap(state);
       })
       .addCase(cancelConnectionRequestThunk.rejected, (state, action) => {
-        const authId = action.meta.arg;
+        const { authId } = parseRequestArg(action.meta.arg);
         setActionLoading(state, authId, false);
         state.requests.error = action.payload || "Failed to cancel request";
       })
       .addCase(acceptConnectionRequestThunk.pending, (state, action) => {
-        const authId = action.meta.arg;
+        const { authId } = parseRequestArg(action.meta.arg);
         setActionLoading(state, authId, true);
       })
       .addCase(acceptConnectionRequestThunk.fulfilled, (state, action) => {
@@ -329,7 +390,7 @@ const connectionsSlice = createSlice({
         refreshStatusMap(state);
       })
       .addCase(acceptConnectionRequestThunk.rejected, (state, action) => {
-        const authId = action.meta.arg;
+        const { authId } = parseRequestArg(action.meta.arg);
         setActionLoading(state, authId, false);
         state.requests.error = action.payload || "Failed to accept request";
       })
