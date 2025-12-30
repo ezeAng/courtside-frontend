@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
@@ -10,90 +9,106 @@ import Typography from "@mui/material/Typography";
 import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import GroupIcon from "@mui/icons-material/Group";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 function FindPlayersScreen() {
   const navigate = useNavigate();
 
   const actions = [
     {
-      label: "Search by Username",
-      description: "Quickly look up players by handle.",
-      icon: <PersonSearchIcon color="primary" />,
+      label: "Search players",
+      description: "Look up players directly by username.",
+      icon: <PersonSearchIcon />,
       onClick: () => navigate("/connections/search"),
+      accent: "primary.main",
     },
     {
-      label: "Connection Requests",
-      description: "Manage incoming and outgoing requests.",
-      icon: <MailOutlineIcon color="primary" />,
+      label: "Requests",
+      description: "Review incoming and outgoing requests.",
+      icon: <MailOutlineIcon />,
       onClick: () => navigate("/connections/requests"),
+      accent: "secondary.main",
     },
     {
-      label: "Find recommended players",
-      description: "See players tailored to your preferences.",
-      icon: <GroupIcon color="primary" />,
+      label: "Recommended",
+      description: "Discover players matched to your play style.",
+      icon: <GroupIcon />,
       onClick: () => navigate("/connections/recommended"),
+      accent: "success.main",
     },
   ];
 
   return (
     <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
-      <Stack spacing={3}>
+      <Stack spacing={4}>
+        {/* Header */}
         <Box>
           <Typography variant="h5" fontWeight={800} gutterBottom>
             Find Players
           </Typography>
           <Typography color="text.secondary">
-            Discover new partners, accept requests, and keep track of your connections.
+            Discover new partners, manage requests, and grow your network.
           </Typography>
         </Box>
 
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          sx={(theme) => ({
-            py: 2,
-            borderRadius: 2,
-            textTransform: "none",
-            fontWeight: 800,
-            fontSize: "1.05rem",
-            boxShadow: theme.custom?.colors?.shadows?.md,
-            backgroundImage:
-              "linear-gradient(120deg, " +
-              theme.palette.primary.main +
-              ", " +
-              theme.palette.secondary.main +
-              ")",
-          })}
-          onClick={() => navigate("/connections/recommended")}
-        >
-          Find Recommended Players
-        </Button>
-
-        <Stack spacing={2}>
+        {/* Action cards */}
+        <Stack spacing={2.5}>
           {actions.map((action) => (
-            <Card key={action.label} variant="outlined" sx={{ borderRadius: 2 }}>
+            <Card
+              key={action.label}
+              sx={{
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: "divider",
+                overflow: "hidden",
+                transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: 3,
+                },
+              }}
+            >
               <CardActionArea onClick={action.onClick}>
-                <CardContent>
-                  <Stack direction="row" spacing={2} alignItems="center">
+                <CardContent sx={{ py: 3 }}>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={2.5}
+                  >
+                    {/* Icon container */}
                     <Box
-                      sx={(theme) => ({
-                        width: 44,
-                        height: 44,
-                        borderRadius: "50%",
-                        display: "grid",
-                        placeItems: "center",
-                        backgroundColor: theme.palette.action.hover,
-                      })}
+                      sx={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: action.accent,
+                        color: "white",
+                        flexShrink: 0,
+                      }}
                     >
                       {action.icon}
                     </Box>
-                    <Box>
-                      <Typography fontWeight={700}>{action.label}</Typography>
-                      <Typography variant="body2" color="text.secondary">
+
+                    {/* Text */}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle1" fontWeight={800}>
+                        {action.label}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                      >
                         {action.description}
                       </Typography>
                     </Box>
+
+                    {/* Chevron */}
+                    <ChevronRightIcon
+                      sx={{ color: "text.secondary" }}
+                    />
                   </Stack>
                 </CardContent>
               </CardActionArea>

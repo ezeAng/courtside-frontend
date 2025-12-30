@@ -3,8 +3,8 @@ import BottomNavigation from "@mui/material/BottomNavigation";
 import BottomNavigationAction from "@mui/material/BottomNavigationAction";
 import Paper from "@mui/material/Paper";
 import HomeIcon from "@mui/icons-material/Home";
-import SportsMartialArtsIcon from "@mui/icons-material/SportsMartialArts";
-import SettingsIcon from "@mui/icons-material/Settings";
+import SportsTennisIcon from '@mui/icons-material/SportsTennis';
+import PersonIcon from '@mui/icons-material/Person';
 import MilitaryTechIcon from "@mui/icons-material/MilitaryTech";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -13,9 +13,9 @@ import { useTheme } from "@mui/material/styles";
 const navItems = [
   { label: "Home", value: "/home", icon: <HomeIcon /> },
   { label: "Leaderboard", value: "/leaderboard", icon: <LeaderboardIcon /> },
-  { label: "Matches", value: "/matches", icon: <SportsMartialArtsIcon /> },
+  { label: "Matches", value: "/matches", icon: <SportsTennisIcon /> },
   { label: "Competitions", value: "/competitions", icon: <MilitaryTechIcon /> },
-  { label: "Settings", value: "/settings", icon: <SettingsIcon /> },
+  { label: "Me", value: "/settings", icon: <PersonIcon /> },
 ];
 
 function BottomNav() {
