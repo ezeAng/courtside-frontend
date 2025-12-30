@@ -12,21 +12,25 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { completePasswordReset } from "../../features/auth/authSlice";
-import {
-  getRecoveryToken,
-  subscribeToRecoveryToken,
-} from "../../services/recoveryToken";
 import logo from "../../logo.svg";
+
+/**
+ * Extracts Supabase recovery access_token from URL hash
+ */
+const getRecoveryTokenFromUrl = () => {
+  const hash = window.location.hash.replace("#", "");
+  const params = new URLSearchParams(hash);
+  return params.get("access_token");
+};
 
 function ResetPasswordScreen() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const {
     passwordUpdateLoading,
     passwordUpdateMessage,
     passwordUpdateError,
-    resetMessage,
-    resetError,
   } = useSelector((state) => state.auth);
 
   const [newPassword, setNewPassword] = useState("");
@@ -35,30 +39,22 @@ function ResetPasswordScreen() {
   const [recoveryReady, setRecoveryReady] = useState(false);
 
   useEffect(() => {
-    const session = getRecoveryToken();
-    if (session?.accessToken || session?.access_token) {
+    const token = getRecoveryTokenFromUrl();
+    if (token) {
       setRecoveryReady(true);
+    } else {
+      setLocalError("Password recovery link is invalid or has expired.");
     }
-
-    const unsubscribe = subscribeToRecoveryToken((token) => {
-      if (token?.accessToken || token?.access_token) {
-        setRecoveryReady(true);
-      }
-    });
-
-    return () => {
-      unsubscribe?.();
-    };
   }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLocalError(null);
 
-    if (!recoveryReady) {
-      setLocalError(
-        "Password recovery link is invalid or has expired."
-      );
+    const recoveryToken = getRecoveryTokenFromUrl();
+
+    if (!recoveryToken) {
+      setLocalError("Password recovery link is invalid or expired.");
       return;
     }
 
@@ -72,7 +68,13 @@ function ResetPasswordScreen() {
       return;
     }
 
-    const result = await dispatch(completePasswordReset({ newPassword }));
+    const result = await dispatch(
+      completePasswordReset({
+        recoveryToken,
+        newPassword,
+      })
+    );
+
     if (completePasswordReset.rejected.match(result)) {
       setLocalError(result.payload || result.error?.message);
       return;
@@ -116,20 +118,14 @@ function ResetPasswordScreen() {
               </Typography>
             </Stack>
 
-            {(localError || passwordUpdateError || resetError) && (
+            {(localError || passwordUpdateError) && (
               <Alert severity="error">
-                {localError || passwordUpdateError || resetError}
+                {localError || passwordUpdateError}
               </Alert>
             )}
 
             {passwordUpdateMessage && (
               <Alert severity="success">{passwordUpdateMessage}</Alert>
-            )}
-
-            {!recoveryReady && (resetMessage || resetError) && (
-              <Alert severity={resetError ? "error" : "info"}>
-                {resetError || resetMessage}
-              </Alert>
             )}
 
             <TextField
@@ -140,6 +136,7 @@ function ResetPasswordScreen() {
               required
               fullWidth
               autoFocus
+              disabled={!recoveryReady}
             />
 
             <TextField
@@ -149,20 +146,23 @@ function ResetPasswordScreen() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               fullWidth
+              disabled={!recoveryReady}
             />
 
             <Button
               type="submit"
               variant="contained"
               size="large"
-              disabled={passwordUpdateLoading}
+              disabled={!recoveryReady || passwordUpdateLoading}
               startIcon={
                 passwordUpdateLoading ? (
                   <CircularProgress size={20} color="inherit" />
                 ) : null
               }
             >
-              {passwordUpdateLoading ? "Updating password..." : "Update password"}
+              {passwordUpdateLoading
+                ? "Updating password..."
+                : "Update password"}
             </Button>
 
             <Stack direction="row" spacing={1} justifyContent="center">
