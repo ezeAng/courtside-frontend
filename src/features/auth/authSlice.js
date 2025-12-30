@@ -4,6 +4,7 @@ import {
   signup as signupRequest,
   resendConfirmationEmail as resendConfirmationEmailRequest,
   requestPasswordReset as requestPasswordResetRequest,
+  resetPassword as resetPasswordRequest,
 } from "../../services/api";
 import {
   clearStoredToken,
@@ -24,6 +25,9 @@ const initialState = {
   resetLoading: false,
   resetMessage: null,
   resetError: null,
+  passwordUpdateLoading: false,
+  passwordUpdateMessage: null,
+  passwordUpdateError: null,
 };
 
 export const signup = createAsyncThunk(
@@ -82,6 +86,21 @@ export const requestPasswordReset = createAsyncThunk(
   }
 );
 
+export const completePasswordReset = createAsyncThunk(
+  "auth/completePasswordReset",
+  async ({ token, newPassword }, { rejectWithValue }) => {
+    try {
+      if (!token) {
+        throw new Error("Password recovery link is invalid or has expired.");
+      }
+      const data = await resetPasswordRequest(token, newPassword);
+      return data?.message || "Password updated successfully.";
+    } catch (error) {
+      return rejectWithValue(error.message || "Password update failed");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -100,6 +119,9 @@ const authSlice = createSlice({
       state.resetLoading = false;
       state.resetMessage = null;
       state.resetError = null;
+      state.passwordUpdateLoading = false;
+      state.passwordUpdateMessage = null;
+      state.passwordUpdateError = null;
       clearStoredToken();
     },
   },
@@ -165,6 +187,20 @@ const authSlice = createSlice({
       .addCase(requestPasswordReset.rejected, (state, action) => {
         state.resetLoading = false;
         state.resetError = action.payload || "Password reset request failed";
+      })
+      .addCase(completePasswordReset.pending, (state) => {
+        state.passwordUpdateLoading = true;
+        state.passwordUpdateMessage = null;
+        state.passwordUpdateError = null;
+      })
+      .addCase(completePasswordReset.fulfilled, (state, action) => {
+        state.passwordUpdateLoading = false;
+        state.passwordUpdateMessage = action.payload;
+      })
+      .addCase(completePasswordReset.rejected, (state, action) => {
+        state.passwordUpdateLoading = false;
+        state.passwordUpdateError =
+          action.payload || "Password update failed";
       });
   },
 });

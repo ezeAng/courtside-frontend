@@ -53,6 +53,19 @@ export async function requestPasswordReset(identifier) {
   return handleResponse(response);
 }
 
+export async function resetPassword(accessToken, password) {
+  const response = await fetch(`${base}/api/auth/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...requireAuthHeader(accessToken),
+    },
+    body: JSON.stringify({ password }),
+  });
+
+  return handleResponse(response);
+}
+
 export async function getCurrentUser(token) {
   const response = await fetch(`${base}/api/users/me`, {
     headers: requireAuthHeader(token),
@@ -408,4 +421,5 @@ export default {
   fetchConnections,
   fetchUserContact,
   requestPasswordReset,
+  resetPassword,
 };

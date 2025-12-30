@@ -28,6 +28,7 @@ import ConnectionsHomeScreen from "./screens/Connections/ConnectionsHomeScreen";
 import FindPlayersScreen from "./screens/Connections/FindPlayersScreen";
 import SearchUsersScreen from "./screens/Connections/SearchUsersScreen";
 import ForgotPasswordScreen from "./screens/Auth/ForgotPasswordScreen";
+import ResetPasswordScreen from "./screens/Auth/ResetPasswordScreen";
 import BottomNav from "./components/BottomNav";
 import { clearAuth } from "./features/auth/authSlice";
 import { clearUser, fetchCurrentUser } from "./features/user/userSlice";
@@ -78,6 +79,7 @@ function App() {
         <Route path="/signup" element={<SignupScreen />} />
         <Route path="/resend-confirmation" element={<ResendConfirmationScreen />} />
         <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+        <Route path="/reset-password" element={<ResetPasswordScreen />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/home" element={<HomeScreen />} />
           <Route path="/matches" element={<MatchHistoryScreen />} />
