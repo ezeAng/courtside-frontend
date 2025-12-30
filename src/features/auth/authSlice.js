@@ -3,13 +3,17 @@ import {
   login as loginRequest,
   signup as signupRequest,
   resendConfirmationEmail as resendConfirmationEmailRequest,
-  requestPasswordReset as requestPasswordResetRequest,
 } from "../../services/api";
 import {
   clearStoredToken,
   getStoredToken,
   setStoredToken,
 } from "../../services/storage";
+import {
+  getPasswordResetRedirectUrl,
+  requestPasswordResetEmail,
+  updatePasswordWithRecoveryToken,
+} from "../../services/supabaseAuth";
 
 const tokenFromStorage = getStoredToken();
 
@@ -24,6 +28,9 @@ const initialState = {
   resetLoading: false,
   resetMessage: null,
   resetError: null,
+  passwordUpdateLoading: false,
+  passwordUpdateMessage: null,
+  passwordUpdateError: null,
 };
 
 export const signup = createAsyncThunk(
@@ -69,15 +76,26 @@ export const resendConfirmationEmail = createAsyncThunk(
 
 export const requestPasswordReset = createAsyncThunk(
   "auth/requestPasswordReset",
-  async ({ identifier }, { rejectWithValue }) => {
+  async ({ email }, { rejectWithValue }) => {
     try {
-      const data = await requestPasswordResetRequest(identifier);
-      return (
-        data?.message ||
-        "If the account exists, a password reset email has been sent."
-      );
+      const data = await requestPasswordResetEmail(email, {
+        redirectTo: getPasswordResetRedirectUrl(),
+      });
+      return data?.message;
     } catch (error) {
       return rejectWithValue(error.message || "Password reset request failed");
+    }
+  }
+);
+
+export const completePasswordReset = createAsyncThunk(
+  "auth/completePasswordReset",
+  async ({ newPassword }, { rejectWithValue }) => {
+    try {
+      const data = await updatePasswordWithRecoveryToken(newPassword);
+      return data?.message || "Password updated successfully.";
+    } catch (error) {
+      return rejectWithValue(error.message || "Password update failed");
     }
   }
 );
@@ -100,6 +118,9 @@ const authSlice = createSlice({
       state.resetLoading = false;
       state.resetMessage = null;
       state.resetError = null;
+      state.passwordUpdateLoading = false;
+      state.passwordUpdateMessage = null;
+      state.passwordUpdateError = null;
       clearStoredToken();
     },
   },
@@ -165,6 +186,20 @@ const authSlice = createSlice({
       .addCase(requestPasswordReset.rejected, (state, action) => {
         state.resetLoading = false;
         state.resetError = action.payload || "Password reset request failed";
+      })
+      .addCase(completePasswordReset.pending, (state) => {
+        state.passwordUpdateLoading = true;
+        state.passwordUpdateMessage = null;
+        state.passwordUpdateError = null;
+      })
+      .addCase(completePasswordReset.fulfilled, (state, action) => {
+        state.passwordUpdateLoading = false;
+        state.passwordUpdateMessage = action.payload;
+      })
+      .addCase(completePasswordReset.rejected, (state, action) => {
+        state.passwordUpdateLoading = false;
+        state.passwordUpdateError =
+          action.payload || "Password update failed";
       });
   },
 });
