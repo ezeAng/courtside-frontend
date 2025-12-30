@@ -43,16 +43,6 @@ export async function resendConfirmationEmail(email) {
   return handleResponse(response);
 }
 
-export async function requestPasswordReset(identifier) {
-  const response = await fetch(`${base}/api/auth/forgot-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: identifier, username: identifier }),
-  });
-
-  return handleResponse(response);
-}
-
 export async function getCurrentUser(token) {
   const response = await fetch(`${base}/api/users/me`, {
     headers: requireAuthHeader(token),
@@ -407,5 +397,4 @@ export default {
   fetchOutgoingRequests,
   fetchConnections,
   fetchUserContact,
-  requestPasswordReset,
 };
