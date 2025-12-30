@@ -158,6 +158,7 @@ export default function PendingMatchesScreen() {
       setError(null);
       const token = getStoredToken();
       const data = await getPendingMatches(token);
+      console.log(data)
       setIncoming(data.incoming || []);
       setOutgoing(data.outgoing || []);
     } catch (err) {
@@ -175,6 +176,7 @@ export default function PendingMatchesScreen() {
     try {
       const token = getStoredToken();
       const confirmation = await confirmMatch(matchId, token);
+      console.log(confirmation)
       setConfirmFeedback(confirmation);
       await load();
     } catch (err) {

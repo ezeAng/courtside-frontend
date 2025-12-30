@@ -42,8 +42,8 @@ export default function MatchConfirmedDialog({
     discipline,
     upset,
     updated_elos,
-    teamA_delta,
-    teamB_delta,
+    elo_change_side_a,
+    elo_change_side_b,
     ranks,
   } = confirmFeedback;
 
@@ -51,14 +51,14 @@ export default function MatchConfirmedDialog({
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Match Confirmed</DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent dividers sx={{py: 4}}>
         <Stack spacing={3}>
           {/* UPSET INFO (neutral, emoji-based) */}
           {upset && (
             <Box
               sx={{
-                px: 2,
-                py: 1.5,
+                px: 4,
+                py: 4,
                 borderRadius: 2,
                 backgroundColor: "rgba(0,0,0,0.04)",
               }}
@@ -141,10 +141,10 @@ export default function MatchConfirmedDialog({
                 Team ELO Changes
               </Typography>
               <Typography variant="body2">
-                Team A: {teamA_delta ?? 0}
+                Team A: {elo_change_side_a ?? 0}
               </Typography>
               <Typography variant="body2">
-                Team B: {teamB_delta ?? 0}
+                Team B: {elo_change_side_b ?? 0}
               </Typography>
             </Stack>
           )}
