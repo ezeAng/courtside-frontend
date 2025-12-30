@@ -21,11 +21,12 @@ import LeaderboardScreen from "./screens/Leaderboard/LeaderboardScreen";
 import SettingsScreen from "./screens/Settings/SettingsScreen";
 import AppSettingsScreen from "./screens/Settings/AppSettingsScreen";
 import SplashScreen from "./screens/SplashScreen";
-import ConnectionsHomeScreen from "./screens/Connections/ConnectionsHomeScreen";
-import SearchUsersScreen from "./screens/Connections/SearchUsersScreen";
 import RecommendedPlayersScreen from "./screens/Connections/RecommendedPlayersScreen";
 import ConnectionRequestsScreen from "./screens/Connections/ConnectionRequestsScreen";
 import MyConnectionsScreen from "./screens/Connections/MyConnectionsScreen";
+import ConnectionsHomeScreen from "./screens/Connections/ConnectionsHomeScreen";
+import FindPlayersScreen from "./screens/Connections/FindPlayersScreen";
+import SearchUsersScreen from "./screens/Connections/SearchUsersScreen";
 import ForgotPasswordScreen from "./screens/Auth/ForgotPasswordScreen";
 import BottomNav from "./components/BottomNav";
 import { clearAuth } from "./features/auth/authSlice";
@@ -87,6 +88,7 @@ function App() {
           <Route path="/settings" element={<SettingsScreen />} />
           <Route path="/settings/preferences" element={<AppSettingsScreen />} />
           <Route path="/connections" element={<ConnectionsHomeScreen />} />
+          <Route path="/connections/find" element={<FindPlayersScreen />} />
           <Route path="/connections/search" element={<SearchUsersScreen />} />
           <Route
             path="/connections/recommended"
