@@ -3,17 +3,15 @@ import {
   login as loginRequest,
   signup as signupRequest,
   resendConfirmationEmail as resendConfirmationEmailRequest,
+  requestPasswordReset as requestPasswordResetRequest,
+  resetPassword as resetPasswordRequest,
 } from "../../services/api";
 import {
   clearStoredToken,
   getStoredToken,
   setStoredToken,
 } from "../../services/storage";
-import {
-  getPasswordResetRedirectUrl,
-  requestPasswordResetEmail,
-  updatePasswordWithRecoveryToken,
-} from "../../services/supabaseAuth";
+import { getRecoveryToken } from "../../services/recoveryToken";
 
 const tokenFromStorage = getStoredToken();
 
@@ -76,12 +74,13 @@ export const resendConfirmationEmail = createAsyncThunk(
 
 export const requestPasswordReset = createAsyncThunk(
   "auth/requestPasswordReset",
-  async ({ email }, { rejectWithValue }) => {
+  async ({ identifier }, { rejectWithValue }) => {
     try {
-      const data = await requestPasswordResetEmail(email, {
-        redirectTo: getPasswordResetRedirectUrl(),
-      });
-      return data?.message;
+      const data = await requestPasswordResetRequest(identifier);
+      return (
+        data?.message ||
+        "If the account exists, a password reset email has been sent."
+      );
     } catch (error) {
       return rejectWithValue(error.message || "Password reset request failed");
     }
@@ -92,7 +91,14 @@ export const completePasswordReset = createAsyncThunk(
   "auth/completePasswordReset",
   async ({ newPassword }, { rejectWithValue }) => {
     try {
-      const data = await updatePasswordWithRecoveryToken(newPassword);
+      const recoveryToken = getRecoveryToken();
+      const accessToken = recoveryToken?.accessToken || recoveryToken?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Password recovery link is invalid or has expired.");
+      }
+
+      const data = await resetPasswordRequest(newPassword, accessToken);
       return data?.message || "Password updated successfully.";
     } catch (error) {
       return rejectWithValue(error.message || "Password update failed");

@@ -43,6 +43,38 @@ export async function resendConfirmationEmail(email) {
   return handleResponse(response);
 }
 
+export async function requestPasswordReset(emailOrUsername) {
+  const payload =
+    typeof emailOrUsername === "object" && emailOrUsername !== null
+      ? emailOrUsername
+      : { email: emailOrUsername, username: emailOrUsername };
+
+  const response = await fetch(`${base}/api/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  return handleResponse(response);
+}
+
+export async function resetPassword(password, recoveryAccessToken) {
+  if (!recoveryAccessToken) {
+    throw new Error("Password recovery link is invalid or has expired.");
+  }
+
+  const response = await fetch(`${base}/api/auth/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${recoveryAccessToken}`,
+    },
+    body: JSON.stringify({ password }),
+  });
+
+  return handleResponse(response);
+}
+
 export async function getCurrentUser(token) {
   const response = await fetch(`${base}/api/users/me`, {
     headers: requireAuthHeader(token),
@@ -387,7 +419,9 @@ export default {
   getPlayerCardData,
   uploadAvatar,
   resendConfirmationEmail,
+  requestPasswordReset,
   deleteUser,
+  resetPassword,
   searchUsers,
   fetchRecommendedPlayers,
   sendConnectionRequest,

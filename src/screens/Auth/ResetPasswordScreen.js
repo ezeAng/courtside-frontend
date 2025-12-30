@@ -13,9 +13,9 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { completePasswordReset } from "../../features/auth/authSlice";
 import {
-  getRecoverySession,
-  subscribeToPasswordRecovery,
-} from "../../services/supabaseAuth";
+  getRecoveryToken,
+  subscribeToRecoveryToken,
+} from "../../services/recoveryToken";
 import logo from "../../logo.svg";
 
 function ResetPasswordScreen() {
@@ -35,13 +35,13 @@ function ResetPasswordScreen() {
   const [recoveryReady, setRecoveryReady] = useState(false);
 
   useEffect(() => {
-    const session = getRecoverySession();
-    if (session?.access_token) {
+    const session = getRecoveryToken();
+    if (session?.accessToken || session?.access_token) {
       setRecoveryReady(true);
     }
 
-    const unsubscribe = subscribeToPasswordRecovery((event) => {
-      if (event === "PASSWORD_RECOVERY") {
+    const unsubscribe = subscribeToRecoveryToken((token) => {
+      if (token?.accessToken || token?.access_token) {
         setRecoveryReady(true);
       }
     });
@@ -57,7 +57,7 @@ function ResetPasswordScreen() {
 
     if (!recoveryReady) {
       setLocalError(
-        "Password recovery link is invalid or has expired. Please request a new reset link."
+        "Password recovery link is invalid or has expired."
       );
       return;
     }
