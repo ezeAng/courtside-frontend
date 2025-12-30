@@ -20,19 +20,19 @@ function ForgotPasswordScreen() {
     (state) => state.auth
   );
 
-  const [identifier, setIdentifier] = useState("");
+  const [email, setEmail] = useState("");
   const [submitError, setSubmitError] = useState(null);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitError(null);
 
-    if (!identifier.trim()) {
-      setSubmitError("Please enter your email or username.");
+    if (!email.trim()) {
+      setSubmitError("Please enter your email.");
       return;
     }
 
-    const result = await dispatch(requestPasswordReset({ identifier }));
+    const result = await dispatch(requestPasswordReset({ email }));
     if (requestPasswordReset.rejected.match(result)) {
       setSubmitError(result.payload || result.error?.message);
     }
@@ -65,7 +65,7 @@ function ForgotPasswordScreen() {
                 Forgot password
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Enter your email or username to receive a reset link.
+                Enter your email to receive a reset link.
               </Typography>
             </Stack>
 
@@ -76,9 +76,9 @@ function ForgotPasswordScreen() {
             {resetMessage && <Alert severity="success">{resetMessage}</Alert>}
 
             <TextField
-              label="Email or Username"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              label="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               fullWidth
               autoFocus

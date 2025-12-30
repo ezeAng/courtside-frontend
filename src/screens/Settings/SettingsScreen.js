@@ -5,6 +5,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import CardActionArea from "@mui/material/CardActionArea";
 import Container from "@mui/material/Container";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
@@ -29,6 +30,7 @@ import FeedbackIcon from "@mui/icons-material/Feedback";
 import PeopleIcon from "@mui/icons-material/People";
 import CircularProgress from "@mui/material/CircularProgress";
 import CheckIcon from "@mui/icons-material/Check";
+import ChevronRightIcon from "@mui/icons-material/ChevronRightOutlined"
 import { useNavigate } from "react-router-dom";
 import PlayerCardModal from "../../components/PlayerCardModal";
 import ProfileAvatar from "../../components/ProfileAvatar";
@@ -253,28 +255,63 @@ function SettingsScreen() {
           </CardContent>
         </Card>
 
-        <Card variant="outlined">
-          <CardContent>
-            <Stack spacing={1} alignItems="flex-start">
-              <Stack direction="row" spacing={1} alignItems="center">
-                <PeopleIcon color="primary" />
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Connections
-                </Typography>
-              </Stack>
-              <Typography color="text.secondary">
-                Discover players, manage requests, and view your connections.
-              </Typography>
-              <Button
-                variant="contained"
-                onClick={() => navigate("/connections")}
-                sx={{ textTransform: "none" }}
+        <Card
+          sx={{
+            borderRadius: 1.25,
+            border: "1px solid",
+            borderColor: "divider",
+            transition: "background-color 0.15s ease, box-shadow 0.15s ease",
+            cursor: "pointer",
+            "&:hover": {
+              bgcolor: "action.hover",
+              boxShadow: 2,
+            },
+          }}
+        >
+          <CardActionArea
+            onClick={() => navigate("/connections")}
+            sx={{ borderRadius: 1.25 }}
+          >
+            <CardContent sx={{ px: 2.5, py: 2.5 }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={2}
               >
-                Find Players
-              </Button>
-            </Stack>
-          </CardContent>
+                {/* Icon container */}
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "primary.main",
+                    color: "primary.contrastText",
+                    flexShrink: 0,
+                  }}
+                >
+                  <PeopleIcon />
+                </Box>
+
+                {/* Text */}
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle1" fontWeight={800}>
+                    Connections
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Find players and manage your connections
+                  </Typography>
+                </Box>
+
+                {/* Direction */}
+                <ChevronRightIcon sx={{ color: "text.secondary" }} />
+              </Stack>
+            </CardContent>
+          </CardActionArea>
         </Card>
+
 
         <Card variant="outlined">
           <CardContent sx={{ p: 0 }}>

@@ -18,7 +18,10 @@ import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import InboxIcon from "@mui/icons-material/Inbox";
 import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
-import Tooltip from "@mui/material/Tooltip";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardActionArea from "@mui/material/CardActionArea";
+import ChevronRightIcon from "@mui/icons-material/ChevronRightOutlined"
 import Box from "@mui/material/Box";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
@@ -29,7 +32,6 @@ import { fetchMatchHistory } from "../../features/matches/matchSlice";
 import { getPendingMatches } from "../../api/matches";
 import { getStoredToken } from "../../services/storage";
 import PlayerProfileChip from "../../components/PlayerProfileChip";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getDisciplineFromMatch, getEloForMode } from "../../utils/elo";
 import { extractYouTubeId, isYouTubeLink } from "../../utils/video";
@@ -260,6 +262,15 @@ function MatchHistoryScreen() {
               <Typography variant="h6" fontWeight={700}>
                 {selectedMatch.match_type === "doubles" ? "Doubles" : "Singles"}
               </Typography>
+              <Chip
+                size="small"
+                label={matchStatus}
+                color={
+                  matchStatus === "confirmed"
+                    ? "success"
+                    : "default"
+                }
+              />
               <Typography color="text.secondary">Result: {winnerLabel}</Typography>
               <Typography>Score: {selectedMatch.score}</Typography>
               <Typography color="text.secondary">
@@ -370,13 +381,19 @@ function MatchHistoryScreen() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
-      <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={2} padding={4}>
-          <Typography variant="h5" fontWeight={500}>
-            Match History
-          </Typography>
-          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" justifyContent="space-evenly">
+    <>
+      <Container maxWidth="sm" sx={{ py: 4, pb: 14 }}>
+        <Stack spacing={3}>
+          {/* Header */}
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Typography variant="h5" fontWeight={700}>
+              Match History
+            </Typography>
+
             <IconButton onClick={() => navigate("/matches/pending")}>
               <Badge
                 color="error"
@@ -387,184 +404,243 @@ function MatchHistoryScreen() {
                 <InboxIcon />
               </Badge>
             </IconButton>
-            <Button
-              variant="contained"
-              color="secondary"
-              startIcon={<PersonSearchIcon />}
-              onClick={() => navigate("/connections")}
-            >
-              Find Players
-            </Button>
-            <Button variant="outlined" onClick={() => setOpenModal(true)}>
-              Record Match
-            </Button>
           </Stack>
-        </Stack>
 
-        <Box></Box>
-
-        {loading ? (
-          <Stack spacing={2}>
-            {[...Array(4)].map((_, idx) => (
-              <Stack key={idx} spacing={1} p={2} sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}>
-                <Skeleton width="80%" />
-                <Skeleton width="60%" />
-                <Skeleton variant="rectangular" height={8} />
-                <Skeleton variant="rectangular" height={8} width="70%" />
-              </Stack>
-            ))}
-            <LoadingSpinner message="Loading match history..." />
-          </Stack>
-        ) : matches?.length ? (
-          <List>
-            {matches.map((match) => {
-              const discipline = getDisciplineFromMatch(match);
-              const winnerTeam = match.winner_team;
-              const teamAOutcome = getOutcomeFromWinnerTeam(winnerTeam, "A");
-              const teamBOutcome = getOutcomeFromWinnerTeam(winnerTeam, "B");
-              const hasVideo = Boolean(match.video_link);
-              const thisMatchStatus = match.status;
-
-              return (
-                <ListItemButton
-                  key={match.match_id || match.id}
-                  divider
-                  onClick={() => handleMatchClick(match)}
-                  sx={{
-                    alignItems: "flex-start",
-                    position: "relative",
-                    py: 1.5,
-                  }}
-                >
-                  {/* Status chip – top right */}
-                  <Box sx={{ position: "absolute", top: 12, right: 16 }}>
-                    <Chip
-                      size="small"
-                      label={thisMatchStatus}
-                      color={thisMatchStatus === "confirmed" ? "success" : "default"}
-                    />
+          {/* Socials / Connections navigation */}
+          <Card
+            sx={{
+              borderRadius: 3,
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <CardActionArea onClick={() => navigate("/connections")}>
+              <CardContent sx={{ px: 2.5, py: 2.25 }}>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      bgcolor: "primary.main",
+                      color: "primary.contrastText",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <PersonSearchIcon />
                   </Box>
 
-                  <ListItemText
-                    primary={
-                      <Typography variant="body2" fontWeight={600}>
-                        {discipline === "doubles" ? "Doubles" : "Singles"} •{" "}
-                        {(() => {
-                          const wt = match.winner_team;
-                          if (wt === "draw" || wt === null) return "Draw";
-                          if (wt) return `Winner: Team ${wt}`;
-                          return "Result pending";
-                        })()}
-                      </Typography>
-                    }
-                    secondary={
-                      <Stack spacing={2} mt={0.75}>
-                        {/* Score */}
-                        <Typography variant="body1" color="text.primary">
-                          Score: {match.score}
-                        </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" fontWeight={800}>
+                      Connections
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Find players and manage your social network
+                    </Typography>
+                  </Box>
 
-                        {/* Team A */}
-                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                          <Typography
-                            variant="body2"
-                            fontWeight={700}
-                            sx={{ minWidth: 64 }}
-                          >
-                            Team A:
+                  <ChevronRightIcon sx={{ color: "text.secondary" }} />
+                </Stack>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+
+          {/* Match list */}
+          {loading ? (
+            <Stack spacing={2}>
+              {[...Array(4)].map((_, idx) => (
+                <Stack
+                  key={idx}
+                  spacing={1}
+                  p={2}
+                  sx={{
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Skeleton width="80%" />
+                  <Skeleton width="60%" />
+                  <Skeleton variant="rectangular" height={8} />
+                  <Skeleton variant="rectangular" height={8} width="70%" />
+                </Stack>
+              ))}
+              <LoadingSpinner message="Loading match history..." />
+            </Stack>
+          ) : matches?.length ? (
+            <List>
+              {matches.map((match) => {
+                const discipline = getDisciplineFromMatch(match);
+                const winnerTeam = match.winner_team;
+                const teamAOutcome = getOutcomeFromWinnerTeam(winnerTeam, "A");
+                const teamBOutcome = getOutcomeFromWinnerTeam(winnerTeam, "B");
+                const hasVideo = Boolean(match.video_link);
+                const thisMatchStatus = match.status;
+
+                return (
+                  <ListItemButton
+                    key={match.match_id || match.id}
+                    divider
+                    onClick={() => handleMatchClick(match)}
+                    sx={{
+                      alignItems: "flex-start",
+                      position: "relative",
+                      py: 1.5,
+                    }}
+                  >
+                    {/* Status chip */}
+                    <Box sx={{ position: "absolute", top: 12, right: 16 }}>
+                      <Chip
+                        size="small"
+                        label={thisMatchStatus}
+                        color={
+                          thisMatchStatus === "confirmed"
+                            ? "success"
+                            : "default"
+                        }
+                      />
+                    </Box>
+
+                    <ListItemText
+                      primary={
+                        <Typography variant="body2" fontWeight={600}>
+                          {discipline === "doubles" ? "Doubles" : "Singles"} •{" "}
+                          {(() => {
+                            const wt = match.winner_team;
+                            if (wt === "draw" || wt === null) return "Draw";
+                            if (wt) return `Winner: Team ${wt}`;
+                            return "Result pending";
+                          })()}
+                        </Typography>
+                      }
+                      secondary={
+                        <Stack spacing={2} mt={0.75}>
+                          <Typography variant="body1">
+                            Score: {match.score}
                           </Typography>
-                          <Stack direction="row" spacing={0.75} flexWrap="wrap">
+
+                          {/* Team A */}
+                          <Stack direction="row" spacing={1} flexWrap="wrap">
+                            <Typography fontWeight={700}>Team A:</Typography>
                             {(match.players?.team_A || []).map((player) => (
                               <PlayerProfileChip
-                                key={player.auth_id || player.id || player.username}
+                                key={player.auth_id || player.id}
                                 player={player}
                                 chipProps={{
-                                  sx: (theme) => getOutcomeStyles(theme, teamAOutcome),
+                                  sx: (theme) =>
+                                    getOutcomeStyles(theme, teamAOutcome),
                                   variant: "outlined",
                                   size: "small",
                                 }}
                               />
                             ))}
                           </Stack>
-                        </Stack>
 
-                        {/* Team B */}
-                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                          <Typography
-                            variant="body2"
-                            fontWeight={700}
-                            sx={{ minWidth: 64 }}
-                          >
-                            Team B:
-                          </Typography>
-                          <Stack direction="row" spacing={0.75} flexWrap="wrap">
+                          {/* Team B */}
+                          <Stack direction="row" spacing={1} flexWrap="wrap">
+                            <Typography fontWeight={700}>Team B:</Typography>
                             {(match.players?.team_B || []).map((player) => (
                               <PlayerProfileChip
-                                key={player.auth_id || player.id || player.username}
+                                key={player.auth_id || player.id}
                                 player={player}
                                 chipProps={{
-                                  sx: (theme) => getOutcomeStyles(theme, teamBOutcome),
+                                  sx: (theme) =>
+                                    getOutcomeStyles(theme, teamBOutcome),
                                   variant: "outlined",
                                   size: "small",
                                 }}
                               />
                             ))}
                           </Stack>
-                        </Stack>
 
-                        {/* Meta row */}
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Typography variant="caption" color="text.secondary">
-                            {match.played_at
-                              ? new Date(match.played_at).toLocaleDateString()
-                              : ""}
-                          </Typography>
+                          <Stack direction="row" spacing={1}>
+                            <Typography variant="caption" color="text.secondary">
+                              {match.played_at
+                                ? new Date(
+                                    match.played_at
+                                  ).toLocaleDateString()
+                                : ""}
+                            </Typography>
 
-                          {hasVideo && (
-                            <Tooltip title="Match video available">
+                            {hasVideo && (
                               <Typography variant="caption" color="text.secondary">
                                 🎥 Video
                               </Typography>
-                            </Tooltip>
-                          )}
+                            )}
+                          </Stack>
                         </Stack>
-                      </Stack>
-                    }
-                  />
-                </ListItemButton>
+                      }
+                    />
+                  </ListItemButton>
+                );
+              })}
+            </List>
+          ) : (
+            <DialogContentText>No matches recorded yet.</DialogContentText>
+          )}
+        </Stack>
 
-              );
-            })}
-          </List>
-        ) : (
-          <DialogContentText>No matches recorded yet.</DialogContentText>
-        )}
-      </Stack>
+        {/* Modals (unchanged) */}
+        <RecordMatchModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          onRecorded={handleRecorded}
+        />
+        <MatchSuccessModal
+          open={showSuccessModal}
+          match={recordedMatch}
+          onClose={handleCloseSuccess}
+          onAddVideo={recordedMatch ? handleAddVideoFromSuccess : undefined}
+        />
+        <AddMatchVideoModal
+          open={videoModalOpen}
+          onClose={() => {
+            setVideoModalOpen(false);
+            setVideoModalMatch(null);
+          }}
+          matchId={videoModalMatch?.id}
+          existingLink={videoModalMatch?.link}
+          onSaved={handleVideoSaved}
+        />
+        {renderMatchDetail()}
+      </Container>
 
-      <RecordMatchModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        onRecorded={handleRecorded}
-      />
-      <MatchSuccessModal
-        open={showSuccessModal}
-        match={recordedMatch}
-        onClose={handleCloseSuccess}
-        onAddVideo={recordedMatch ? handleAddVideoFromSuccess : undefined}
-      />
-      <AddMatchVideoModal
-        open={videoModalOpen}
-        onClose={() => {
-          setVideoModalOpen(false);
-          setVideoModalMatch(null);
+      {/* Floating Record Match CTA */}
+      <Box
+        sx={{
+          position: "fixed",
+          bottom: "12vh",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 1200,
+          width: "calc(100% - 32px)",
+          maxWidth: 200,
         }}
-        matchId={videoModalMatch?.id}
-        existingLink={videoModalMatch?.link}
-        onSaved={handleVideoSaved}
-      />
-      {renderMatchDetail()}
-    </Container>
+      >
+        <Button
+          fullWidth
+          variant="contained"
+          size="large"
+          onClick={() => setOpenModal(true)}
+          sx={{
+            py: 1.75,
+            borderRadius: 999,
+            fontWeight: 900,
+            fontSize: 18,
+            textTransform: "none",
+            boxShadow: 6,
+            height: 60
+          }}
+        >
+          + Record Match
+        </Button>
+      </Box>
+    </>
   );
+
 }
 
 export default MatchHistoryScreen;

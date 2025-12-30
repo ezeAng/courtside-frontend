@@ -3,14 +3,17 @@ import {
   login as loginRequest,
   signup as signupRequest,
   resendConfirmationEmail as resendConfirmationEmailRequest,
-  requestPasswordReset as requestPasswordResetRequest,
-  resetPassword as resetPasswordRequest,
 } from "../../services/api";
 import {
   clearStoredToken,
   getStoredToken,
   setStoredToken,
 } from "../../services/storage";
+import {
+  getPasswordResetRedirectUrl,
+  requestPasswordResetEmail,
+  updatePasswordWithRecoveryToken,
+} from "../../services/supabaseAuth";
 
 const tokenFromStorage = getStoredToken();
 
@@ -73,13 +76,12 @@ export const resendConfirmationEmail = createAsyncThunk(
 
 export const requestPasswordReset = createAsyncThunk(
   "auth/requestPasswordReset",
-  async ({ identifier }, { rejectWithValue }) => {
+  async ({ email }, { rejectWithValue }) => {
     try {
-      const data = await requestPasswordResetRequest(identifier);
-      return (
-        data?.message ||
-        "If the account exists, a password reset email has been sent."
-      );
+      const data = await requestPasswordResetEmail(email, {
+        redirectTo: getPasswordResetRedirectUrl(),
+      });
+      return data?.message;
     } catch (error) {
       return rejectWithValue(error.message || "Password reset request failed");
     }
@@ -88,12 +90,9 @@ export const requestPasswordReset = createAsyncThunk(
 
 export const completePasswordReset = createAsyncThunk(
   "auth/completePasswordReset",
-  async ({ token, newPassword }, { rejectWithValue }) => {
+  async ({ newPassword }, { rejectWithValue }) => {
     try {
-      if (!token) {
-        throw new Error("Password recovery link is invalid or has expired.");
-      }
-      const data = await resetPasswordRequest(token, newPassword);
+      const data = await updatePasswordWithRecoveryToken(newPassword);
       return data?.message || "Password updated successfully.";
     } catch (error) {
       return rejectWithValue(error.message || "Password update failed");

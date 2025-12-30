@@ -12,6 +12,10 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { completePasswordReset } from "../../features/auth/authSlice";
+import {
+  getRecoverySession,
+  subscribeToPasswordRecovery,
+} from "../../services/supabaseAuth";
 import logo from "../../logo.svg";
 
 function ResetPasswordScreen() {
@@ -28,27 +32,30 @@ function ResetPasswordScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [localError, setLocalError] = useState(null);
-  const [recoveryToken, setRecoveryToken] = useState(null);
+  const [recoveryReady, setRecoveryReady] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.hash.slice(1));
-    const type = params.get("type");
-    const token = params.get("access_token");
-
-    if (type === "recovery" && token) {
-      setRecoveryToken(token);
-    } else {
-      setLocalError(
-        "Password recovery link is invalid or has expired. Please request a new reset link."
-      );
+    const session = getRecoverySession();
+    if (session?.access_token) {
+      setRecoveryReady(true);
     }
+
+    const unsubscribe = subscribeToPasswordRecovery((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setRecoveryReady(true);
+      }
+    });
+
+    return () => {
+      unsubscribe?.();
+    };
   }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLocalError(null);
 
-    if (!recoveryToken) {
+    if (!recoveryReady) {
       setLocalError(
         "Password recovery link is invalid or has expired. Please request a new reset link."
       );
@@ -65,9 +72,7 @@ function ResetPasswordScreen() {
       return;
     }
 
-    const result = await dispatch(
-      completePasswordReset({ token: recoveryToken, newPassword })
-    );
+    const result = await dispatch(completePasswordReset({ newPassword }));
     if (completePasswordReset.rejected.match(result)) {
       setLocalError(result.payload || result.error?.message);
       return;
@@ -105,7 +110,7 @@ function ResetPasswordScreen() {
                 Reset password
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {recoveryToken
+                {recoveryReady
                   ? "Enter a new password to finish resetting your account."
                   : "Open the password recovery link from your email to continue."}
               </Typography>
@@ -121,7 +126,7 @@ function ResetPasswordScreen() {
               <Alert severity="success">{passwordUpdateMessage}</Alert>
             )}
 
-            {!recoveryToken && (resetMessage || resetError) && (
+            {!recoveryReady && (resetMessage || resetError) && (
               <Alert severity={resetError ? "error" : "info"}>
                 {resetError || resetMessage}
               </Alert>
