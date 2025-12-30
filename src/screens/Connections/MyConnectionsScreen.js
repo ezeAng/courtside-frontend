@@ -32,9 +32,9 @@ function MyConnectionsScreen() {
           <Stack spacing={1.5}>
             {items.map((player) => (
               <PlayerChip
-                key={player.auth_id || player.id || player.username}
-                player={player}
-                onClick={() => setSelected(player)}
+                key={player?.user.auth_id || player?.user.id || player?.user.username}
+                player={player?.user}
+                onClick={() => setSelected(player?.user)}
                 endAdornment={<Chip size="small" label="Connected" color="success" />}
               />
             ))}

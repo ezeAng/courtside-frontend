@@ -27,19 +27,21 @@ import PlayerCardModal from "../../../components/PlayerCardModal";
 const getId = (player) => player?.auth_id || player?.id || player?.user_id;
 
 function ProfileModal({ open, onClose, player }) {
+  console.log(player)
   const dispatch = useDispatch();
   const authUserId = useSelector((state) => state.user.user?.auth_id);
   const { statusMap, actionLoading, requestIds } = useSelector(
     (state) => state.connections
   );
-
   const [showCard, setShowCard] = useState(false);
 
   const playerId = getId(player);
+  console.log(playerId)
   const status = playerId ? statusMap[playerId] : null;
+  console.log(statusMap)
   const isOwn = playerId && playerId === authUserId;
   const loading = playerId ? actionLoading[playerId] : false;
-
+  console.log(playerId, status, isOwn)
   // Ensure connection state is loaded when opening modal
   useEffect(() => {
     if (open && playerId && !status) {

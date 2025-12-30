@@ -13,7 +13,6 @@ async function handleResponse(response) {
   if (response.status === 204) {
     return null;
   }
-
   return response.json();
 }
 
@@ -306,8 +305,8 @@ export async function fetchIncomingRequests(token) {
     method: "GET",
     headers: requireAuthHeader(token),
   });
-
-  return handleResponse(response);
+  let res = handleResponse(response);
+  return res;
 }
 
 export async function fetchOutgoingRequests(token) {
@@ -315,8 +314,8 @@ export async function fetchOutgoingRequests(token) {
     method: "GET",
     headers: requireAuthHeader(token),
   });
-
-  return handleResponse(response);
+  let res = handleResponse(response);
+  return res;
 }
 
 export async function fetchConnections(token) {

@@ -90,6 +90,7 @@ function ConnectionRequestsScreen() {
 
   const { incoming, outgoing, loading } = useSelector((state) => {
     const req = state.connections.requests || {};
+   
     return {
       incoming: Array.isArray(req.incoming) ? req.incoming : [],
       outgoing: Array.isArray(req.outgoing) ? req.outgoing : [],

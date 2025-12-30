@@ -5,6 +5,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { normalizeProfileImage } from "../../../utils/profileImage";
 
 function PlayerChip({ player, onClick, endAdornment }) {
+  
   if (!player) return null;
 
   const avatarSrc = normalizeProfileImage(player.profile_image_url);

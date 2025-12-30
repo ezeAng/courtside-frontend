@@ -55,9 +55,8 @@ const asArray = (value) => (Array.isArray(value) ? value : []);
 const refreshStatusMap = (state) => {
   const map = {};
   const requestIds = { incoming: {}, outgoing: {} };
-
   asArray(state.connections.items).forEach((player) => {
-    const id = getId(player);
+    const id = getId(player.user);
     if (id) map[id] = "connected";
   });
 
@@ -161,6 +160,7 @@ export const fetchIncomingRequestsThunk = createAsyncThunk(
     try {
       const token = getState().auth.accessToken;
       const results = await fetchIncomingRequests(token);
+      
       const requests = Array.isArray(results?.requests) ? results.requests : results;
       return normalizeRequests(requests, "incoming");
     } catch (error) {
