@@ -29,13 +29,13 @@ function MyConnectionsScreen() {
         {loading ? (
           <LoadingSpinner message="Loading connections..." />
         ) : items?.length ? (
-          <Stack spacing={1.5}>
+          <Stack spacing={1.5} sx={{py:4}}>
             {items.map((player) => (
               <PlayerChip
                 key={player?.user.auth_id || player?.user.id || player?.user.username}
                 player={player?.user}
                 onClick={() => setSelected(player?.user)}
-                endAdornment={<Chip size="small" label="Connected" color="success" />}
+                endAdornment={<Chip size="large" label="Connected" color="success" />}
               />
             ))}
           </Stack>

@@ -27,7 +27,6 @@ import PlayerCardModal from "../../../components/PlayerCardModal";
 const getId = (player) => player?.auth_id || player?.id || player?.user_id;
 
 function ProfileModal({ open, onClose, player }) {
-  console.log(player)
   const dispatch = useDispatch();
   const authUserId = useSelector((state) => state.user.user?.auth_id);
   const { statusMap, actionLoading, requestIds } = useSelector(
@@ -36,12 +35,10 @@ function ProfileModal({ open, onClose, player }) {
   const [showCard, setShowCard] = useState(false);
 
   const playerId = getId(player);
-  console.log(playerId)
   const status = playerId ? statusMap[playerId] : null;
-  console.log(statusMap)
   const isOwn = playerId && playerId === authUserId;
   const loading = playerId ? actionLoading[playerId] : false;
-  console.log(playerId, status, isOwn)
+
   // Ensure connection state is loaded when opening modal
   useEffect(() => {
     if (open && playerId && !status) {
@@ -149,9 +146,9 @@ function ProfileModal({ open, onClose, player }) {
   return (
     <>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-        <DialogTitle>{player.username || "Player"}</DialogTitle>
+        <DialogTitle>Player Profile</DialogTitle>
 
-        <DialogContent dividers>
+        <DialogContent dividers sx={{py:5}}>
           <Stack spacing={2} alignItems="center" textAlign="center">
             <ProfileAvatar user={player} size={90} editable={false} />
 
@@ -196,9 +193,9 @@ function ProfileModal({ open, onClose, player }) {
                   </Typography>
                 </Box>
                 <Box textAlign="right">
-                  <Typography>Matches</Typography>
+                  <Typography>Matches Played</Typography>
                   <Typography color="text.secondary">
-                    {player.singles_matches ?? player.singlesMatches ?? "-"}
+                    {player.singles_matches_played ?? player.singlesMatches ?? "-"}
                   </Typography>
                 </Box>
               </Stack>
@@ -211,9 +208,9 @@ function ProfileModal({ open, onClose, player }) {
                   </Typography>
                 </Box>
                 <Box textAlign="right">
-                  <Typography>Matches</Typography>
+                  <Typography>Matches Played</Typography>
                   <Typography color="text.secondary">
-                    {player.doubles_matches ?? player.doublesMatches ?? "-"}
+                    {player.doubles_matches_played ?? player.doublesMatches ?? "-"}
                   </Typography>
                 </Box>
               </Stack>

@@ -65,7 +65,7 @@ function SettingsScreen() {
     Boolean(user?.is_profile_private)
   );
   const [shareContactWithConnection, setShareContactWithConnection] = useState(
-    Boolean(user?.share_contact_with_connection)
+    Boolean(user?.share_contact_with_connections)
   );
   const [successMessage, setSuccessMessage] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -74,9 +74,13 @@ function SettingsScreen() {
   const [closeAfterAvatarUpload, setCloseAfterAvatarUpload] = useState(false);
   const [countryDialogOpen, setCountryDialogOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
+  
   const [modalCountryCode, setModalCountryCode] = useState(
     user?.country_code || null
   );
+  const [phoneNumber, setPhoneNumber] = useState(user?.phone_number || "");
+  const [contactEmail, setContactEmail] = useState(user?.contact_email || "");
+
 
 
   useEffect(() => {
@@ -95,7 +99,9 @@ function SettingsScreen() {
       setCountryCode(user.country_code || null);
       setModalCountryCode(user.country_code || null);
       setIsProfilePrivate(Boolean(user.is_profile_private));
-      setShareContactWithConnection(Boolean(user.share_contact_with_connection));
+      setShareContactWithConnection(Boolean(user.share_contact_with_connections));
+      setPhoneNumber(user.phone_number || "");
+      setContactEmail(user.contact_email || "");
     }
   }, [user]);
 
@@ -134,11 +140,14 @@ function SettingsScreen() {
       region,
       address,
       bio,
+      phone_number: phoneNumber,
+      contact_email: contactEmail,
       is_profile_private: isProfilePrivate,
-      share_contact_with_connection: shareContactWithConnection,
+      share_contact_with_connections: shareContactWithConnection,
       profile_image_url: user?.profile_image_url || null,
       country_code: normalizedCountryCode,
     };
+
 
     const result = await dispatch(updateUserProfile(payload));
 
@@ -403,35 +412,44 @@ function SettingsScreen() {
               minRows={3}
               fullWidth
             />
+            <TextField
+              label="Contact Email"
+              type="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              fullWidth
+              helperText="Visible to connections if sharing is enabled"
+            />
+
+            <TextField
+              label="Phone Number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              fullWidth
+              helperText="Include country code if applicable"
+            />
+
 
             <List component="div" sx={{ border: 1, borderColor: "divider", borderRadius: 1, overflow: "hidden" }}>
               <ListItemButton onClick={openCountrySelector}>
                 <ListItemText
                   primary="Country"
                   secondary={
-                    selectedCountry ? (
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-                        <Typography fontSize={24} lineHeight={1}>
-                          {selectedCountry.flag}
-                        </Typography>
-                        <Typography variant="body2" color="text.primary">
-                          {selectedCountry.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {selectedCountry.code}
-                        </Typography>
-                      </Stack>
-                    ) : normalizedCountryCode ? (
-                      <Typography variant="body2" color="text.primary" sx={{ mt: 0.5 }}>
-                        {normalizedCountryCode}
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Box component="span" sx={{ fontSize: 24, lineHeight: 1 }}>
+                        {selectedCountry?.flag}
+                      </Box>
+                      <Typography component="span" variant="body2" color="text.primary">
+                        {selectedCountry?.name}
                       </Typography>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        Select country
+                      <Typography component="span" variant="caption" color="text.secondary">
+                        {selectedCountry?.code}
                       </Typography>
-                    )
+                    </Stack>
                   }
+                  secondaryTypographyProps={{ component: "div" }}
                 />
+
               </ListItemButton>
             </List>
 

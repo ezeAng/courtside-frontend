@@ -11,7 +11,6 @@ import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -25,7 +24,7 @@ import {
 const defaultFilters = {
   gender: "any",
   mode: "singles",
-  region: "",
+  region: "any",
 };
 
 function RecommendedPlayersScreen() {
@@ -97,13 +96,22 @@ function RecommendedPlayersScreen() {
                 </FormControl>
 
                 <FormControl disabled={loading}>
-                  <FormLabel>Region</FormLabel>
-                  <TextField
-                    placeholder="Optional"
+                  <FormLabel>Region</FormLabel>             
+                  <Select
                     value={localFilters.region}
                     onChange={handleChange("region")}
                     size="small"
-                  />
+                  >
+                    <MenuItem value="Any">Any</MenuItem>
+                    <MenuItem value="N">North</MenuItem>
+                    <MenuItem value="NE">Northeast</MenuItem>
+                    <MenuItem value="E">East</MenuItem>
+                    <MenuItem value="SE">Southeast</MenuItem>
+                    <MenuItem value="S">South</MenuItem>
+                    <MenuItem value="SW">Southwest</MenuItem>
+                    <MenuItem value="W">West</MenuItem>
+                    <MenuItem value="NW">Northwest</MenuItem>
+                  </Select>
                 </FormControl>
               </Stack>
             )}

@@ -2,77 +2,125 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
 import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 
 function ContactRow({ icon, label, value, href }) {
-  const handleCopy = () => {
-    navigator.clipboard?.writeText(value);
+  const handleClick = () => {
+    if (value) {
+      navigator.clipboard?.writeText(value);
+    }
   };
 
   return (
-    <Stack direction="row" alignItems="center" spacing={1}>
-      {icon}
-      <Typography>{label}</Typography>
-      <Button
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        size="small"
-        variant="outlined"
+    <Grid
+      container
+      alignItems="center"
+      columnSpacing={1}
+      wrap="nowrap"
+      sx={{ width: "100%" }}
+    >
+      {/* Icon */}
+      <Grid
+        item
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          color: "text.secondary",
+        }}
       >
-        {value}
-      </Button>
-      <Button
-        onClick={handleCopy}
-        size="small"
-        startIcon={<ContentCopyIcon />}
-        variant="text"
-      >
-        Copy
-      </Button>
-    </Stack>
+        {icon}
+      </Grid>
+
+      {/* Label */}
+      <Grid item xs={4}>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
+      </Grid>
+
+      {/* Value (tap to copy) */}
+      <Grid item xs>
+        <Box
+          component={href ? "a" : "div"}
+          href={href}
+          onClick={handleClick}
+          sx={{
+            display: "block",
+            cursor: "pointer",
+            textDecoration: "none",
+            color: "text.primary",
+            fontSize: 14,
+            lineHeight: 1.4,
+            wordBreak: "break-word",
+            overflowWrap: "anywhere",
+            "&:hover": {
+              textDecoration: "underline",
+            },
+          }}
+        >
+          {value}
+        </Box>
+      </Grid>
+    </Grid>
   );
 }
 
 function ContactSection({ playerId }) {
-  const contactState = useSelector((state) => state.connections.contact[playerId]);
+  const contactState = useSelector(
+    (state) => state.connections.contact[playerId]
+  );
 
   const content = useMemo(() => {
     if (!contactState || contactState.loading) {
-      return <Typography>Loading contact details...</Typography>;
+      return (
+        <Typography variant="body2" color="text.secondary">
+          Loading contact details…
+        </Typography>
+      );
     }
 
     if (contactState.forbidden) {
-      return <Typography>Contact details not shared</Typography>;
+      return (
+        <Typography variant="body2" color="text.secondary">
+          Contact details not shared
+        </Typography>
+      );
     }
 
     if (contactState.error) {
-      return <Typography color="error">Unable to load contact</Typography>;
+      return (
+        <Typography variant="body2" color="error">
+          Unable to load contact
+        </Typography>
+      );
     }
 
-    const phone = contactState.data?.phone;
+    const phone = contactState.data?.phone_number;
     const email = contactState.data?.contact_email;
 
     if (!phone && !email) {
-      return <Typography>This user has not added contact details yet.</Typography>;
+      return (
+        <Typography variant="body2" color="text.secondary">
+          This user has not added contact details yet.
+        </Typography>
+      );
     }
 
     return (
-      <Stack spacing={1} alignItems="flex-start" width="100%">
+      <Stack spacing={1}>
         {phone && (
           <ContactRow
-            icon={<PhoneIcon />}
+            icon={<PhoneIcon fontSize="small" />}
             label="Phone"
             value={phone}
-            href={`tel:${phone}`}
           />
         )}
         {email && (
           <ContactRow
-            icon={<EmailIcon />}
+            icon={<EmailIcon fontSize="small" />}
             label="Email"
             value={email}
             href={`mailto:${email}`}
@@ -83,7 +131,7 @@ function ContactSection({ playerId }) {
   }, [contactState]);
 
   return (
-    <Stack spacing={1} width="100%" alignItems="flex-start">
+    <Stack spacing={1.5} width="100%">
       <Typography variant="subtitle1" fontWeight={700}>
         Contact
       </Typography>
