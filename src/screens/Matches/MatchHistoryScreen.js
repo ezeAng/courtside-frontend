@@ -262,6 +262,15 @@ function MatchHistoryScreen() {
               <Typography variant="h6" fontWeight={700}>
                 {selectedMatch.match_type === "doubles" ? "Doubles" : "Singles"}
               </Typography>
+              <Chip
+                size="small"
+                label={matchStatus}
+                color={
+                  matchStatus === "confirmed"
+                    ? "success"
+                    : "default"
+                }
+              />
               <Typography color="text.secondary">Result: {winnerLabel}</Typography>
               <Typography>Score: {selectedMatch.score}</Typography>
               <Typography color="text.secondary">
