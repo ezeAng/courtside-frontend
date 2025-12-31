@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { clearAuth } from "../auth/authSlice";
 import {
   deleteUser,
   getCurrentUser,
@@ -73,7 +74,7 @@ export const uploadUserAvatar = createAsyncThunk(
 
 export const deleteCurrentUser = createAsyncThunk(
   "user/deleteCurrentUser",
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { dispatch, getState, rejectWithValue }) => {
     try {
       const token = getState().auth.accessToken;
       if (!token) {
@@ -81,6 +82,9 @@ export const deleteCurrentUser = createAsyncThunk(
       }
 
       await deleteUser(token);
+
+      dispatch(clearAuth());
+      dispatch(clearUser());
       return true;
     } catch (error) {
       return rejectWithValue(error.message);
