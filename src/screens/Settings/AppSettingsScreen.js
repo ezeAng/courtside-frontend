@@ -68,7 +68,7 @@ function AppSettingsScreen() {
                   />
                 </ListItem>
               </List>
-              <Divider />
+              {/* <Divider />
               <Stack spacing={1}>
                 {deleteError && (
                   <Typography color="error" variant="body2">
@@ -84,7 +84,7 @@ function AppSettingsScreen() {
                 >
                   {deleteLoading ? "Deleting..." : "Delete Account"}
                 </Button>
-              </Stack>
+              </Stack> */}
             </Stack>
           </CardContent>
         </Card>
