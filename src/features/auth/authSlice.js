@@ -33,9 +33,18 @@ const initialState = {
 
 export const signup = createAsyncThunk(
   "auth/signup",
-  async ({ email, password, username, gender }, { rejectWithValue }) => {
+  async (
+    { email, password, username, gender, seedElo },
+    { rejectWithValue }
+  ) => {
     try {
-      const data = await signupRequest(email, password, username, gender);
+      const data = await signupRequest(
+        email,
+        password,
+        username,
+        gender,
+        seedElo
+      );
       return data;
     } catch (error) {
       return rejectWithValue(error.message || "Signup failed");

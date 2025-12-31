@@ -16,11 +16,17 @@ async function handleResponse(response) {
   return response.json();
 }
 
-export async function signup(email, password, username, gender) {
+export async function signup(email, password, username, gender, seedElo) {
+  const payload = { email, password, username, gender };
+
+  if (typeof seedElo === "number") {
+    payload.seed_elo = seedElo;
+  }
+
   const response = await fetch(`${base}/api/auth/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, username, gender }),
+    body: JSON.stringify(payload),
   });
   return handleResponse(response);
 }
