@@ -378,6 +378,7 @@ export default function PendingMatchesScreen() {
         open={Boolean(confirmFeedback)}
         confirmFeedback={confirmFeedback}
         onClose={() => setConfirmFeedback(null)}
+        currentAuthId={currentUserId}
       />
 
       <Stack spacing={5}>
