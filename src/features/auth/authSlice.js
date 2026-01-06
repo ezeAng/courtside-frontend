@@ -123,6 +123,14 @@ const authSlice = createSlice({
       state.accessToken = action.payload;
       setStoredToken(action.payload);
     },
+    resetSignupStatus: (state) => {
+      state.loading = false;
+      state.error = null;
+      state.signupMessage = null;
+      state.resendMessage = null;
+      state.resendError = null;
+      state.resendLoading = false;
+    },
     clearAuth: (state) => {
       state.accessToken = null;
       state.error = null;
@@ -219,6 +227,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setToken, clearAuth } = authSlice.actions;
+export const { setToken, resetSignupStatus, clearAuth } = authSlice.actions;
 
 export default authSlice.reducer;
