@@ -91,3 +91,25 @@ export async function leaveSession(sessionId, token) {
   });
   return handleResponse(response);
 }
+
+export async function updateSession(sessionId, payload, token) {
+  if (!sessionId) throw new Error("Session ID is required");
+  const response = await fetch(`${base}/api/sessions/${sessionId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...requireAuthHeader(token),
+    },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+}
+
+export async function deleteSession(sessionId, token) {
+  if (!sessionId) throw new Error("Session ID is required");
+  const response = await fetch(`${base}/api/sessions/${sessionId}`, {
+    method: "DELETE",
+    headers: requireAuthHeader(token),
+  });
+  return handleResponse(response);
+}
