@@ -30,6 +30,8 @@ import {
   useTheme,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import GroupsIcon from "@mui/icons-material/Groups";
@@ -38,10 +40,12 @@ import CompetitionsScreen from "../Competitions/CompetitionsScreen";
 import RecordMatchModal from "../Matches/RecordMatchModal";
 import {
   createSession,
+  deleteSession,
   fetchSessionDetails,
   fetchSessions,
   joinSession,
   leaveSession,
+  updateSession,
 } from "../../api/sessions";
 import { getStoredToken } from "../../services/storage";
 import { getPlayerAuthId, getPlayerDisplayName } from "../../utils/matchPlayers";
@@ -251,9 +255,12 @@ const SessionDetailsModal = ({
   onJoin,
   onLeave,
   onRecordMatch,
+  onEdit,
+  onDelete,
   currentUser,
   actionLoading,
   actionError,
+  adminLoading,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -274,7 +281,8 @@ const SessionDetailsModal = ({
     (p) => currentUserId && String(getPlayerAuthId(p)) === String(currentUserId)
   );
   const isFull = capacity > 0 && joinedCount >= capacity;
-  const actionDisabled = isHost || (isFull && !isParticipant) || loading || actionLoading;
+  const hostActionsDisabled = loading || actionLoading || adminLoading;
+  const actionDisabled = isHost || (isFull && !isParticipant) || hostActionsDisabled;
   const actionLabel = isHost
     ? "Host"
     : isParticipant
@@ -422,6 +430,29 @@ const SessionDetailsModal = ({
       <DialogActions sx={{ p: 2 }}>
         <Stack spacing={1} width="100%">
           {actionError && <Alert severity="error">{actionError}</Alert>}
+          {isHost && (
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={<EditIcon />}
+                onClick={() => onEdit?.(session)}
+                disabled={hostActionsDisabled}
+              >
+                Edit session
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                fullWidth
+                startIcon={<DeleteOutlineIcon />}
+                onClick={() => onDelete?.(session)}
+                disabled={hostActionsDisabled}
+              >
+                Delete session
+              </Button>
+            </Stack>
+          )}
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
             <Button
               variant="contained"
@@ -503,11 +534,13 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
     capacity: 4,
     session_date: today,
     session_time: "",
+    session_end_time: "",
     venue_name: "",
     hall: "",
     court_number: "",
     min_elo: "",
     max_elo: "",
+    is_public: true,
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -515,7 +548,11 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
 
   useEffect(() => {
     if (open) {
-      setForm((prev) => ({ ...prev, session_date: today }));
+      setForm((prev) => ({
+        ...prev,
+        session_date: today,
+        session_end_time: "",
+      }));
       setErrors({});
       setApiError("");
     }
@@ -533,10 +570,18 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
     }
     if (!form.session_date) nextErrors.session_date = "Date is required";
     if (!form.session_time) nextErrors.session_time = "Time is required";
+    if (!form.session_end_time) nextErrors.session_end_time = "End time is required";
     if (!form.venue_name) nextErrors.venue_name = "Venue is required";
     if (form.min_elo && form.max_elo && Number(form.min_elo) > Number(form.max_elo)) {
       nextErrors.min_elo = "Min Elo must be <= Max Elo";
       nextErrors.max_elo = "Max Elo must be >= Min Elo";
+    }
+    if (form.session_time && form.session_end_time) {
+      const start = new Date(`${form.session_date || today}T${form.session_time}`);
+      const end = new Date(`${form.session_date || today}T${form.session_end_time}`);
+      if (end <= start) {
+        nextErrors.session_end_time = "End time must be after start time";
+      }
     }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -557,6 +602,8 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
         court_number: form.court_number || undefined,
         title: form.title || undefined,
         description: form.description || undefined,
+        session_end_time: form.session_end_time,
+        is_public: Boolean(form.is_public),
       };
       await createSession(payload, token);
       onCreated?.();
@@ -640,6 +687,17 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
               InputLabelProps={{ shrink: true }}
               fullWidth
             />
+            <TextField
+              required
+              type="time"
+              label="End time"
+              value={form.session_end_time}
+              onChange={handleChange("session_end_time")}
+              error={Boolean(errors.session_end_time)}
+              helperText={errors.session_end_time}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+            />
           </Stack>
           <TextField
             required
@@ -684,6 +742,17 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
               fullWidth
             />
           </Stack>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={form.is_public}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, is_public: e.target.checked }))
+                }
+              />
+            }
+            label="Public session"
+          />
           {apiError && (
             <Alert severity="error">{apiError}</Alert>
           )}
@@ -701,6 +770,276 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
             disabled={submitting}
           >
             {submitting ? "Creating..." : "Create Session"}
+          </Button>
+        </Stack>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    format: "singles",
+    capacity: "",
+    session_date: "",
+    session_time: "",
+    session_end_time: "",
+    venue_name: "",
+    hall: "",
+    court_number: "",
+    min_elo: "",
+    max_elo: "",
+    is_public: true,
+  });
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [apiError, setApiError] = useState("");
+
+  useEffect(() => {
+    if (open && session) {
+      const skillRange = getSkillRange(session);
+      setForm({
+        title: session?.title || "",
+        description: session?.description || "",
+        format: session?.format || "singles",
+        capacity: session?.capacity ?? getCapacity(session) ?? "",
+        session_date: getSessionDate(session) || "",
+        session_time: getSessionTime(session) || "",
+        session_end_time: session?.session_end_time || "",
+        venue_name: session?.venue_name ?? session?.location?.venue_name ?? "",
+        hall: session?.hall ?? session?.location?.hall ?? "",
+        court_number: session?.court_number ?? session?.location?.court_number ?? "",
+        min_elo: skillRange?.min ?? "",
+        max_elo: skillRange?.max ?? "",
+        is_public: session?.is_public ?? true,
+      });
+      setErrors({});
+      setApiError("");
+    }
+  }, [open, session]);
+
+  const handleChange = (field) => (event) => {
+    setForm((prev) => ({ ...prev, [field]: event.target.value }));
+  };
+
+  const validate = () => {
+    const nextErrors = {};
+    if (!form.format) nextErrors.format = "Format is required";
+    if (!form.capacity || Number(form.capacity) <= 0) {
+      nextErrors.capacity = "Capacity must be greater than 0";
+    }
+    if (!form.session_date) nextErrors.session_date = "Date is required";
+    if (!form.session_time) nextErrors.session_time = "Time is required";
+    if (form.min_elo && form.max_elo && Number(form.min_elo) > Number(form.max_elo)) {
+      nextErrors.min_elo = "Min Elo must be <= Max Elo";
+      nextErrors.max_elo = "Max Elo must be >= Min Elo";
+    }
+    if (form.session_time && form.session_end_time) {
+      const start = new Date(`${form.session_date || getSessionDate(session)}T${form.session_time}`);
+      const end = new Date(
+        `${form.session_date || getSessionDate(session)}T${form.session_end_time}`
+      );
+      if (end <= start) {
+        nextErrors.session_end_time = "End time must be after start time";
+      }
+    }
+    if (!form.venue_name) nextErrors.venue_name = "Venue is required";
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!session) return;
+    if (!validate()) return;
+    setSubmitting(true);
+    setApiError("");
+    try {
+      const token = getStoredToken();
+      const payload = {
+        title: form.title || undefined,
+        description: form.description || null,
+        format: form.format,
+        capacity: form.capacity ? Number(form.capacity) : undefined,
+        session_date: form.session_date || undefined,
+        session_time: form.session_time || undefined,
+        session_end_time: form.session_end_time || undefined,
+        venue_name: form.venue_name || undefined,
+        hall: form.hall === "" ? null : form.hall,
+        court_number: form.court_number === "" ? null : form.court_number,
+        min_elo: form.min_elo === "" ? null : Number(form.min_elo),
+        max_elo: form.max_elo === "" ? null : Number(form.max_elo),
+        is_public: Boolean(form.is_public),
+      };
+      await updateSession(getSessionId(session), payload, token);
+      onUpdated?.();
+      onClose?.();
+    } catch (err) {
+      setApiError(err.message || "Failed to update session");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!session) return null;
+
+  return (
+    <Dialog open={open} onClose={onClose} fullScreen={isMobile} fullWidth scroll="paper">
+      <DialogTitle
+        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+      >
+        <Typography variant="h6">Edit Session</Typography>
+        <IconButton onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          <TextField
+            label="Title"
+            placeholder="Friendly rally"
+            value={form.title}
+            onChange={handleChange("title")}
+            fullWidth
+          />
+          <TextField
+            label="Description"
+            placeholder="Share any notes or preferences"
+            value={form.description}
+            onChange={handleChange("description")}
+            fullWidth
+            multiline
+            minRows={3}
+          />
+          <TextField
+            select
+            required
+            label="Format"
+            value={form.format}
+            onChange={handleChange("format")}
+            error={Boolean(errors.format)}
+            helperText={errors.format}
+          >
+            <MenuItem value="singles">Singles</MenuItem>
+            <MenuItem value="doubles">Doubles</MenuItem>
+            <MenuItem value="mixed">Mixed</MenuItem>
+          </TextField>
+          <TextField
+            required
+            type="number"
+            label="Capacity"
+            value={form.capacity}
+            onChange={handleChange("capacity")}
+            error={Boolean(errors.capacity)}
+            helperText={errors.capacity}
+            inputProps={{ min: 1 }}
+          />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <TextField
+              required
+              type="date"
+              label="Date"
+              value={form.session_date}
+              onChange={handleChange("session_date")}
+              error={Boolean(errors.session_date)}
+              helperText={errors.session_date}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+            />
+            <TextField
+              required
+              type="time"
+              label="Time"
+              value={form.session_time}
+              onChange={handleChange("session_time")}
+              error={Boolean(errors.session_time)}
+              helperText={errors.session_time}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+            />
+            <TextField
+              type="time"
+              label="End time (optional)"
+              value={form.session_end_time}
+              onChange={handleChange("session_end_time")}
+              error={Boolean(errors.session_end_time)}
+              helperText={errors.session_end_time}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+            />
+          </Stack>
+          <TextField
+            required
+            label="Venue"
+            value={form.venue_name}
+            onChange={handleChange("venue_name")}
+            error={Boolean(errors.venue_name)}
+            helperText={errors.venue_name}
+            fullWidth
+          />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <TextField
+              label="Hall (optional)"
+              value={form.hall}
+              onChange={handleChange("hall")}
+              fullWidth
+            />
+            <TextField
+              label="Court number (optional)"
+              value={form.court_number}
+              onChange={handleChange("court_number")}
+              fullWidth
+            />
+          </Stack>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <TextField
+              type="number"
+              label="Min Elo (optional)"
+              value={form.min_elo}
+              onChange={handleChange("min_elo")}
+              error={Boolean(errors.min_elo)}
+              helperText={errors.min_elo}
+              fullWidth
+            />
+            <TextField
+              type="number"
+              label="Max Elo (optional)"
+              value={form.max_elo}
+              onChange={handleChange("max_elo")}
+              error={Boolean(errors.max_elo)}
+              helperText={errors.max_elo}
+              fullWidth
+            />
+          </Stack>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={form.is_public}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, is_public: e.target.checked }))
+                }
+              />
+            }
+            label="Public session"
+          />
+          {apiError && <Alert severity="error">{apiError}</Alert>}
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ p: 2 }}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
+          <Button variant="outlined" fullWidth onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
+            {submitting ? "Saving..." : "Save changes"}
           </Button>
         </Stack>
       </DialogActions>
@@ -825,9 +1164,11 @@ export default function PlayScreen() {
   const [sessionActionError, setSessionActionError] = useState("");
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
   const [recordMatchModalOpen, setRecordMatchModalOpen] = useState(false);
   const [recordPrefill, setRecordPrefill] = useState({});
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -915,6 +1256,7 @@ export default function PlayScreen() {
   const handleOpenSession = async (session) => {
     const id = getSessionId(session);
     setSessionActionError("");
+    setAdminActionLoading(false);
     setSelectedSessionId(id);
     setSessionDetails(null);
     await refreshSessionDetails(id);
@@ -924,6 +1266,8 @@ export default function PlayScreen() {
     setSelectedSessionId(null);
     setSessionDetails(null);
     setSessionActionError("");
+    setEditModalOpen(false);
+    setAdminActionLoading(false);
   };
 
   const handleSessionError = async (err, sessionId, fallbackMessage = "Something went wrong") => {
@@ -1012,6 +1356,33 @@ export default function PlayScreen() {
     }
   };
 
+  const handleDeleteSession = async (session) => {
+    const sessionId = getSessionId(session);
+    if (!sessionId) return;
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this session? All participants will be removed."
+    );
+    if (!confirmed) return;
+    setAdminActionLoading(true);
+    setSessionActionError("");
+    try {
+      const token = getStoredToken();
+      await deleteSession(sessionId, token);
+      setSelectedSessionId(null);
+      setSessionDetails(null);
+      await loadSessions();
+      setSnackbar({
+        open: true,
+        message: "Session deleted",
+        severity: "success",
+      });
+    } catch (err) {
+      await handleSessionError(err, sessionId, "Failed to delete session");
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+
   const handleRecordMatch = (session) => {
     const prefill = deriveRecordMatchPrefill(session, currentUser);
     setRecordPrefill(prefill);
@@ -1025,6 +1396,24 @@ export default function PlayScreen() {
       severity: "success",
     });
     loadSessions();
+  };
+
+  const handleEditSuccess = async () => {
+    setEditModalOpen(false);
+    if (selectedSessionId) {
+      await refreshSessionDetails(selectedSessionId);
+    }
+    await loadSessions();
+    setSnackbar({
+      open: true,
+      message: "Session updated",
+      severity: "success",
+    });
+  };
+
+  const handleOpenEditModal = () => {
+    setSessionActionError("");
+    setEditModalOpen(true);
   };
 
   const selectedSessionFromList = useMemo(
@@ -1138,6 +1527,16 @@ export default function PlayScreen() {
         currentUser={currentUser}
         actionLoading={actionLoading}
         actionError={sessionActionError}
+        onEdit={handleOpenEditModal}
+        onDelete={handleDeleteSession}
+        adminLoading={adminActionLoading}
+      />
+
+      <EditSessionModal
+        open={editModalOpen}
+        session={resolvedSelectedSession}
+        onClose={() => setEditModalOpen(false)}
+        onUpdated={handleEditSuccess}
       />
 
       <CreateSessionModal
