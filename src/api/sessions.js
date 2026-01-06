@@ -1,4 +1,5 @@
 import { optionalAuthHeader, requireAuthHeader } from "../services/authHeaders";
+import { getSessionId } from "../utils/sessionUtils";
 
 const base = process.env.REACT_APP_BACKEND_URL;
 
@@ -22,6 +23,13 @@ async function handleResponse(response) {
   if (response.status === 204) return null;
   return payload;
 }
+
+const extractSessions = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (payload?.sessions) return payload.sessions;
+  if (payload?.items) return payload.items;
+  return [];
+};
 
 const buildQueryString = (filters = {}) => {
   const params = new URLSearchParams();
@@ -54,15 +62,31 @@ export async function fetchSessions(filters = {}, token) {
 }
 
 export async function fetchMySessions(fromDate, toDate, token) {
-  const params = new URLSearchParams();
-  if (fromDate) params.set("from_date", fromDate);
-  if (toDate) params.set("to_date", toDate);
-  const query = params.toString() ? `?${params.toString()}` : "";
-  const response = await fetch(`${base}/api/sessions/mine${query}`, {
-    method: "GET",
-    headers: optionalAuthHeader(token),
+  const baseFilters = {
+    date_from: fromDate,
+    date_to: toDate,
+  };
+
+  const [hostedPayload, joinedPayload] = await Promise.all([
+    fetchSessions({ ...baseFilters, hosted_by_me: true }, token),
+    fetchSessions({ ...baseFilters, joined_by_me: true }, token),
+  ]);
+
+  const hostedSessions = extractSessions(hostedPayload);
+  const joinedSessions = extractSessions(joinedPayload);
+
+  const mergedSessions = [];
+  const seen = new Set();
+
+  [...hostedSessions, ...joinedSessions].forEach((session) => {
+    const sessionId = getSessionId(session);
+    if (sessionId && !seen.has(sessionId)) {
+      seen.add(sessionId);
+      mergedSessions.push(session);
+    }
   });
-  return handleResponse(response);
+
+  return { sessions: mergedSessions };
 }
 
 export async function fetchSessionDetails(sessionId, token) {
