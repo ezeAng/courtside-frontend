@@ -500,7 +500,8 @@ export default function PlayScreen() {
             variant="fullWidth"
           >
             <Tab label="Sessions" value="sessions" />
-            <Tab label="Competitions" value="competitions" />
+            <Tab label="Tournaments" value="tournaments" />
+            <Tab label="Leagues" value="leagues" />
           </Tabs>
 
           {tab === "sessions" ? (
@@ -511,7 +512,7 @@ export default function PlayScreen() {
               onCreateSession={handleCreateSession}
             />
           ) : (
-            <CompetitionsScreen />
+            <CompetitionsScreen tab={tab === "tournaments" ? "tournaments" : "leagues"} allowTabSwitching={false} />
           )}
         </Stack>
       </Container>

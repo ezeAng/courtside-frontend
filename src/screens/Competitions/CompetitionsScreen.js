@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
@@ -69,14 +69,23 @@ function ComingSoon({ emoji, tab, onJoinWaitlist, loading, error }) {
   </EmptyState>;
 }
 
-export default function CompetitionsScreen() {
-  const [tab, setTab] = useState(tabOptions[0].value);
+export default function CompetitionsScreen({ tab: activeTabProp, allowTabSwitching = true }) {
+  const [tab, setTab] = useState(activeTabProp || tabOptions[0].value);
+
+  useEffect(() => {
+    if (activeTabProp) {
+      setTab(activeTabProp);
+    }
+  }, [activeTabProp]);
+
+  const resolvedTab = activeTabProp || tab;
   const token = useSelector((state) => state.auth.accessToken);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [waitlistError, setWaitlistError] = useState("");
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
 
-  const activeTab = tabOptions.find((option) => option.value === tab);
+  const activeTab = tabOptions.find((option) => option.value === resolvedTab);
+  const heading = allowTabSwitching ? "Competitions" : activeTab?.label || "Competitions";
 
   const handleJoinWaitlist = async () => {
     setWaitlistError("");
@@ -94,7 +103,7 @@ export default function CompetitionsScreen() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          subject: `waitlist for ${tab}`,
+          subject: `waitlist for ${resolvedTab}`,
           text: "Signal of demand",
         }),
       });
@@ -119,22 +128,27 @@ export default function CompetitionsScreen() {
       <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
         <Stack spacing={3}>
           <Typography align="center" variant="h5" fontWeight={700}>
-            Competitions
+            {heading}
           </Typography>
 
-          <Tabs
-            value={tab}
-            onChange={(event, newValue) => setTab(newValue)}
-            variant="fullWidth"
-          >
-            {tabOptions.map((option) => (
-              <Tab key={option.value} label={option.label} value={option.value} />
-            ))}
-          </Tabs>
-
+          {allowTabSwitching && (
+            <Tabs
+              value={resolvedTab}
+              onChange={(event, newValue) => {
+                if (!allowTabSwitching) return;
+                setTab(newValue);
+              }}
+              variant="fullWidth"
+            >
+              {tabOptions.map((option) => (
+                <Tab key={option.value} label={option.label} value={option.value} />
+              ))}
+            </Tabs>
+          )}
+          
           <ComingSoon
             emoji={activeTab?.emoji || "⏳"}
-            tab={tab}
+            tab={resolvedTab}
             onJoinWaitlist={handleJoinWaitlist}
             loading={waitlistLoading}
             error={waitlistError}
