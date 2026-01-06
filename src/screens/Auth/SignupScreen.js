@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -14,7 +14,11 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
-import { signup, resendConfirmationEmail } from "../../features/auth/authSlice";
+import {
+  signup,
+  resendConfirmationEmail,
+  resetSignupStatus,
+} from "../../features/auth/authSlice";
 import OnboardingModal from "../../components/OnboardingModal/OnboardingModal";
 import logo from "../../logo.svg";
 
@@ -143,6 +147,7 @@ const questionnaireSteps = [
 
 function SignupScreen() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const {
     accessToken,
     loading,
@@ -172,6 +177,7 @@ function SignupScreen() {
   const [submitError, setSubmitError] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  const isDisabled = loading || Boolean(signupMessage);
 
   const totalSteps = useMemo(
     () => questionnaireSteps.length + 2,
@@ -191,6 +197,16 @@ function SignupScreen() {
     const baseElo = calculateSeedElo(answers);
     setCalculatedSeedElo(clampElo(baseElo + confidenceAdjustment));
   }, [answers, confidenceAdjustment]);
+
+  useEffect(() => {
+    if (!signupMessage) return undefined;
+    const timer = setTimeout(() => {
+      dispatch(resetSignupStatus());
+      navigate("/login", { replace: true });
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [dispatch, navigate, signupMessage]);
 
   const handleOnboardingDismiss = useCallback(() => {
     localStorage.setItem("onboarding_seen", "true");
@@ -226,27 +242,33 @@ function SignupScreen() {
   );
 
   const handleOptionSelect = (key, value) => {
+    if (isDisabled) return;
     setAnswers((prev) => ({ ...prev, [key]: value }));
     setStep((prev) => Math.min(prev + 1, finalStep));
   };
 
   const handleSkipQuestion = () => {
+    if (isDisabled) return;
     setStep((prev) => Math.min(prev + 1, finalStep));
   };
 
   const handleBack = () => {
+    if (isDisabled) return;
     setStep((prev) => Math.max(1, prev - 1));
   };
 
   const handleEditAnswers = () => {
+    if (isDisabled) return;
     setStep(2);
   };
 
   const handleConfidenceAdjustment = (value) => {
+    if (isDisabled) return;
     setConfidenceAdjustment(value);
   };
 
   const handleSubmit = async () => {
+    if (isDisabled) return;
     setSubmitError(null);
 
     const result = await dispatch(
@@ -265,6 +287,7 @@ function SignupScreen() {
   };
 
   const handleResend = async () => {
+    if (isDisabled) return;
     setSubmitError(null);
     if (!email) {
       setSubmitError("Please enter your email to resend the confirmation link.");
@@ -304,13 +327,13 @@ function SignupScreen() {
 
     return (
       <Stack spacing={4} sx={{ minHeight: "60vh" }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconButton onClick={handleBack} aria-label="Go back">
-            <ArrowBackIosNewIcon fontSize="small" />
-          </IconButton>
-          <Typography variant="body2" color="text.secondary">
-            Step {step} of {totalSteps}
-          </Typography>
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <IconButton onClick={handleBack} aria-label="Go back" disabled={isDisabled}>
+          <ArrowBackIosNewIcon fontSize="small" />
+        </IconButton>
+        <Typography variant="body2" color="text.secondary">
+          Step {step} of {totalSteps}
+        </Typography>
         </Stack>
 
         <Stack spacing={1}>
@@ -330,6 +353,7 @@ function SignupScreen() {
               color="primary"
               size="large"
               onClick={() => handleOptionSelect(question.key, option.value)}
+              disabled={isDisabled}
               sx={{
                 justifyContent: "flex-start",
                 py: 2,
@@ -346,8 +370,12 @@ function SignupScreen() {
         </Stack>
 
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Button onClick={handleBack}>Back</Button>
-          <Button onClick={handleSkipQuestion}>Skip</Button>
+          <Button onClick={handleBack} disabled={isDisabled}>
+            Back
+          </Button>
+          <Button onClick={handleSkipQuestion} disabled={isDisabled}>
+            Skip
+          </Button>
         </Stack>
       </Stack>
     );
@@ -356,7 +384,7 @@ function SignupScreen() {
   const renderFinalStep = () => (
     <Stack spacing={4} sx={{ minHeight: "60vh" }}>
       <Stack direction="row" alignItems="center" spacing={1}>
-        <IconButton onClick={handleBack} aria-label="Go back">
+        <IconButton onClick={handleBack} aria-label="Go back" disabled={isDisabled}>
           <ArrowBackIosNewIcon fontSize="small" />
         </IconButton>
         <Typography variant="body2" color="text.secondary">
@@ -388,6 +416,7 @@ function SignupScreen() {
               key={option.value}
               variant={confidenceAdjustment === option.value ? "contained" : "outlined"}
               onClick={() => handleConfidenceAdjustment(option.value)}
+              disabled={isDisabled}
               sx={{ textTransform: "none" }}
             >
               {option.label}
@@ -407,7 +436,7 @@ function SignupScreen() {
             variant="outlined"
             size="small"
             onClick={handleResend}
-            disabled={resendLoading || !email}
+            disabled={resendLoading || !email || isDisabled}
             startIcon={
               resendLoading ? (
                 <CircularProgress size={16} color="inherit" />
@@ -429,7 +458,7 @@ function SignupScreen() {
           variant="contained"
           size="large"
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={isDisabled}
           startIcon={
             loading ? <CircularProgress size={20} color="inherit" /> : null
           }
@@ -466,6 +495,7 @@ function SignupScreen() {
         onChange={(e) => setEmail(e.target.value)}
         required
         fullWidth
+        disabled={isDisabled}
       />
 
       <TextField
@@ -475,6 +505,7 @@ function SignupScreen() {
         onChange={(e) => setPassword(e.target.value)}
         required
         fullWidth
+        disabled={isDisabled}
       />
 
       <TextField
@@ -490,6 +521,7 @@ function SignupScreen() {
             ? "Passwords do not match"
             : ""
         }
+        disabled={isDisabled}
       />
 
       <TextField
@@ -498,6 +530,7 @@ function SignupScreen() {
         onChange={(e) => setUsername(e.target.value)}
         required
         fullWidth
+        disabled={isDisabled}
       />
 
       <TextField
@@ -506,6 +539,7 @@ function SignupScreen() {
         value={gender}
         onChange={(e) => setGender(e.target.value)}
         fullWidth
+        disabled={isDisabled}
       >
         <MenuItem value="male">Male</MenuItem>
         <MenuItem value="female">Female</MenuItem>
@@ -515,7 +549,7 @@ function SignupScreen() {
         type="submit"
         variant="contained"
         size="large"
-        disabled={loading}
+        disabled={isDisabled}
         startIcon={
           loading ? <CircularProgress size={20} color="inherit" /> : null
         }
