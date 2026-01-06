@@ -16,7 +16,6 @@ import HomeScreen from "./screens/Home/HomeScreen";
 import MatchHistoryScreen from "./screens/Matches/MatchHistoryScreen";
 import MatchDetailScreen from "./screens/Matches/MatchDetailScreen";
 import PendingMatchesScreen from "./screens/Matches/PendingMatchesScreen";
-import CompetitionsScreen from "./screens/Competitions/CompetitionsScreen";
 import LeaderboardScreen from "./screens/Leaderboard/LeaderboardScreen";
 import SettingsScreen from "./screens/Settings/SettingsScreen";
 import AppSettingsScreen from "./screens/Settings/AppSettingsScreen";
@@ -32,6 +31,7 @@ import ResetPasswordScreen from "./screens/Auth/ResetPasswordScreen";
 import BottomNav from "./components/BottomNav";
 import { clearAuth } from "./features/auth/authSlice";
 import { clearUser, fetchCurrentUser } from "./features/user/userSlice";
+import PlayScreen from "./screens/Play/PlayScreen";
 
 function ProtectedLayout() {
   const dispatch = useDispatch();
@@ -84,7 +84,8 @@ function App() {
           <Route path="/home" element={<HomeScreen />} />
           <Route path="/matches" element={<MatchHistoryScreen />} />
           <Route path="/matches/pending" element={<PendingMatchesScreen />} />
-          <Route path="/competitions" element={<CompetitionsScreen />} />
+          <Route path="/play" element={<PlayScreen />} />
+          <Route path="/competitions" element={<Navigate to="/play" replace />} />
           <Route path="/matches/:match_id" element={<MatchDetailScreen />} />
           <Route path="/leaderboard" element={<LeaderboardScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
