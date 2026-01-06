@@ -14,7 +14,7 @@ const navItems = [
   { label: "Home", value: "/home", icon: <HomeIcon /> },
   { label: "Leaderboard", value: "/leaderboard", icon: <LeaderboardIcon /> },
   { label: "Matches", value: "/matches", icon: <SportsTennisIcon /> },
-  { label: "Competitions", value: "/competitions", icon: <MilitaryTechIcon /> },
+  { label: "Play", value: "/play", icon: <MilitaryTechIcon /> },
   { label: "Me", value: "/settings", icon: <PersonIcon /> },
 ];
 
