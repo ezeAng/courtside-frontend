@@ -61,6 +61,12 @@ const getSkillRange = (session) => {
   if (min === undefined && max === undefined) return null;
   return { min, max };
 };
+const getFormatLabel = (format) => {
+  const value = (format || "").toString().toLowerCase();
+  if (value === "doubles") return "Doubles";
+  if (value === "mixed") return "Mixed";
+  return "Singles";
+};
 
 const formatDateTime = (date, time) => {
   if (!date || !time) return "Date & time TBD";
@@ -120,12 +126,9 @@ const SessionCard = ({ session, onOpen, currentUser }) => {
     );
 
   const skillRange = getSkillRange(session);
-  const formatLabel =
-    session?.format === "doubles"
-      ? "Doubles"
-      : session?.format === "mixed"
-        ? "Mixed"
-        : "Singles";
+  const formatLabel = getFormatLabel(session?.format);
+  const formatValue = (session?.format || "").toString().toLowerCase();
+  const isDoublesFormat = formatValue === "doubles";
 
   return (
     <Box
@@ -161,7 +164,7 @@ const SessionCard = ({ session, onOpen, currentUser }) => {
             <Chip
               size="small"
               label={formatLabel}
-              color={session?.format === "doubles" ? "primary" : "default"}
+              color={isDoublesFormat ? "primary" : "default"}
               icon={<GroupsIcon fontSize="small" />}
             />
             <Stack direction="row" spacing={0.5}>
@@ -250,6 +253,7 @@ const SessionDetailsModal = ({
   onRecordMatch,
   currentUser,
   actionLoading,
+  actionError,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -279,12 +283,7 @@ const SessionDetailsModal = ({
         ? "Full"
         : "Join Session";
   const emptySlots = Math.max(capacity - participants.length, 0);
-  const formatLabel =
-    session?.format === "doubles"
-      ? "Doubles"
-      : session?.format === "mixed"
-        ? "Mixed"
-        : "Singles";
+  const formatLabel = getFormatLabel(session?.format);
 
   if (!session) return null;
 
@@ -293,8 +292,16 @@ const SessionDetailsModal = ({
       open={open}
       onClose={onClose}
       fullWidth
-      fullScreen={isMobile}
+      maxWidth="sm"
       scroll="paper"
+      PaperProps={{
+        sx: {
+          m: isMobile ? 1 : 3,
+          width: "min(640px, 100%)",
+          maxHeight: isMobile ? "calc(100vh - 24px)" : "85vh",
+          borderRadius: isMobile ? 2 : 3,
+        },
+      }}
     >
       <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <EventAvailableIcon color="primary" />
@@ -413,28 +420,31 @@ const SessionDetailsModal = ({
         )}
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
-          <Button
-            variant="contained"
-            fullWidth
-            onClick={() => {
-              if (isParticipant) onLeave(session);
-              else onJoin(session);
-            }}
-            disabled={actionDisabled}
-          >
-            {actionLabel}
-          </Button>
-          {(isParticipant || isHost) && (
+        <Stack spacing={1} width="100%">
+          {actionError && <Alert severity="error">{actionError}</Alert>}
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
             <Button
-              variant="outlined"
+              variant="contained"
               fullWidth
-              onClick={() => onRecordMatch(session)}
-              startIcon={<MilitaryTechIcon />}
+              onClick={() => {
+                if (isParticipant) onLeave(session);
+                else onJoin(session);
+              }}
+              disabled={actionDisabled}
             >
-              Record Match
+              {actionLabel}
             </Button>
-          )}
+            {(isParticipant || isHost) && (
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => onRecordMatch(session)}
+                startIcon={<MilitaryTechIcon />}
+              >
+                Record Match
+              </Button>
+            )}
+          </Stack>
         </Stack>
       </DialogActions>
     </Dialog>
@@ -812,6 +822,7 @@ export default function PlayScreen() {
   const [sessionsError, setSessionsError] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [sessionDetails, setSessionDetails] = useState(null);
+  const [sessionActionError, setSessionActionError] = useState("");
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [recordMatchModalOpen, setRecordMatchModalOpen] = useState(false);
@@ -903,27 +914,39 @@ export default function PlayScreen() {
 
   const handleOpenSession = async (session) => {
     const id = getSessionId(session);
+    setSessionActionError("");
     setSelectedSessionId(id);
     setSessionDetails(null);
     await refreshSessionDetails(id);
   };
 
-  const handleSessionError = async (err, sessionId) => {
+  const handleCloseSessionDetails = () => {
+    setSelectedSessionId(null);
+    setSessionDetails(null);
+    setSessionActionError("");
+  };
+
+  const handleSessionError = async (err, sessionId, fallbackMessage = "Something went wrong") => {
     const code = err?.code;
     if (code === "SESSION_CANCELLED") {
+      const cancelledMessage = "Session was cancelled";
+      setSessionActionError(cancelledMessage);
       setSelectedSessionId(null);
+      setSessionDetails(null);
       await loadSessions();
       setSnackbar({
         open: true,
-        message: "Session was cancelled",
+        message: cancelledMessage,
         severity: "warning",
       });
       return;
     }
     if (code === "SESSION_FULL") {
+      const fullMessage = "Session is full";
+      setSessionActionError(fullMessage);
       setSnackbar({
         open: true,
-        message: "Session is full",
+        message: fullMessage,
         severity: "warning",
       });
       await refreshSessionDetails(sessionId);
@@ -931,13 +954,16 @@ export default function PlayScreen() {
       return;
     }
     if (code === "ALREADY_JOINED" || code === "NOT_A_PARTICIPANT") {
+      setSessionActionError("");
       await refreshSessionDetails(sessionId);
       await loadSessions();
       return;
     }
+    const message = err?.message || fallbackMessage;
+    setSessionActionError(message);
     setSnackbar({
       open: true,
-      message: err.message || "Something went wrong",
+      message,
       severity: "error",
     });
   };
@@ -946,6 +972,7 @@ export default function PlayScreen() {
     const sessionId = getSessionId(session);
     if (!sessionId) return;
     setActionLoading(true);
+    setSessionActionError("");
     try {
       const token = getStoredToken();
       await joinSession(sessionId, token);
@@ -957,7 +984,7 @@ export default function PlayScreen() {
         severity: "success",
       });
     } catch (err) {
-      await handleSessionError(err, sessionId);
+      await handleSessionError(err, sessionId, "Failed to join session");
     } finally {
       setActionLoading(false);
     }
@@ -967,6 +994,7 @@ export default function PlayScreen() {
     const sessionId = getSessionId(session);
     if (!sessionId) return;
     setActionLoading(true);
+    setSessionActionError("");
     try {
       const token = getStoredToken();
       await leaveSession(sessionId, token);
@@ -978,7 +1006,7 @@ export default function PlayScreen() {
         severity: "info",
       });
     } catch (err) {
-      await handleSessionError(err, sessionId);
+      await handleSessionError(err, sessionId, "Failed to leave session");
     } finally {
       setActionLoading(false);
     }
@@ -1101,7 +1129,7 @@ export default function PlayScreen() {
         open={Boolean(resolvedSelectedSession)}
         session={resolvedSelectedSession}
         loading={detailsLoading}
-        onClose={() => setSelectedSessionId(null)}
+        onClose={handleCloseSessionDetails}
         onJoin={handleJoinSession}
         onLeave={handleLeaveSession}
         onRecordMatch={(session) => {
@@ -1109,6 +1137,7 @@ export default function PlayScreen() {
         }}
         currentUser={currentUser}
         actionLoading={actionLoading}
+        actionError={sessionActionError}
       />
 
       <CreateSessionModal
