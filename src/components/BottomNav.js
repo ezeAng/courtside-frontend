@@ -13,8 +13,8 @@ import { useTheme } from "@mui/material/styles";
 const navItems = [
   { label: "Home", value: "/home", icon: <HomeIcon /> },
   { label: "Leaderboard", value: "/leaderboard", icon: <LeaderboardIcon /> },
-  { label: "Matches", value: "/matches", icon: <SportsTennisIcon /> },
   { label: "Play", value: "/play", icon: <MilitaryTechIcon /> },
+  { label: "Matches", value: "/matches", icon: <SportsTennisIcon /> },
   { label: "Me", value: "/settings", icon: <PersonIcon /> },
 ];
 

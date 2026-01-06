@@ -109,9 +109,9 @@ const SessionDetailsModal = ({
       scroll="paper"
       PaperProps={{
         sx: {
-          m: isMobile ? 1 : 3,
-          width: "min(640px, 100%)",
-          maxHeight: isMobile ? "calc(100vh - 24px)" : "85vh",
+          m: isMobile ? 2 : 3,
+          width: isMobile ? "calc(100% - 32px)" : "min(640px, 100%)",
+          maxHeight: isMobile ? "calc(100vh - 64px)" : "85vh",
           borderRadius: isMobile ? 2 : 3,
         },
       }}
@@ -126,8 +126,30 @@ const SessionDetailsModal = ({
           color={isFull ? "default" : "success"}
           size="small"
         />
-        <IconButton onClick={onClose} edge="end">
-          <CloseIcon />
+        {isHost && (
+          <>
+            <IconButton
+              onClick={() => onEdit?.(session)}
+              disabled={hostActionsDisabled}
+              size="small"
+              color="primary"
+              title="Edit session"
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              onClick={() => onDelete?.(session)}
+              disabled={hostActionsDisabled}
+              size="small"
+              color="error"
+              title="Delete session"
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </>
+        )}
+        <IconButton onClick={onClose} edge="end" size="small">
+          <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
       <DialogContent dividers>
@@ -235,29 +257,6 @@ const SessionDetailsModal = ({
       <DialogActions sx={{ p: 2 }}>
         <Stack spacing={1} width="100%">
           {actionError && <Alert severity="error">{actionError}</Alert>}
-          {isHost && (
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
-              <Button
-                variant="outlined"
-                fullWidth
-                startIcon={<EditIcon />}
-                onClick={() => onEdit?.(session)}
-                disabled={hostActionsDisabled}
-              >
-                Edit session
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                fullWidth
-                startIcon={<DeleteOutlineIcon />}
-                onClick={() => onDelete?.(session)}
-                disabled={hostActionsDisabled}
-              >
-                Delete session
-              </Button>
-            </Stack>
-          )}
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
             <Button
               variant="contained"

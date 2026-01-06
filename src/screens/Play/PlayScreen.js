@@ -94,7 +94,7 @@ const SessionCard = ({ session, onOpen, currentUser }) => {
     <Box
       onClick={() => onOpen(session)}
       sx={{
-        p: 2,
+        p: 3,
         borderRadius: 2,
         border: `1px solid ${
           highlight ? theme.palette.primary.main : theme.palette.divider
@@ -552,13 +552,27 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
   if (!session) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} fullScreen={isMobile} fullWidth scroll="paper">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      scroll="paper"
+      PaperProps={{
+        sx: {
+          m: isMobile ? 2 : 3,
+          width: isMobile ? "calc(100% - 32px)" : "min(640px, 100%)",
+          maxHeight: isMobile ? "calc(100vh - 64px)" : "85vh",
+          borderRadius: isMobile ? 2 : 3,
+        },
+      }}
+    >
       <DialogTitle
         sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
       >
         <Typography variant="h6">Edit Session</Typography>
-        <IconButton onClick={onClose}>
-          <CloseIcon />
+        <IconButton onClick={onClose} size="small">
+          <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
       <DialogContent dividers>
@@ -577,7 +591,8 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
             onChange={handleChange("description")}
             fullWidth
             multiline
-            minRows={3}
+            minRows={2}
+            maxRows={4}
           />
           <TextField
             select
@@ -603,7 +618,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
             helperText={errors.capacity}
             inputProps={{ min: 1 }}
           />
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             <TextField
               required
               type="date"
@@ -646,7 +661,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
             helperText={errors.venue_name}
             fullWidth
           />
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             <TextField
               label="Hall (optional)"
               value={form.hall}
@@ -660,7 +675,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
               fullWidth
             />
           </Stack>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             <TextField
               type="number"
               label="Min Elo (optional)"
@@ -695,7 +710,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
+        <Stack direction="row" spacing={1.5} width="100%">
           <Button variant="outlined" fullWidth onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
