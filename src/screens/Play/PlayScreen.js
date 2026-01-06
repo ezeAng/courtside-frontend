@@ -52,24 +52,55 @@ import { getPlayerAuthId, getPlayerDisplayName } from "../../utils/matchPlayers"
 
 const PLAY_TAB_STORAGE_KEY = "play-tab-selection";
 
-const getSessionId = (session) => session?.session_id ?? session?.id;
-const getSessionDate = (session) => session?.session_date || session?.date;
-const getSessionTime = (session) => session?.session_time || session?.time;
+const getSessionId = (session) =>
+  session?.session_id ?? session?.id ?? session?.session?.session_id ?? session?.session?.id;
+const getSessionDate = (session) =>
+  session?.session_date || session?.date || session?.session?.session_date;
+const getSessionTime = (session) =>
+  session?.session_time || session?.time || session?.session?.session_time;
 const getJoinedCount = (session) =>
-  session?.joined_count ?? session?.participants?.length ?? 0;
-const getCapacity = (session) => session?.capacity ?? 0;
+  session?.joined_count ??
+  session?.participants?.length ??
+  session?.session?.joined_count ??
+  session?.session?.participants?.length ??
+  0;
+const getCapacity = (session) =>
+  session?.capacity ?? session?.session?.capacity ?? 0;
 
 const getSkillRange = (session) => {
-  const min = session?.min_elo ?? session?.skill_range?.min_elo;
-  const max = session?.max_elo ?? session?.skill_range?.max_elo;
+  const min =
+    session?.min_elo ??
+    session?.skill_range?.min_elo ??
+    session?.session?.min_elo ??
+    session?.session?.skill_range?.min_elo;
+  const max =
+    session?.max_elo ??
+    session?.skill_range?.max_elo ??
+    session?.session?.max_elo ??
+    session?.session?.skill_range?.max_elo;
   if (min === undefined && max === undefined) return null;
   return { min, max };
 };
+const getHostAuthId = (session) =>
+  session?.host_auth_id ?? session?.session?.host_auth_id ?? session?.host?.auth_id;
 const getFormatLabel = (format) => {
   const value = (format || "").toString().toLowerCase();
+  if (!value || value === "any") return "Any";
   if (value === "doubles") return "Doubles";
   if (value === "mixed") return "Mixed";
   return "Singles";
+};
+
+const normalizeSessionDetail = (detail) => {
+  if (!detail) return null;
+  if (detail.session) {
+    const { session, participants } = detail;
+    return {
+      ...session,
+      participants: participants ?? session.participants ?? [],
+    };
+  }
+  return detail;
 };
 
 const formatDateTime = (date, time) => {
@@ -96,10 +127,17 @@ const isWithin24Hours = (date, time) => {
 };
 
 const buildLocationLabel = (session) => {
-  const courtNumber = session?.court_number ?? session?.location?.court_number;
+  const courtNumber =
+    session?.court_number ??
+    session?.location?.court_number ??
+    session?.session?.court_number ??
+    session?.session?.location?.court_number;
   const parts = [
-    session?.venue_name ?? session?.location?.venue_name,
-    session?.hall ?? session?.location?.hall,
+    session?.venue_name ??
+      session?.location?.venue_name ??
+      session?.session?.venue_name ??
+      session?.session?.location?.venue_name,
+    session?.hall ?? session?.location?.hall ?? session?.session?.hall ?? session?.session?.location?.hall,
     courtNumber ? `Court ${courtNumber}` : null,
   ].filter(Boolean);
   return parts.join(" • ");
@@ -117,10 +155,8 @@ const SessionCard = ({ session, onOpen, currentUser }) => {
     capacity > 0 ? Math.min(100, (joinedCount / capacity) * 100) : 0;
   const locationLabel = buildLocationLabel(session);
   const currentUserId = currentUser?.auth_id || currentUser?.id;
-  const isHost =
-    currentUserId &&
-    session?.host_auth_id &&
-    String(session.host_auth_id) === String(currentUserId);
+  const hostAuthId = getHostAuthId(session);
+  const isHost = currentUserId && hostAuthId && String(hostAuthId) === String(currentUserId);
   const isJoined =
     session?.is_joined ??
     session?.joined_by_me ??
@@ -241,7 +277,7 @@ const ParticipantItem = ({ player }) => (
     <Box>
       <Typography fontWeight={600}>{player?.username || "Player"}</Typography>
       <Typography variant="body2" color="text.secondary">
-        Elo {player?.elo ?? "N/A"}
+        Elo {player?.overall_elo ?? player?.elo ?? "N/A"}
       </Typography>
     </Box>
   </Stack>
@@ -273,10 +309,8 @@ const SessionDetailsModal = ({
   const locationLabel = buildLocationLabel(session);
   const participants = session?.participants || [];
   const currentUserId = currentUser?.auth_id || currentUser?.id;
-  const isHost =
-    currentUserId &&
-    session?.host_auth_id &&
-    String(session.host_auth_id) === String(currentUserId);
+  const hostAuthId = getHostAuthId(session);
+  const isHost = currentUserId && hostAuthId && String(hostAuthId) === String(currentUserId);
   const isParticipant = participants.some(
     (p) => currentUserId && String(getPlayerAuthId(p)) === String(currentUserId)
   );
@@ -530,7 +564,7 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
   const [form, setForm] = useState({
     title: "",
     description: "",
-    format: "singles",
+    format: "any",
     capacity: 4,
     session_date: today,
     session_time: "",
@@ -550,6 +584,7 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
     if (open) {
       setForm((prev) => ({
         ...prev,
+        format: prev.format || "any",
         session_date: today,
         session_end_time: "",
       }));
@@ -650,6 +685,7 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
             error={Boolean(errors.format)}
             helperText={errors.format}
           >
+            <MenuItem value="any">Any</MenuItem>
             <MenuItem value="singles">Singles</MenuItem>
             <MenuItem value="doubles">Doubles</MenuItem>
             <MenuItem value="mixed">Mixed</MenuItem>
@@ -783,7 +819,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
   const [form, setForm] = useState({
     title: "",
     description: "",
-    format: "singles",
+    format: "any",
     capacity: "",
     session_date: "",
     session_time: "",
@@ -805,7 +841,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
       setForm({
         title: session?.title || "",
         description: session?.description || "",
-        format: session?.format || "singles",
+        format: session?.format || "any",
         capacity: session?.capacity ?? getCapacity(session) ?? "",
         session_date: getSessionDate(session) || "",
         session_time: getSessionTime(session) || "",
@@ -923,6 +959,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
             error={Boolean(errors.format)}
             helperText={errors.format}
           >
+            <MenuItem value="any">Any</MenuItem>
             <MenuItem value="singles">Singles</MenuItem>
             <MenuItem value="doubles">Doubles</MenuItem>
             <MenuItem value="mixed">Mixed</MenuItem>
@@ -1234,7 +1271,7 @@ export default function PlayScreen() {
       try {
         const token = getStoredToken();
         const detail = await fetchSessionDetails(sessionId, token);
-        setSessionDetails(detail);
+        setSessionDetails(normalizeSessionDetail(detail));
       } catch (err) {
         setSnackbar({
           open: true,
