@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   Alert,
-  Avatar,
   Box,
   Button,
   Chip,
@@ -30,13 +29,10 @@ import {
   useTheme,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import EditIcon from "@mui/icons-material/Edit";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import GroupsIcon from "@mui/icons-material/Groups";
-import MilitaryTechIcon from "@mui/icons-material/MilitaryTech";
 import CompetitionsScreen from "../Competitions/CompetitionsScreen";
+import SessionDetailsModal from "../../components/SessionDetailsModal";
 import RecordMatchModal from "../Matches/RecordMatchModal";
 import {
   createSession,
@@ -48,100 +44,24 @@ import {
   updateSession,
 } from "../../api/sessions";
 import { getStoredToken } from "../../services/storage";
-import { getPlayerAuthId, getPlayerDisplayName } from "../../utils/matchPlayers";
+import {
+  buildLocationLabel,
+  deriveRecordMatchPrefill,
+  formatDateTime,
+  getCapacity,
+  getFormatLabel,
+  getHostAuthId,
+  getJoinedCount,
+  getSessionDate,
+  getSessionId,
+  getSessionTime,
+  getSkillRange,
+  isWithin24Hours,
+  normalizeSessionDetail,
+} from "../../utils/sessionUtils";
+import { getPlayerAuthId } from "../../utils/matchPlayers";
 
 const PLAY_TAB_STORAGE_KEY = "play-tab-selection";
-
-const getSessionId = (session) =>
-  session?.session_id ?? session?.id ?? session?.session?.session_id ?? session?.session?.id;
-const getSessionDate = (session) =>
-  session?.session_date || session?.date || session?.session?.session_date;
-const getSessionTime = (session) =>
-  session?.session_time || session?.time || session?.session?.session_time;
-const getJoinedCount = (session) =>
-  session?.joined_count ??
-  session?.participants?.length ??
-  session?.session?.joined_count ??
-  session?.session?.participants?.length ??
-  0;
-const getCapacity = (session) =>
-  session?.capacity ?? session?.session?.capacity ?? 0;
-
-const getSkillRange = (session) => {
-  const min =
-    session?.min_elo ??
-    session?.skill_range?.min_elo ??
-    session?.session?.min_elo ??
-    session?.session?.skill_range?.min_elo;
-  const max =
-    session?.max_elo ??
-    session?.skill_range?.max_elo ??
-    session?.session?.max_elo ??
-    session?.session?.skill_range?.max_elo;
-  if (min === undefined && max === undefined) return null;
-  return { min, max };
-};
-const getHostAuthId = (session) =>
-  session?.host_auth_id ?? session?.session?.host_auth_id ?? session?.host?.auth_id;
-const getFormatLabel = (format) => {
-  const value = (format || "").toString().toLowerCase();
-  if (!value || value === "any") return "Any";
-  if (value === "doubles") return "Doubles";
-  if (value === "mixed") return "Mixed";
-  return "Singles";
-};
-
-const normalizeSessionDetail = (detail) => {
-  if (!detail) return null;
-  if (detail.session) {
-    const { session, participants } = detail;
-    return {
-      ...session,
-      participants: participants ?? session.participants ?? [],
-    };
-  }
-  return detail;
-};
-
-const formatDateTime = (date, time) => {
-  if (!date || !time) return "Date & time TBD";
-  const dateTime = new Date(`${date}T${time}`);
-  const dateLabel = dateTime.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-  const timeLabel = dateTime.toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  return `${dateLabel} • ${timeLabel}`;
-};
-
-const isWithin24Hours = (date, time) => {
-  if (!date || !time) return false;
-  const start = new Date(`${date}T${time}`);
-  const now = new Date();
-  const diff = start.getTime() - now.getTime();
-  return diff <= 24 * 60 * 60 * 1000 && diff >= 0;
-};
-
-const buildLocationLabel = (session) => {
-  const courtNumber =
-    session?.court_number ??
-    session?.location?.court_number ??
-    session?.session?.court_number ??
-    session?.session?.location?.court_number;
-  const parts = [
-    session?.venue_name ??
-      session?.location?.venue_name ??
-      session?.session?.venue_name ??
-      session?.session?.location?.venue_name,
-    session?.hall ?? session?.location?.hall ?? session?.session?.hall ?? session?.session?.location?.hall,
-    courtNumber ? `Court ${courtNumber}` : null,
-  ].filter(Boolean);
-  return parts.join(" • ");
-};
 
 const SessionCard = ({ session, onOpen, currentUser }) => {
   const theme = useTheme();
@@ -264,297 +184,6 @@ const SessionCard = ({ session, onOpen, currentUser }) => {
       </Stack>
     </Box>
   );
-};
-
-const ParticipantItem = ({ player }) => (
-  <Stack
-    direction="row"
-    spacing={1.5}
-    alignItems="center"
-    sx={{ p: 1, borderRadius: 1, border: "1px solid", borderColor: "divider" }}
-  >
-    <Avatar>{(player?.username || "P")[0]?.toUpperCase()}</Avatar>
-    <Box>
-      <Typography fontWeight={600}>{player?.username || "Player"}</Typography>
-      <Typography variant="body2" color="text.secondary">
-        Elo {player?.overall_elo ?? player?.elo ?? "N/A"}
-      </Typography>
-    </Box>
-  </Stack>
-);
-
-const SessionDetailsModal = ({
-  open,
-  session,
-  loading,
-  onClose,
-  onJoin,
-  onLeave,
-  onRecordMatch,
-  onEdit,
-  onDelete,
-  currentUser,
-  actionLoading,
-  actionError,
-  adminLoading,
-}) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const sessionDate = getSessionDate(session);
-  const sessionTime = getSessionTime(session);
-  const joinedCount = getJoinedCount(session);
-  const capacity = getCapacity(session);
-  const skillRange = getSkillRange(session);
-  const locationLabel = buildLocationLabel(session);
-  const participants = session?.participants || [];
-  const currentUserId = currentUser?.auth_id || currentUser?.id;
-  const hostAuthId = getHostAuthId(session);
-  const isHost = currentUserId && hostAuthId && String(hostAuthId) === String(currentUserId);
-  const isParticipant = participants.some(
-    (p) => currentUserId && String(getPlayerAuthId(p)) === String(currentUserId)
-  );
-  const isFull = capacity > 0 && joinedCount >= capacity;
-  const hostActionsDisabled = loading || actionLoading || adminLoading;
-  const actionDisabled = isHost || (isFull && !isParticipant) || hostActionsDisabled;
-  const actionLabel = isHost
-    ? "Host"
-    : isParticipant
-      ? "Leave Session"
-      : isFull
-        ? "Full"
-        : "Join Session";
-  const emptySlots = Math.max(capacity - participants.length, 0);
-  const formatLabel = getFormatLabel(session?.format);
-
-  if (!session) return null;
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullWidth
-      maxWidth="sm"
-      scroll="paper"
-      PaperProps={{
-        sx: {
-          m: isMobile ? 1 : 3,
-          width: "min(640px, 100%)",
-          maxHeight: isMobile ? "calc(100vh - 24px)" : "85vh",
-          borderRadius: isMobile ? 2 : 3,
-        },
-      }}
-    >
-      <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <EventAvailableIcon color="primary" />
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          {session?.title || formatLabel}
-        </Typography>
-        <Chip
-          label={isFull ? "Full" : "Open"}
-          color={isFull ? "default" : "success"}
-          size="small"
-        />
-        <IconButton onClick={onClose} edge="end">
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers>
-        {loading ? (
-          <Stack spacing={2}>
-            <Skeleton height={24} width="60%" />
-            <Skeleton height={24} width="40%" />
-            <Skeleton variant="rectangular" height={120} />
-          </Stack>
-        ) : (
-          <Stack spacing={3}>
-            <Stack spacing={1}>
-              <Typography fontWeight={700}>
-                {formatDateTime(sessionDate, sessionTime)}
-              </Typography>
-              {locationLabel && (
-                <Typography color="text.secondary">{locationLabel}</Typography>
-              )}
-            </Stack>
-
-            {session?.description && (
-              <Stack spacing={1}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Description
-                </Typography>
-                <Typography>{session.description}</Typography>
-              </Stack>
-            )}
-
-            <Divider />
-
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Details
-              </Typography>
-              <Stack spacing={1}>
-                <Stack direction="row" justifyContent="space-between">
-                  <Typography color="text.secondary">Format</Typography>
-                  <Typography fontWeight={600}>{formatLabel}</Typography>
-                </Stack>
-                <Stack direction="row" justifyContent="space-between">
-                  <Typography color="text.secondary">Capacity</Typography>
-                  <Typography fontWeight={600}>
-                    {joinedCount} / {capacity || "—"}
-                  </Typography>
-                </Stack>
-                {skillRange && (
-                  <Stack direction="row" justifyContent="space-between">
-                    <Typography color="text.secondary">Elo range</Typography>
-                    <Typography fontWeight={600}>
-                      Elo {skillRange.min ?? "Any"}–{skillRange.max ?? "Any"}
-                    </Typography>
-                  </Stack>
-                )}
-                <Stack direction="row" justifyContent="space-between">
-                  <Typography color="text.secondary">Host</Typography>
-                  <Typography fontWeight={600}>
-                    {session?.host_username || "Host"}
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Stack>
-
-            <Divider />
-
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Participants
-              </Typography>
-              <Stack spacing={1}>
-                {participants.map((player) => (
-                  <ParticipantItem key={player.auth_id || player.username} player={player} />
-                ))}
-                {Array.from({ length: emptySlots }).map((_, index) => (
-                  <Stack
-                    key={index}
-                    direction="row"
-                    spacing={1.5}
-                    alignItems="center"
-                    sx={{
-                      p: 1,
-                      borderRadius: 1,
-                      border: "1px dashed",
-                      borderColor: "divider",
-                    }}
-                  >
-                    <Avatar sx={{ bgcolor: "action.hover", color: "text.secondary" }}>
-                      +
-                    </Avatar>
-                    <Box>
-                      <Typography fontWeight={600} color="text.secondary">
-                        Open slot
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Waiting for a player
-                      </Typography>
-                    </Box>
-                  </Stack>
-                ))}
-              </Stack>
-            </Stack>
-          </Stack>
-        )}
-      </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Stack spacing={1} width="100%">
-          {actionError && <Alert severity="error">{actionError}</Alert>}
-          {isHost && (
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
-              <Button
-                variant="outlined"
-                fullWidth
-                startIcon={<EditIcon />}
-                onClick={() => onEdit?.(session)}
-                disabled={hostActionsDisabled}
-              >
-                Edit session
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                fullWidth
-                startIcon={<DeleteOutlineIcon />}
-                onClick={() => onDelete?.(session)}
-                disabled={hostActionsDisabled}
-              >
-                Delete session
-              </Button>
-            </Stack>
-          )}
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={() => {
-                if (isParticipant) onLeave(session);
-                else onJoin(session);
-              }}
-              disabled={actionDisabled}
-            >
-              {actionLabel}
-            </Button>
-            {(isParticipant || isHost) && (
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={() => onRecordMatch(session)}
-                startIcon={<MilitaryTechIcon />}
-              >
-                Record Match
-              </Button>
-            )}
-          </Stack>
-        </Stack>
-      </DialogActions>
-    </Dialog>
-  );
-};
-
-const deriveRecordMatchPrefill = (session, currentUser) => {
-  if (!session) return {};
-  const participants = session.participants || [];
-  const currentUserId = currentUser?.auth_id || currentUser?.id;
-  const currentUserEntry =
-    participants.find(
-      (p) => getPlayerAuthId(p) && currentUserId && String(getPlayerAuthId(p)) === String(currentUserId)
-    ) ||
-    (currentUser
-      ? {
-          username: getPlayerDisplayName(currentUser),
-          elo: currentUser.elo,
-          auth_id: currentUserId,
-        }
-      : null);
-
-  const others = participants.filter(
-    (p) => !currentUserEntry || String(getPlayerAuthId(p)) !== String(getPlayerAuthId(currentUserEntry))
-  );
-
-  if (session.format === "singles") {
-    const opponent = others[0] || session.host;
-    return {
-      initialSinglesValues: {
-        opponent,
-      },
-      initialTab: 0,
-    };
-  }
-
-  const [partner, opponent1, opponent2] = others;
-  return {
-    initialDoublesValues: {
-      partner: partner || null,
-      opponent1: opponent1 || null,
-      opponent2: opponent2 || null,
-    },
-    initialTab: 1,
-  };
 };
 
 const CreateSessionModal = ({ open, onClose, onCreated }) => {

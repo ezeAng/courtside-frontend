@@ -44,6 +44,7 @@ import {
   updateUserProfile,
 } from "../../features/user/userSlice";
 import FeedbackModal from "./FeedbackModal";
+import MySessionsCalendar from "../../components/MySessionsCalendar";
 
 function SettingsScreen() {
   const dispatch = useDispatch();
@@ -309,9 +310,15 @@ function SettingsScreen() {
                 <ChevronRightIcon sx={{ color: "text.secondary" }} />
               </Stack>
             </CardContent>
-          </CardActionArea>
+        </CardActionArea>
         </Card>
 
+
+        <Card variant="outlined">
+          <CardContent>
+            <MySessionsCalendar token={token} currentUser={user} />
+          </CardContent>
+        </Card>
 
         <Card variant="outlined">
           <CardContent sx={{ p: 0 }}>

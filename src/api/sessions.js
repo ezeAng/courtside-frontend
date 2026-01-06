@@ -53,6 +53,18 @@ export async function fetchSessions(filters = {}, token) {
   return handleResponse(response);
 }
 
+export async function fetchMySessions(fromDate, toDate, token) {
+  const params = new URLSearchParams();
+  if (fromDate) params.set("from_date", fromDate);
+  if (toDate) params.set("to_date", toDate);
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const response = await fetch(`${base}/api/sessions/mine${query}`, {
+    method: "GET",
+    headers: optionalAuthHeader(token),
+  });
+  return handleResponse(response);
+}
+
 export async function fetchSessionDetails(sessionId, token) {
   if (!sessionId) throw new Error("Session ID is required");
   const response = await fetch(`${base}/api/sessions/${sessionId}`, {
