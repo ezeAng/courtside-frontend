@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Container from "@mui/material/Container";
@@ -8,36 +9,35 @@ import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Switch from "@mui/material/Switch";
-import Button from "@mui/material/Button";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import LanguageIcon from "@mui/icons-material/Language";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import LogoutIcon from "@mui/icons-material/Logout";
+import FeedbackIcon from "@mui/icons-material/Feedback";
 import { toggleThemeMode } from "../../features/preferences/preferencesSlice";
 import { clearAuth } from "../../features/auth/authSlice";
-import { clearUser, deleteCurrentUser } from "../../features/user/userSlice";
+import { clearUser } from "../../features/user/userSlice";
+import FeedbackModal from "./FeedbackModal";
 
 function AppSettingsScreen() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { themeMode } = useSelector((state) => state.preferences);
-  const { deleteLoading, deleteError } = useSelector((state) => state.user);
+  const { user } = useSelector((state) => state.user);
+  const token = useSelector((state) => state.auth.accessToken);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const handleToggleTheme = () => {
     dispatch(toggleThemeMode());
   };
 
-  const handleDeleteAccount = async () => {
-    const confirmed = window.confirm(
-      "Delete your account permanently? This cannot be undone."
-    );
-    if (!confirmed) return;
-
-    const result = await dispatch(deleteCurrentUser());
-    if (deleteCurrentUser.fulfilled.match(result)) {
-      dispatch(clearAuth());
-      dispatch(clearUser());
-      navigate("/login", { replace: true });
-    }
+  const handleLogout = () => {
+    dispatch(clearAuth());
+    dispatch(clearUser());
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -88,7 +88,48 @@ function AppSettingsScreen() {
             </Stack>
           </CardContent>
         </Card>
+        <Card variant="outlined">
+          <CardContent sx={{ p: 0 }}>
+            <List disablePadding>
+              <ListItemButton>
+                <ListItemIcon>
+                  <LanguageIcon />
+                </ListItemIcon>
+                <ListItemText primary="Language" secondary="English" />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton>
+                <ListItemIcon>
+                  <LocationOnIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Location"
+                  secondary={user?.region || "Not set"}
+                />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton onClick={() => setFeedbackOpen(true)}>
+                <ListItemIcon>
+                  <FeedbackIcon />
+                </ListItemIcon>
+                <ListItemText primary="Send feedback" />
+              </ListItemButton>
+              <Divider component="li" />
+              <ListItemButton onClick={handleLogout} sx={{ color: "error.main" }}>
+                <ListItemIcon sx={{ color: "error.main" }}>
+                  <LogoutIcon />
+                </ListItemIcon>
+                <ListItemText primary="Log out" />
+              </ListItemButton>
+            </List>
+          </CardContent>
+        </Card>
       </Stack>
+      <FeedbackModal
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        token={token}
+      />
     </Container>
   );
 }

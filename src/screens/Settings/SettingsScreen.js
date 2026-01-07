@@ -22,11 +22,7 @@ import Switch from "@mui/material/Switch";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import LanguageIcon from "@mui/icons-material/Language";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
-import FeedbackIcon from "@mui/icons-material/Feedback";
 import PeopleIcon from "@mui/icons-material/People";
 import CircularProgress from "@mui/material/CircularProgress";
 import CheckIcon from "@mui/icons-material/Check";
@@ -34,16 +30,13 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRightOutlined"
 import { useNavigate } from "react-router-dom";
 import PlayerCardModal from "../../components/PlayerCardModal";
 import ProfileAvatar from "../../components/ProfileAvatar";
-import { clearAuth } from "../../features/auth/authSlice";
 import Snackbar from "@mui/material/Snackbar";
 import { countries } from "../../constants/countries";
 
 import {
-  clearUser,
   fetchCurrentUser,
   updateUserProfile,
 } from "../../features/user/userSlice";
-import FeedbackModal from "./FeedbackModal";
 import MySessionsCalendar from "../../components/MySessionsCalendar";
 
 function SettingsScreen() {
@@ -73,7 +66,6 @@ function SettingsScreen() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [showCard, setShowCard] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [closeAfterAvatarUpload, setCloseAfterAvatarUpload] = useState(false);
   const [countryDialogOpen, setCountryDialogOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
@@ -162,12 +154,6 @@ function SettingsScreen() {
 
   };
 
-
-  const handleLogout = () => {
-    dispatch(clearAuth());
-    dispatch(clearUser());
-    navigate("/login", { replace: true });
-  };
 
   const normalizedCountryCode = countryCode ? countryCode.toUpperCase() : null;
   const normalizedModalCountryCode = modalCountryCode
@@ -320,39 +306,6 @@ function SettingsScreen() {
           </CardContent>
         </Card>
 
-        <Card variant="outlined">
-          <CardContent sx={{ p: 0 }}>
-            <List disablePadding>
-              <ListItemButton>
-                <ListItemIcon>
-                  <LanguageIcon />
-                </ListItemIcon>
-                <ListItemText primary="Language" secondary="English" />
-              </ListItemButton>
-              <Divider component="li" />
-              <ListItemButton>
-                <ListItemIcon>
-                  <LocationOnIcon />
-                </ListItemIcon>
-                <ListItemText primary="Location" secondary={region || "Not set"} />
-              </ListItemButton>
-              <Divider component="li" />
-              <ListItemButton onClick={() => setFeedbackOpen(true)}>
-                <ListItemIcon>
-                  <FeedbackIcon />
-                </ListItemIcon>
-                <ListItemText primary="Send feedback" />
-              </ListItemButton>
-              <Divider component="li" />
-              <ListItemButton onClick={handleLogout} sx={{ color: "error.main" }}>
-                <ListItemIcon sx={{ color: "error.main" }}>
-                  <LogoutIcon />
-                </ListItemIcon>
-                <ListItemText primary="Log out" />
-              </ListItemButton>
-            </List>
-          </CardContent>
-        </Card>
       </Stack>
 
       <Dialog 
@@ -545,11 +498,6 @@ function SettingsScreen() {
       </Dialog>
 
       {showCard && <PlayerCardModal token={token} onClose={() => setShowCard(false)} />}
-      <FeedbackModal
-        open={feedbackOpen}
-        onClose={() => setFeedbackOpen(false)}
-        token={token}
-      />
       <Dialog
         open={countryDialogOpen}
         fullWidth
