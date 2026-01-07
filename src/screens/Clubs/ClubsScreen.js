@@ -12,7 +12,6 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import SearchIcon from "@mui/icons-material/Search";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 
 const clubs = [
@@ -39,7 +38,7 @@ function ClubsScreen() {
     <Container maxWidth="sm" sx={{ pb: 12, pt: 2 }}>
       <Stack spacing={3}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6" fontWeight={700}>
+          <Typography variant="h5" fontWeight={800}>
             Club
           </Typography>
           <Box width={24} />
@@ -50,10 +49,11 @@ function ClubsScreen() {
             borderRadius: 3,
             color: "common.white",
             background:
-              "linear-gradient(135deg, rgba(255,112,67,0.95) 0%, rgba(255,167,38,0.9) 100%)",
+              "linear-gradient(135deg, rgba(16,106,82,0.98) 0%, rgba(46,156,122,0.94) 55%, rgba(98,196,154,0.92) 100%)",
+            boxShadow: "0px 18px 32px -20px rgba(16, 106, 82, 0.7)",
           }}
         >
-          <CardContent>
+          <CardContent sx={{ p: 3 }}>
             <Stack spacing={2}>
               <Typography variant="h6" fontWeight={700}>
                 Create your own Courtside club
@@ -61,45 +61,25 @@ function ClubsScreen() {
               <Typography variant="body2" sx={{ opacity: 0.9 }}>
                 Start a badminton community and schedule matches with players nearby.
               </Typography>
-              <Button variant="contained" color="inherit" sx={{ alignSelf: "flex-start" }}>
+              <Button
+                variant="contained"
+                color="inherit"
+                sx={{
+                  alignSelf: "flex-start",
+                  bgcolor: "common.white",
+                  color: "success.dark",
+                  fontWeight: 700,
+                  px: 3,
+                  py: 1,
+                  borderRadius: 999,
+                  "&:hover": {
+                    bgcolor: "grey.100",
+                  },
+                }}
+              >
                 Create a Club
               </Button>
             </Stack>
-          </CardContent>
-        </Card>
-
-        <Card variant="outlined">
-          <CardContent>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <CardMedia
-                component="img"
-                src="https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=120&q=80"
-                alt="Featured badminton club"
-                sx={{ width: 64, height: 64, borderRadius: 2 }}
-              />
-              <Stack spacing={0.5} flex={1}>
-                <Typography variant="h6" fontWeight={700}>
-                  Courtside Smash Club
-                </Typography>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <LocationOnIcon fontSize="small" color="action" />
-                  <Typography color="text.secondary" variant="body2">
-                    San Francisco, California
-                  </Typography>
-                </Stack>
-                <Typography color="text.secondary" variant="body2">
-                  2,340 Players
-                </Typography>
-              </Stack>
-            </Stack>
-            <Button
-              fullWidth
-              variant="contained"
-              color="primary"
-              sx={{ mt: 2, borderRadius: 999 }}
-            >
-              Join
-            </Button>
           </CardContent>
         </Card>
 
@@ -124,15 +104,15 @@ function ClubsScreen() {
           <Divider />
           <Grid container spacing={2}>
             {clubs.map((club) => (
-              <Grid item xs={12} sm={6} key={club.id}>
-                <Card variant="outlined" sx={{ height: "100%" }}>
+              <Grid item xs={6} key={club.id}>
+                <Card variant="outlined" sx={{ height: "100%", borderRadius: 3 }}>
                   <CardMedia
                     component="img"
                     height="120"
                     image={club.image}
                     alt={club.name}
                   />
-                  <CardContent>
+                  <CardContent sx={{ p: 2 }}>
                     <Stack spacing={1}>
                       <Typography variant="subtitle1" fontWeight={700}>
                         {club.name}
