@@ -6,13 +6,13 @@ import HomeIcon from "@mui/icons-material/Home";
 import SportsTennisIcon from '@mui/icons-material/SportsTennis';
 import PersonIcon from '@mui/icons-material/Person';
 import MilitaryTechIcon from "@mui/icons-material/MilitaryTech";
-import LeaderboardIcon from "@mui/icons-material/Leaderboard";
+import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 
 const navItems = [
   { label: "Home", value: "/home", icon: <HomeIcon /> },
-  { label: "Leaderboard", value: "/leaderboard", icon: <LeaderboardIcon /> },
+  { label: "Clubs", value: "/clubs", icon: <ShieldOutlinedIcon /> },
   { label: "Play", value: "/play", icon: <MilitaryTechIcon /> },
   { label: "Matches", value: "/matches", icon: <SportsTennisIcon /> },
   { label: "Me", value: "/settings", icon: <PersonIcon /> },

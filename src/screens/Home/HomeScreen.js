@@ -23,6 +23,7 @@ import { getEloForMode } from "../../utils/elo";
 import { setEloMode } from "../../features/ui/uiSlice";
 import SessionCard from "../../components/SessionCard";
 import SessionDetailsModal from "../../components/SessionDetailsModal";
+import LeaderboardPanel from "../../components/leaderboard/LeaderboardPanel";
 import {
   fetchSessionDetails,
   fetchMySessions,
@@ -568,6 +569,17 @@ function HomeScreen() {
                     ))}
                   </Stack>
                 )}
+              </CardContent>
+            </Card>
+            <Card variant="outlined" sx={{ height: "100%", padding: "2px" }}>
+              <CardContent>
+                <LeaderboardPanel
+                  compact
+                  limit={5}
+                  onViewAll={() => navigate("/leaderboard")}
+                  title="Leaderboard"
+                  subtitle="See the top players on Courtside."
+                />
               </CardContent>
             </Card>
             <Card variant="outlined" sx={{ height: "100%", padding: "2px"}}>
