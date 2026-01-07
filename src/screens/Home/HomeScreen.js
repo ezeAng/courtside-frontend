@@ -25,11 +25,24 @@ import SessionCard from "../../components/SessionCard";
 import SessionDetailsModal from "../../components/SessionDetailsModal";
 import {
   fetchSessionDetails,
-  fetchUpcomingSessionReminders,
+  fetchMySessions,
   joinSession,
   leaveSession,
 } from "../../api/sessions";
-import { getSessionId, normalizeSessionDetail } from "../../utils/sessionUtils";
+import {
+  combineSessionDateTime,
+  formatDateKey,
+  getSessionId,
+  isSessionPast,
+  normalizeSessionDetail,
+} from "../../utils/sessionUtils";
+
+const extractSessions = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (payload?.sessions) return payload.sessions;
+  if (payload?.items) return payload.items;
+  return [];
+};
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -95,8 +108,26 @@ function HomeScreen() {
     try {
       setUpcomingLoading(true);
       setUpcomingError(null);
-      const payload = await fetchUpcomingSessionReminders({ limit: 2 }, token);
-      setUpcomingSessions(payload?.reminders || []);
+      const today = new Date();
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + 180);
+      const payload = await fetchMySessions(
+        formatDateKey(today),
+        formatDateKey(endDate),
+        token
+      );
+      const upcoming = extractSessions(payload)
+        .filter((session) => !isSessionPast(session, today))
+        .sort((a, b) => {
+          const dateA = combineSessionDateTime(a);
+          const dateB = combineSessionDateTime(b);
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          return dateA - dateB;
+        })
+        .slice(0, 2);
+      setUpcomingSessions(upcoming);
     } catch (err) {
       setUpcomingError(err?.message || "Unable to load upcoming sessions.");
       setUpcomingSessions([]);
