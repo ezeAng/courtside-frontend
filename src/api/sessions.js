@@ -27,6 +27,8 @@ async function handleResponse(response) {
 const extractSessions = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (payload?.sessions) return payload.sessions;
+  if (payload?.suggested_sessions) return payload.suggested_sessions;
+  if (payload?.suggestions) return payload.suggestions;
   if (payload?.items) return payload.items;
   return [];
 };

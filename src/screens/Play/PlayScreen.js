@@ -711,6 +711,7 @@ export default function PlayScreen() {
   const [sessions, setSessions] = useState([]);
   const [suggestedSessions, setSuggestedSessions] = useState([]);
   const [suggestedLoading, setSuggestedLoading] = useState(false);
+  const [suggestedError, setSuggestedError] = useState("");
   const [filters, setFilters] = useState({
     dateFrom: today,
     dateTo: "",
@@ -765,18 +766,26 @@ export default function PlayScreen() {
   const extractSessions = useCallback((payload) => {
     if (Array.isArray(payload)) return payload;
     if (payload?.sessions) return payload.sessions;
+    if (payload?.suggested_sessions) return payload.suggested_sessions;
+    if (payload?.suggestions) return payload.suggestions;
     if (payload?.items) return payload.items;
     return [];
   }, []);
 
   const loadSuggestedSessions = useCallback(async () => {
     setSuggestedLoading(true);
+    setSuggestedError("");
     try {
       const token = getStoredToken();
       const payload = await fetchSuggestedSessions({ limit: 5 }, token);
       setSuggestedSessions(extractSessions(payload));
     } catch (err) {
       setSuggestedSessions([]);
+      setSuggestedError(err.message || "Failed to load suggested sessions");
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.warn("Failed to load suggested sessions", err);
+      }
     } finally {
       setSuggestedLoading(false);
     }
@@ -1012,7 +1021,7 @@ export default function PlayScreen() {
   );
 
   const resolvedSelectedSession = sessionDetails || selectedSessionFromList;
-  const showSuggestedSection = suggestedLoading || suggestedSessions.length > 0;
+  const showSuggestedSection = suggestedLoading || suggestedSessions.length > 0 || Boolean(suggestedError);
   return (
     <>
       <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
@@ -1086,7 +1095,7 @@ export default function PlayScreen() {
                           />
                         ))}
                       </Stack>
-                    ) : (
+                    ) : suggestedSessions.length ? (
                       <Stack
                         direction="row"
                         spacing={2}
@@ -1102,6 +1111,14 @@ export default function PlayScreen() {
                             />
                           </Box>
                         ))}
+                      </Stack>
+                    ) : (
+                      <Stack spacing={1}>
+                        {suggestedError && <Alert severity="warning">{suggestedError}</Alert>}
+                        <Typography variant="body2" color="text.secondary">
+                          No suggested sessions right now. Check back soon or create a session to
+                          get players on court.
+                        </Typography>
                       </Stack>
                     )}
                   </Stack>
