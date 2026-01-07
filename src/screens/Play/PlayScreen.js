@@ -323,11 +323,25 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullScreen={isMobile} fullWidth scroll="paper">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      scroll="paper"
+      PaperProps={{
+        sx: {
+          m: isMobile ? 2 : 3,
+          width: isMobile ? "calc(100% - 32px)" : "min(640px, 100%)",
+          maxHeight: isMobile ? "calc(100vh - 64px)" : "85vh",
+          borderRadius: isMobile ? 2 : 3,
+        },
+      }}
+    >
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Typography variant="h6">Create Session</Typography>
-        <IconButton onClick={onClose}>
-          <CloseIcon />
+        <IconButton onClick={onClose} size="small">
+          <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
       <DialogContent dividers>
