@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   Alert,
@@ -39,6 +39,7 @@ import {
   deleteSession,
   fetchSessionDetails,
   fetchSessions,
+  fetchSuggestedSessions,
   joinSession,
   leaveSession,
   updateSession,
@@ -63,7 +64,7 @@ import { getPlayerAuthId } from "../../utils/matchPlayers";
 
 const PLAY_TAB_STORAGE_KEY = "play-tab-selection";
 
-const SessionCard = ({ session, onOpen, currentUser }) => {
+const SessionCard = ({ session, onOpen, currentUser, variant = "full" }) => {
   const theme = useTheme();
   const sessionDate = getSessionDate(session);
   const sessionTime = getSessionTime(session);
@@ -71,6 +72,7 @@ const SessionCard = ({ session, onOpen, currentUser }) => {
   const capacity = getCapacity(session);
   const isFull = capacity > 0 && joinedCount >= capacity;
   const highlight = !isFull && isWithin24Hours(sessionDate, sessionTime);
+  const isCompact = variant === "compact";
   const capacityProgress =
     capacity > 0 ? Math.min(100, (joinedCount / capacity) * 100) : 0;
   const locationLabel = buildLocationLabel(session);
@@ -89,12 +91,17 @@ const SessionCard = ({ session, onOpen, currentUser }) => {
   const formatLabel = getFormatLabel(session?.format);
   const formatValue = (session?.format || "").toString().toLowerCase();
   const isDoublesFormat = formatValue === "doubles";
+  const suggestionLabel =
+    session?.suggestion_label ||
+    session?.suggestion_reason ||
+    session?.suggested_reason ||
+    "";
 
   return (
     <Box
       onClick={() => onOpen(session)}
       sx={{
-        p: 3,
+        p: isCompact ? 2 : 3,
         borderRadius: 2,
         border: `1px solid ${
           highlight ? theme.palette.primary.main : theme.palette.divider
@@ -105,83 +112,119 @@ const SessionCard = ({ session, onOpen, currentUser }) => {
         cursor: "pointer",
       }}
     >
-      <Stack spacing={1.5}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Stack spacing={0.5}>
-            <Typography variant="subtitle2" color="text.secondary">
-              {formatDateTime(sessionDate, sessionTime)}
-            </Typography>
-            <Typography variant="h6" fontWeight={700}>
-              {session?.title || formatLabel}
-            </Typography>
-            {locationLabel && (
-              <Typography variant="body2" color="text.secondary">
-                {locationLabel}
+      {isCompact ? (
+        <Stack spacing={1}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Stack spacing={0.25}>
+              <Typography variant="subtitle2" color="text.secondary">
+                {formatDateTime(sessionDate, sessionTime)}
               </Typography>
-            )}
-          </Stack>
-          <Stack spacing={1} alignItems="flex-end">
+              {locationLabel && (
+                <Typography variant="body2" color="text.secondary">
+                  {locationLabel}
+                </Typography>
+              )}
+            </Stack>
             <Chip
               size="small"
               label={formatLabel}
               color={isDoublesFormat ? "primary" : "default"}
               icon={<GroupsIcon fontSize="small" />}
             />
-            <Stack direction="row" spacing={0.5}>
-              {isHost && <Chip size="small" color="success" label="Host" />}
-              {isJoined && !isHost && (
-                <Chip size="small" color="primary" variant="outlined" label="Joined" />
-              )}
-              {isFull && <Chip size="small" color="default" label="Full" />}
-              {highlight && !isFull && (
-                <Chip
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  label="Starts within 24h"
-                />
-              )}
-            </Stack>
           </Stack>
-        </Stack>
-
-        <Stack spacing={0.5}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="body2" fontWeight={600}>
+            <Typography variant="caption" color="text.secondary">
               Capacity
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="caption" color="text.secondary">
               {joinedCount} / {capacity || "—"}
             </Typography>
           </Stack>
-          <LinearProgress
-            variant="determinate"
-            value={capacityProgress}
-            color={isFull ? "inherit" : "primary"}
-            sx={{ height: 8, borderRadius: 999 }}
-          />
+          {suggestionLabel && (
+            <Typography variant="caption" color="text.secondary">
+              {suggestionLabel}
+            </Typography>
+          )}
         </Stack>
-
-        {skillRange && (
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1}
-            justifyContent="space-between"
-            alignItems={{ xs: "flex-start", sm: "center" }}
-          >
-            <Chip
-              label={`Elo ${skillRange.min ?? "Any"}–${skillRange.max ?? "Any"}`}
-              variant="outlined"
-              size="small"
-            />
-            {session?.host_username && (
-              <Typography variant="body2" color="text.secondary">
-                Host: {session.host_username}
+      ) : (
+        <Stack spacing={1.5}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Stack spacing={0.5}>
+              <Typography variant="subtitle2" color="text.secondary">
+                {formatDateTime(sessionDate, sessionTime)}
               </Typography>
-            )}
+              <Typography variant="h6" fontWeight={700}>
+                {session?.title || formatLabel}
+              </Typography>
+              {locationLabel && (
+                <Typography variant="body2" color="text.secondary">
+                  {locationLabel}
+                </Typography>
+              )}
+            </Stack>
+            <Stack spacing={1} alignItems="flex-end">
+              <Chip
+                size="small"
+                label={formatLabel}
+                color={isDoublesFormat ? "primary" : "default"}
+                icon={<GroupsIcon fontSize="small" />}
+              />
+              <Stack direction="row" spacing={0.5}>
+                {isHost && <Chip size="small" color="success" label="Host" />}
+                {isJoined && !isHost && (
+                  <Chip size="small" color="primary" variant="outlined" label="Joined" />
+                )}
+                {isFull && <Chip size="small" color="default" label="Full" />}
+                {highlight && !isFull && (
+                  <Chip
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    label="Starts within 24h"
+                  />
+                )}
+              </Stack>
+            </Stack>
           </Stack>
-        )}
-      </Stack>
+
+          <Stack spacing={0.5}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="body2" fontWeight={600}>
+                Capacity
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {joinedCount} / {capacity || "—"}
+              </Typography>
+            </Stack>
+            <LinearProgress
+              variant="determinate"
+              value={capacityProgress}
+              color={isFull ? "inherit" : "primary"}
+              sx={{ height: 8, borderRadius: 999 }}
+            />
+          </Stack>
+
+          {skillRange && (
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              justifyContent="space-between"
+              alignItems={{ xs: "flex-start", sm: "center" }}
+            >
+              <Chip
+                label={`Elo ${skillRange.min ?? "Any"}–${skillRange.max ?? "Any"}`}
+                variant="outlined"
+                size="small"
+              />
+              {session?.host_username && (
+                <Typography variant="body2" color="text.secondary">
+                  Host: {session.host_username}
+                </Typography>
+              )}
+            </Stack>
+          )}
+        </Stack>
+      )}
     </Box>
   );
 };
@@ -827,6 +870,8 @@ export default function PlayScreen() {
     () => localStorage.getItem(PLAY_TAB_STORAGE_KEY) || "sessions"
   );
   const [sessions, setSessions] = useState([]);
+  const [suggestedSessions, setSuggestedSessions] = useState([]);
+  const [suggestedLoading, setSuggestedLoading] = useState(false);
   const [filters, setFilters] = useState({
     dateFrom: today,
     dateTo: "",
@@ -850,6 +895,7 @@ export default function PlayScreen() {
   const [recordPrefill, setRecordPrefill] = useState({});
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const sessionsListRef = useRef(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -877,12 +923,25 @@ export default function PlayScreen() {
     setFilters((prev) => ({ ...prev, ...changes }));
   }, []);
 
-  const extractSessions = (payload) => {
+  const extractSessions = useCallback((payload) => {
     if (Array.isArray(payload)) return payload;
     if (payload?.sessions) return payload.sessions;
     if (payload?.items) return payload.items;
     return [];
-  };
+  }, []);
+
+  const loadSuggestedSessions = useCallback(async () => {
+    setSuggestedLoading(true);
+    try {
+      const token = getStoredToken();
+      const payload = await fetchSuggestedSessions({ limit: 5 }, token);
+      setSuggestedSessions(extractSessions(payload));
+    } catch (err) {
+      setSuggestedSessions([]);
+    } finally {
+      setSuggestedLoading(false);
+    }
+  }, [extractSessions]);
 
   const loadSessions = useCallback(async () => {
     setSessionsLoading(true);
@@ -906,7 +965,7 @@ export default function PlayScreen() {
     } finally {
       setSessionsLoading(false);
     }
-  }, [filters]);
+  }, [extractSessions, filters]);
 
   const refreshSessionDetails = useCallback(
     async (sessionId) => {
@@ -934,6 +993,11 @@ export default function PlayScreen() {
     loadSessions();
   }, [tab, loadSessions]);
 
+  useEffect(() => {
+    if (tab !== "sessions") return;
+    loadSuggestedSessions();
+  }, [tab, loadSuggestedSessions]);
+
   const handleOpenSession = async (session) => {
     const id = getSessionId(session);
     setSessionActionError("");
@@ -959,6 +1023,7 @@ export default function PlayScreen() {
       setSelectedSessionId(null);
       setSessionDetails(null);
       await loadSessions();
+      await loadSuggestedSessions();
       setSnackbar({
         open: true,
         message: cancelledMessage,
@@ -1003,6 +1068,7 @@ export default function PlayScreen() {
       await joinSession(sessionId, token);
       await refreshSessionDetails(sessionId);
       await loadSessions();
+      await loadSuggestedSessions();
       setSnackbar({
         open: true,
         message: "Joined session. See you on court!",
@@ -1025,6 +1091,7 @@ export default function PlayScreen() {
       await leaveSession(sessionId, token);
       await refreshSessionDetails(sessionId);
       await loadSessions();
+      await loadSuggestedSessions();
       setSnackbar({
         open: true,
         message: "You left the session",
@@ -1052,6 +1119,7 @@ export default function PlayScreen() {
       setSelectedSessionId(null);
       setSessionDetails(null);
       await loadSessions();
+      await loadSuggestedSessions();
       setSnackbar({
         open: true,
         message: "Session deleted",
@@ -1070,13 +1138,14 @@ export default function PlayScreen() {
     setRecordMatchModalOpen(true);
   };
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = async () => {
     setSnackbar({
       open: true,
       message: "Session created successfully",
       severity: "success",
     });
-    loadSessions();
+    await loadSessions();
+    await loadSuggestedSessions();
   };
 
   const handleEditSuccess = async () => {
@@ -1085,6 +1154,7 @@ export default function PlayScreen() {
       await refreshSessionDetails(selectedSessionId);
     }
     await loadSessions();
+    await loadSuggestedSessions();
     setSnackbar({
       open: true,
       message: "Session updated",
@@ -1103,6 +1173,7 @@ export default function PlayScreen() {
   );
 
   const resolvedSelectedSession = sessionDetails || selectedSessionFromList;
+  const showSuggestedSection = suggestedLoading || suggestedSessions.length > 0;
   return (
     <>
       <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
@@ -1132,6 +1203,72 @@ export default function PlayScreen() {
                 Create Session
               </Button>
 
+              {showSuggestedSection && (
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Stack spacing={1.5}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                      <Stack spacing={0.5}>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          Suggested for You
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Sessions that match your level and availability
+                        </Typography>
+                      </Stack>
+                      <Button
+                        size="small"
+                        variant="text"
+                        onClick={() =>
+                          sessionsListRef.current?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          })
+                        }
+                      >
+                        See all
+                      </Button>
+                    </Stack>
+                    {suggestedLoading ? (
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        sx={{ overflowX: "auto", pb: 1 }}
+                      >
+                        {[...Array(3)].map((_, idx) => (
+                          <Box
+                            key={idx}
+                            sx={{
+                              minWidth: 220,
+                              flex: "0 0 auto",
+                              height: 92,
+                              borderRadius: 2,
+                              bgcolor: "action.hover",
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    ) : (
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        sx={{ overflowX: "auto", pb: 1 }}
+                      >
+                        {suggestedSessions.map((session) => (
+                          <Box key={getSessionId(session)} sx={{ minWidth: 220, flex: "0 0 auto" }}>
+                            <SessionCard
+                              session={session}
+                              onOpen={handleOpenSession}
+                              currentUser={currentUser}
+                              variant="compact"
+                            />
+                          </Box>
+                        ))}
+                      </Stack>
+                    )}
+                  </Stack>
+                </Paper>
+              )}
+
               <SessionsFilterPanel
                 open={filtersOpen}
                 filters={filters}
@@ -1145,7 +1282,7 @@ export default function PlayScreen() {
                 onReset={resetFilters}
               />
 
-              <Stack spacing={0.5}>
+              <Stack spacing={0.5} ref={sessionsListRef}>
                 <Typography variant="body2" color="text.secondary">
                   Showing sessions from {filtersApplied.date_from || filters.dateFrom || "today"}
                   {filtersApplied.date_to ? ` to ${filtersApplied.date_to}` : ""} •{" "}
