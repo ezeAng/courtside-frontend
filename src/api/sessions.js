@@ -61,6 +61,20 @@ export async function fetchSessions(filters = {}, token) {
   return handleResponse(response);
 }
 
+export async function fetchSuggestedSessions({ limit = 5 } = {}, token) {
+  const params = new URLSearchParams();
+  if (limit) params.set("limit", limit);
+  const queryString = params.toString();
+  const response = await fetch(
+    `${base}/api/sessions/suggested${queryString ? `?${queryString}` : ""}`,
+    {
+      method: "GET",
+      headers: optionalAuthHeader(token),
+    }
+  );
+  return handleResponse(response);
+}
+
 export async function fetchMySessions(fromDate, toDate, token) {
   const baseFilters = {
     date_from: fromDate,
