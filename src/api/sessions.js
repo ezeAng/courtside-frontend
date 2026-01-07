@@ -75,6 +75,20 @@ export async function fetchSuggestedSessions({ limit = 5 } = {}, token) {
   return handleResponse(response);
 }
 
+export async function fetchUpcomingSessionReminders({ limit = 2 } = {}, token) {
+  const params = new URLSearchParams();
+  if (limit) params.set("limit", limit);
+  const queryString = params.toString();
+  const response = await fetch(
+    `${base}/api/sessions/reminders/upcoming${queryString ? `?${queryString}` : ""}`,
+    {
+      method: "GET",
+      headers: requireAuthHeader(token),
+    }
+  );
+  return handleResponse(response);
+}
+
 export async function fetchMySessions(fromDate, toDate, token) {
   const baseFilters = {
     date_from: fromDate,
