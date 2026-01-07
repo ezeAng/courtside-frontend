@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -8,9 +7,9 @@ import Chip from "@mui/material/Chip";
 import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
+import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
-import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import SearchIcon from "@mui/icons-material/Search";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -19,74 +18,55 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 const clubs = [
   {
     id: "club-1",
-    name: "5000kms in 2024",
+    name: "Shuttle Sprint Society",
     location: "Singapore",
-    members: "30,284 Cyclists",
-    type: "Cycling",
-    image: "https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=600&q=80",
+    members: "1,284 Players",
+    type: "Badminton",
+    image: "https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "club-2",
-    name: "Solo Runners",
+    name: "Smash & Spin Crew",
     location: "Johor, Malaysia",
-    members: "28,965 Runners",
-    type: "Running",
-    image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80",
+    members: "946 Players",
+    type: "Badminton",
+    image: "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&fit=crop&w=600&q=80",
   },
 ];
 
 function ClubsScreen() {
-  const [tab, setTab] = useState("clubs");
-
   return (
     <Container maxWidth="sm" sx={{ pb: 12, pt: 2 }}>
       <Stack spacing={3}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <SearchIcon />
           <Typography variant="h6" fontWeight={700}>
-            Groups
+            Club
           </Typography>
           <Box width={24} />
         </Stack>
 
-        <Tabs
-          value={tab}
-          onChange={(_, value) => setTab(value)}
-          centered
-          textColor="primary"
-          indicatorColor="primary"
+        <Card
+          sx={{
+            borderRadius: 3,
+            color: "common.white",
+            background:
+              "linear-gradient(135deg, rgba(255,112,67,0.95) 0%, rgba(255,167,38,0.9) 100%)",
+          }}
         >
-          <Tab label="Activity" value="activity" />
-          <Tab label="Challenges" value="challenges" />
-          <Tab label="Clubs" value="clubs" />
-        </Tabs>
-
-        <Card variant="outlined">
           <CardContent>
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              spacing={2}
-            >
-              <Typography fontWeight={600}>
+            <Stack spacing={2}>
+              <Typography variant="h6" fontWeight={700}>
                 Create your own Courtside club
               </Typography>
-              <Button variant="outlined" color="primary">
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Start a badminton community and schedule matches with players nearby.
+              </Typography>
+              <Button variant="contained" color="inherit" sx={{ alignSelf: "flex-start" }}>
                 Create a Club
               </Button>
             </Stack>
           </CardContent>
         </Card>
-
-        <Box
-          sx={{
-            height: 180,
-            borderRadius: 3,
-            background:
-              "linear-gradient(135deg, rgba(255,112,67,0.9) 0%, rgba(255,167,38,0.8) 100%)",
-          }}
-        />
 
         <Card variant="outlined">
           <CardContent>
@@ -94,12 +74,12 @@ function ClubsScreen() {
               <CardMedia
                 component="img"
                 src="https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=120&q=80"
-                alt="Featured club"
+                alt="Featured badminton club"
                 sx={{ width: 64, height: 64, borderRadius: 2 }}
               />
               <Stack spacing={0.5} flex={1}>
                 <Typography variant="h6" fontWeight={700}>
-                  The Courtside Club
+                  Courtside Smash Club
                 </Typography>
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <LocationOnIcon fontSize="small" color="action" />
@@ -108,7 +88,7 @@ function ClubsScreen() {
                   </Typography>
                 </Stack>
                 <Typography color="text.secondary" variant="body2">
-                  6,669,609 Athletes
+                  2,340 Players
                 </Typography>
               </Stack>
             </Stack>
@@ -130,6 +110,17 @@ function ClubsScreen() {
               Popular Clubs Near You
             </Typography>
           </Stack>
+          <TextField
+            placeholder="Search clubs near you"
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
           <Divider />
           <Grid container spacing={2}>
             {clubs.map((club) => (
