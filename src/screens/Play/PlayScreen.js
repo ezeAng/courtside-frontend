@@ -4,17 +4,14 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   Collapse,
   Container,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   FormControlLabel,
   IconButton,
-  LinearProgress,
   MenuItem,
   Paper,
   Skeleton,
@@ -30,9 +27,9 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import GroupsIcon from "@mui/icons-material/Groups";
 import CompetitionsScreen from "../Competitions/CompetitionsScreen";
 import SessionDetailsModal from "../../components/SessionDetailsModal";
+import SessionCard from "../../components/SessionCard";
 import RecordMatchModal from "../Matches/RecordMatchModal";
 import {
   createSession,
@@ -46,188 +43,16 @@ import {
 } from "../../api/sessions";
 import { getStoredToken } from "../../services/storage";
 import {
-  buildLocationLabel,
   deriveRecordMatchPrefill,
-  formatDateTime,
   getCapacity,
-  getFormatLabel,
-  getHostAuthId,
-  getJoinedCount,
   getSessionDate,
   getSessionId,
   getSessionTime,
   getSkillRange,
-  isWithin24Hours,
   normalizeSessionDetail,
 } from "../../utils/sessionUtils";
-import { getPlayerAuthId } from "../../utils/matchPlayers";
 
 const PLAY_TAB_STORAGE_KEY = "play-tab-selection";
-
-const SessionCard = ({ session, onOpen, currentUser, variant = "full" }) => {
-  const theme = useTheme();
-  const sessionDate = getSessionDate(session);
-  const sessionTime = getSessionTime(session);
-  const joinedCount = getJoinedCount(session);
-  const capacity = getCapacity(session);
-  const isFull = capacity > 0 && joinedCount >= capacity;
-  const highlight = !isFull && isWithin24Hours(sessionDate, sessionTime);
-  const isCompact = variant === "compact";
-  const capacityProgress =
-    capacity > 0 ? Math.min(100, (joinedCount / capacity) * 100) : 0;
-  const locationLabel = buildLocationLabel(session);
-  const currentUserId = currentUser?.auth_id || currentUser?.id;
-  const hostAuthId = getHostAuthId(session);
-  const isHost = currentUserId && hostAuthId && String(hostAuthId) === String(currentUserId);
-  const isJoined =
-    session?.is_joined ??
-    session?.joined_by_me ??
-    session?.joined_by_current_user ??
-    session?.participants?.some(
-      (p) => currentUserId && String(getPlayerAuthId(p)) === String(currentUserId)
-    );
-
-  const skillRange = getSkillRange(session);
-  const formatLabel = getFormatLabel(session?.format);
-  const formatValue = (session?.format || "").toString().toLowerCase();
-  const isDoublesFormat = formatValue === "doubles";
-  const suggestionLabel =
-    session?.suggestion_label ||
-    session?.suggestion_reason ||
-    session?.suggested_reason ||
-    "";
-
-  return (
-    <Box
-      onClick={() => onOpen(session)}
-      sx={{
-        p: isCompact ? 2 : 3,
-        borderRadius: 2,
-        border: `1px solid ${
-          highlight ? theme.palette.primary.main : theme.palette.divider
-        }`,
-        backgroundColor: isFull ? "action.hover" : "background.paper",
-        opacity: isFull ? 0.7 : 1,
-        boxShadow: theme.custom?.colors?.shadows?.sm,
-        cursor: "pointer",
-      }}
-    >
-      {isCompact ? (
-        <Stack spacing={1}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack spacing={0.25}>
-              <Typography variant="subtitle2" color="text.secondary">
-                {formatDateTime(sessionDate, sessionTime)}
-              </Typography>
-              {locationLabel && (
-                <Typography variant="body2" color="text.secondary">
-                  {locationLabel}
-                </Typography>
-              )}
-            </Stack>
-            <Chip
-              size="small"
-              label={formatLabel}
-              color={isDoublesFormat ? "primary" : "default"}
-              icon={<GroupsIcon fontSize="small" />}
-            />
-          </Stack>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="caption" color="text.secondary">
-              Capacity
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {joinedCount} / {capacity || "—"}
-            </Typography>
-          </Stack>
-          {suggestionLabel && (
-            <Typography variant="caption" color="text.secondary">
-              {suggestionLabel}
-            </Typography>
-          )}
-        </Stack>
-      ) : (
-        <Stack spacing={1.5}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack spacing={0.5}>
-              <Typography variant="subtitle2" color="text.secondary">
-                {formatDateTime(sessionDate, sessionTime)}
-              </Typography>
-              <Typography variant="h6" fontWeight={700}>
-                {session?.title || formatLabel}
-              </Typography>
-              {locationLabel && (
-                <Typography variant="body2" color="text.secondary">
-                  {locationLabel}
-                </Typography>
-              )}
-            </Stack>
-            <Stack spacing={1} alignItems="flex-end">
-              <Chip
-                size="small"
-                label={formatLabel}
-                color={isDoublesFormat ? "primary" : "default"}
-                icon={<GroupsIcon fontSize="small" />}
-              />
-              <Stack direction="row" spacing={0.5}>
-                {isHost && <Chip size="small" color="success" label="Host" />}
-                {isJoined && !isHost && (
-                  <Chip size="small" color="primary" variant="outlined" label="Joined" />
-                )}
-                {isFull && <Chip size="small" color="default" label="Full" />}
-                {highlight && !isFull && (
-                  <Chip
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    label="Starts within 24h"
-                  />
-                )}
-              </Stack>
-            </Stack>
-          </Stack>
-
-          <Stack spacing={0.5}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="body2" fontWeight={600}>
-                Capacity
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {joinedCount} / {capacity || "—"}
-              </Typography>
-            </Stack>
-            <LinearProgress
-              variant="determinate"
-              value={capacityProgress}
-              color={isFull ? "inherit" : "primary"}
-              sx={{ height: 8, borderRadius: 999 }}
-            />
-          </Stack>
-
-          {skillRange && (
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              justifyContent="space-between"
-              alignItems={{ xs: "flex-start", sm: "center" }}
-            >
-              <Chip
-                label={`Elo ${skillRange.min ?? "Any"}–${skillRange.max ?? "Any"}`}
-                variant="outlined"
-                size="small"
-              />
-              {session?.host_username && (
-                <Typography variant="body2" color="text.secondary">
-                  Host: {session.host_username}
-                </Typography>
-              )}
-            </Stack>
-          )}
-        </Stack>
-      )}
-    </Box>
-  );
-};
 
 const CreateSessionModal = ({ open, onClose, onCreated }) => {
   const theme = useTheme();

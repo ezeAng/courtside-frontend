@@ -21,6 +21,15 @@ import Avatar from "@mui/material/Avatar";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getEloForMode } from "../../utils/elo";
 import { setEloMode } from "../../features/ui/uiSlice";
+import SessionCard from "../../components/SessionCard";
+import SessionDetailsModal from "../../components/SessionDetailsModal";
+import {
+  fetchSessionDetails,
+  fetchUpcomingSessionReminders,
+  joinSession,
+  leaveSession,
+} from "../../api/sessions";
+import { getSessionId, normalizeSessionDetail } from "../../utils/sessionUtils";
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -35,6 +44,14 @@ function HomeScreen() {
   const [overall, setOverall] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [upcomingLoading, setUpcomingLoading] = useState(false);
+  const [upcomingError, setUpcomingError] = useState(null);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [selectedSessionDetails, setSelectedSessionDetails] = useState(null);
+  const [sessionDetailsLoading, setSessionDetailsLoading] = useState(false);
+  const [sessionActionLoading, setSessionActionLoading] = useState(false);
+  const [sessionActionError, setSessionActionError] = useState("");
   const handleSelectEloMode = useCallback(
     (mode) => dispatch(setEloMode(mode)),
     [dispatch]
@@ -72,6 +89,25 @@ function HomeScreen() {
       dispatch(fetchCurrentUser(token));
     }
   }, [dispatch, token]);
+
+  const loadUpcomingSessions = useCallback(async () => {
+    if (!token) return;
+    try {
+      setUpcomingLoading(true);
+      setUpcomingError(null);
+      const payload = await fetchUpcomingSessionReminders({ limit: 2 }, token);
+      setUpcomingSessions(payload?.reminders || []);
+    } catch (err) {
+      setUpcomingError(err?.message || "Unable to load upcoming sessions.");
+      setUpcomingSessions([]);
+    } finally {
+      setUpcomingLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadUpcomingSessions();
+  }, [loadUpcomingSessions]);
 
   const overallEloValue = useMemo(
     () =>
@@ -157,11 +193,76 @@ function HomeScreen() {
     navigate("/matches");
   };
 
+  const handleOpenSession = useCallback(
+    async (session) => {
+      const sessionId = getSessionId(session);
+      if (!sessionId) return;
+      setSelectedSessionId(sessionId);
+      setSelectedSessionDetails(null);
+      setSessionActionError("");
+      setSessionDetailsLoading(true);
+      try {
+        const detail = await fetchSessionDetails(sessionId, token);
+        setSelectedSessionDetails(normalizeSessionDetail(detail));
+      } catch (err) {
+        setSessionActionError(err?.message || "Unable to load session details.");
+      } finally {
+        setSessionDetailsLoading(false);
+      }
+    },
+    [token]
+  );
+
+  const handleCloseSession = () => {
+    setSelectedSessionId(null);
+    setSelectedSessionDetails(null);
+    setSessionActionError("");
+  };
+
+  const handleJoinSession = async (session) => {
+    const sessionId = getSessionId(session);
+    if (!sessionId) return;
+    setSessionActionError("");
+    setSessionActionLoading(true);
+    try {
+      await joinSession(sessionId, token);
+      await handleOpenSession(session);
+      await loadUpcomingSessions();
+    } catch (err) {
+      setSessionActionError(err?.message || "Failed to join session.");
+    } finally {
+      setSessionActionLoading(false);
+    }
+  };
+
+  const handleLeaveSession = async (session) => {
+    const sessionId = getSessionId(session);
+    if (!sessionId) return;
+    setSessionActionError("");
+    setSessionActionLoading(true);
+    try {
+      await leaveSession(sessionId, token);
+      await handleOpenSession(session);
+      await loadUpcomingSessions();
+    } catch (err) {
+      setSessionActionError(err?.message || "Failed to leave session.");
+    } finally {
+      setSessionActionLoading(false);
+    }
+  };
+
 
   const totalMatches = useMemo(() => {
     if (!stats) return 0;
     return stats?.stats?.total_matches || stats.totalMatches || 0;
   }, [stats]);
+
+  const selectedSessionFromList = useMemo(
+    () => upcomingSessions.find((session) => getSessionId(session) === selectedSessionId),
+    [upcomingSessions, selectedSessionId]
+  );
+
+  const resolvedSession = selectedSessionDetails || selectedSessionFromList;
 
   const overallWinRate = useMemo(() => {
     if (!stats) return null;
@@ -387,6 +488,57 @@ function HomeScreen() {
         
         <Container sx={{ height: "100%", paddingHorizontal: "5%", paddingBottom: "15%" }}>
           <Stack spacing="5%">
+            <Card variant="outlined" sx={{ height: "100%", padding: "2px" }}>
+              <CardContent>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  mb={2}
+                >
+                  <Typography variant="h6" fontWeight={700}>
+                    Upcoming sessions
+                  </Typography>
+                  <Chip
+                    label="View all"
+                    size="small"
+                    variant="outlined"
+                    onClick={() => navigate("/play")}
+                    sx={{ cursor: "pointer" }}
+                  />
+                </Stack>
+                {upcomingLoading && (
+                  <Stack spacing={1.5}>
+                    {[...Array(2)].map((_, index) => (
+                      <Skeleton key={index} variant="rounded" height={72} />
+                    ))}
+                  </Stack>
+                )}
+                {!upcomingLoading && upcomingError && (
+                  <Typography color="error" variant="body2">
+                    {upcomingError}
+                  </Typography>
+                )}
+                {!upcomingLoading && !upcomingError && upcomingSessions.length === 0 && (
+                  <Typography color="text.secondary">
+                    No upcoming sessions yet.
+                  </Typography>
+                )}
+                {!upcomingLoading && upcomingSessions.length > 0 && (
+                  <Stack spacing={1.5}>
+                    {upcomingSessions.map((session) => (
+                      <SessionCard
+                        key={getSessionId(session)}
+                        session={session}
+                        onOpen={handleOpenSession}
+                        currentUser={user}
+                        variant="compact"
+                      />
+                    ))}
+                  </Stack>
+                )}
+              </CardContent>
+            </Card>
             <Card variant="outlined" sx={{ height: "100%", padding: "2px"}}>
               <CardContent>
                 <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -599,6 +751,19 @@ function HomeScreen() {
           </Stack>
           
         </Container>
+
+        <SessionDetailsModal
+          open={Boolean(resolvedSession)}
+          session={resolvedSession}
+          loading={sessionDetailsLoading}
+          onClose={handleCloseSession}
+          onJoin={handleJoinSession}
+          onLeave={handleLeaveSession}
+          onRecordMatch={handleRecordMatch}
+          currentUser={user}
+          actionLoading={sessionActionLoading}
+          actionError={sessionActionError}
+        />
 
         
 
