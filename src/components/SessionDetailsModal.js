@@ -116,9 +116,9 @@ const SessionDetailsModal = ({
         },
       }}
     >
-      <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <DialogTitle component="div" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <EventAvailableIcon color="primary" />
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
           {session?.title || formatLabel}
         </Typography>
         <Chip

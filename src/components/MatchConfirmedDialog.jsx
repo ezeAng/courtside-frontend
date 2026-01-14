@@ -188,7 +188,7 @@ export default function MatchConfirmedDialog({
                         : "text.secondary";
 
                     return (
-                      <Grid item xs={12} key={p.auth_id}>
+                      <Grid size={{ xs: 12 }} key={p.auth_id}>
                         <Box
                           sx={{
                             px: 2,

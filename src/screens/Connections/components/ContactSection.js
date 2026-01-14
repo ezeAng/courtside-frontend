@@ -24,7 +24,7 @@ function ContactRow({ icon, label, value, href }) {
     >
       {/* Icon */}
       <Grid
-        item
+        size="auto"
         sx={{
           display: "flex",
           alignItems: "center",
@@ -35,14 +35,14 @@ function ContactRow({ icon, label, value, href }) {
       </Grid>
 
       {/* Label */}
-      <Grid item xs={4}>
+      <Grid size={{ xs: 4 }}>
         <Typography variant="body2" color="text.secondary">
           {label}
         </Typography>
       </Grid>
 
       {/* Value (tap to copy) */}
-      <Grid item xs>
+      <Grid size="grow">
         <Box
           component={href ? "a" : "div"}
           href={href}

@@ -188,7 +188,7 @@ function SettingsScreen() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4, pb: 10 }}>
+    <Container maxWidth="sm" sx={{ py: 6, pb: 18 }}>
       <Stack spacing={3}>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography variant="h5" fontWeight={700}>

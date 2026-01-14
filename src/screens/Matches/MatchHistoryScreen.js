@@ -573,6 +573,7 @@ function MatchHistoryScreen() {
                           </Stack>
                         </Stack>
                       }
+                      secondaryTypographyProps={{ component: "div" }}
                     />
                   </ListItemButton>
                 );

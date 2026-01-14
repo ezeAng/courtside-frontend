@@ -591,12 +591,12 @@ function HomeScreen() {
                   <Stack spacing={2}>
                     {[...Array(2)].map((_, idx) => (
                       <Grid container spacing={2} key={idx}>
-                        <Grid item xs={6}>
+                        <Grid size={{ xs: 6 }}>
                           <Skeleton variant="text" width="60%" />
                           <Skeleton variant="text" width="50%" />
                           <Skeleton variant="text" width="70%" />
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid size={{ xs: 6 }}>
                           <Skeleton variant="text" width="55%" />
                           <Skeleton variant="text" width="40%" />
                           <Skeleton variant="text" width="70%" />
@@ -620,7 +620,7 @@ function HomeScreen() {
                 {stats && (
                   <Stack spacing={3}>
                     <Grid container spacing={2}>
-                      <Grid item xs={6}>
+                      <Grid size={{ xs: 6 }}>
                         <Typography color="text.secondary" variant="body2">
                           Record
                         </Typography>
@@ -633,7 +633,7 @@ function HomeScreen() {
                           </Typography>
                         )}
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid size={{ xs: 6 }}>
                         <Typography color="text.secondary" variant="body2">
                           Total Matches
                         </Typography>
@@ -689,8 +689,7 @@ function HomeScreen() {
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid
-                        item
-                        xs={6}
+                        size={{ xs: 6 }}
                         onClick={() => handleSelectEloMode("singles")}
                         sx={{ cursor: "pointer" }}
                       >
@@ -705,8 +704,7 @@ function HomeScreen() {
                         </Typography>
                       </Grid>
                       <Grid
-                        item
-                        xs={6}
+                        size={{ xs: 6 }}
                         onClick={() => handleSelectEloMode("doubles")}
                         sx={{ cursor: "pointer" }}
                       >

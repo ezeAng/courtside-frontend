@@ -136,6 +136,9 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
         description: form.description || undefined,
         session_end_time: form.session_end_time,
         is_public: Boolean(form.is_public),
+        source: "user_created",
+        session_type: null,
+        club_id: null,
       };
       await createSession(payload, token);
       onCreated?.();
@@ -163,8 +166,13 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
         },
       }}
     >
-      <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h6">Create Session</Typography>
+      <DialogTitle
+        component="div"
+        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+      >
+        <Typography variant="h6" component="h2">
+          Create Session
+        </Typography>
         <IconButton onClick={onClose} size="small">
           <CloseIcon fontSize="small" />
         </IconButton>
@@ -177,6 +185,7 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
             value={form.title}
             onChange={handleChange("title")}
             fullWidth
+            autoFocus
           />
           <TextField
             label="Description"
@@ -450,9 +459,12 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
       }}
     >
       <DialogTitle
+        component="div"
         sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
       >
-        <Typography variant="h6">Edit Session</Typography>
+        <Typography variant="h6" component="h2">
+          Edit Session
+        </Typography>
         <IconButton onClick={onClose} size="small">
           <CloseIcon fontSize="small" />
         </IconButton>
@@ -465,6 +477,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
             value={form.title}
             onChange={handleChange("title")}
             fullWidth
+            autoFocus
           />
           <TextField
             label="Description"
@@ -706,7 +719,11 @@ const SessionsFilterPanel = ({
 export default function PlayScreen() {
   const today = new Date().toISOString().split("T")[0];
   const [tab, setTab] = useState(
-    () => localStorage.getItem(PLAY_TAB_STORAGE_KEY) || "sessions"
+    () => {
+      const savedTab = localStorage.getItem(PLAY_TAB_STORAGE_KEY);
+      if (savedTab === "leagues") return "tournaments";
+      return savedTab || "sessions";
+    }
   );
   const [sessions, setSessions] = useState([]);
   const [suggestedSessions, setSuggestedSessions] = useState([]);
@@ -744,6 +761,10 @@ export default function PlayScreen() {
   const currentUser = useSelector((state) => state.user.user);
 
   useEffect(() => {
+    if (tab === "leagues") {
+      setTab("tournaments");
+      return;
+    }
     localStorage.setItem(PLAY_TAB_STORAGE_KEY, tab);
   }, [tab]);
 
@@ -1042,7 +1063,6 @@ export default function PlayScreen() {
           >
             <Tab label="Sessions" value="sessions" />
             <Tab label="Tournaments" value="tournaments" />
-            <Tab label="Leagues" value="leagues" />
           </Tabs>
 
           {tab === "sessions" ? (
@@ -1181,7 +1201,7 @@ export default function PlayScreen() {
             </Stack>
           ) : (
             <CompetitionsScreen
-              tab={tab === "tournaments" ? "tournaments" : "leagues"}
+              tab="tournaments"
               allowTabSwitching={false}
             />
           )}

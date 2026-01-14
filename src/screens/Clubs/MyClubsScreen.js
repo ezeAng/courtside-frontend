@@ -2,21 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardActionArea from "@mui/material/CardActionArea";
-import CardContent from "@mui/material/CardContent";
-import CardMedia from "@mui/material/CardMedia";
-import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import LockIcon from "@mui/icons-material/Lock";
 import { fetchMyClubs } from "../../api/clubs";
+import ClubCard from "../../components/ClubCard";
 
 const getClubId = (club) => club?.id || club?.club_id;
 
@@ -76,51 +70,18 @@ function MyClubsScreen() {
         const emblem = getClubEmblem(club);
         const role = getClubRole(club);
         return (
-          <Grid item xs={6} key={clubId || club.name}>
-            <Card variant="outlined" sx={{ height: "100%", borderRadius: 3 }}>
-              <CardActionArea onClick={() => clubId && navigate(`/clubs/${clubId}`)}>
-                {emblem ? (
-                  <CardMedia component="img" height="120" image={emblem} alt={club.name} />
-                ) : (
-                  <Box
-                    sx={{
-                      height: 120,
-                      bgcolor: "grey.200",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Typography variant="subtitle2" color="text.secondary">
-                      No emblem
-                    </Typography>
-                  </Box>
-                )}
-                <CardContent sx={{ p: 2 }}>
-                  <Stack spacing={1}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Typography variant="subtitle1" fontWeight={700} noWrap>
-                        {club.name || "Untitled Club"}
-                      </Typography>
-                      {isPrivate && <LockIcon fontSize="small" color="action" />}
-                    </Stack>
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                      {getClubShortDescription(club)}
-                    </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                      <Chip label={visibility} size="small" />
-                      {getClubCadence(club) && (
-                        <Chip label={getClubCadence(club)} size="small" variant="outlined" />
-                      )}
-                      {role && <Chip label={role} size="small" color="primary" />}
-                    </Stack>
-                    <Typography variant="body2" color="text.secondary">
-                      {getClubMemberCount(club)} members
-                    </Typography>
-                  </Stack>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+          <Grid size={{ xs: 12, sm: 6 }} key={clubId || club.name}>
+            <ClubCard
+              name={club.name}
+              description={getClubShortDescription(club)}
+              visibility={visibility}
+              cadence={getClubCadence(club)}
+              memberCount={getClubMemberCount(club)}
+              emblem={emblem}
+              isPrivate={isPrivate}
+              role={role}
+              onClick={() => clubId && navigate(`/clubs/${clubId}`)}
+            />
           </Grid>
         );
       }),
@@ -164,7 +125,7 @@ function MyClubsScreen() {
             No clubs yet
           </Typography>
         )}
-        {!loading && !error && !empty && <Grid container spacing={2}>{clubCards}</Grid>}
+        {!loading && !error && !empty && <Grid container spacing={3}>{clubCards}</Grid>}
       </Stack>
     </Container>
   );

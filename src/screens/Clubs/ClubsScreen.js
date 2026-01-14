@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
-import CardMedia from "@mui/material/CardMedia";
-import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
 import Dialog from "@mui/material/Dialog";
@@ -24,8 +20,8 @@ import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import LockIcon from "@mui/icons-material/Lock";
 import { createClub, fetchClubs, searchClubs } from "../../api/clubs";
+import ClubCard from "../../components/ClubCard";
 
 const visibilityOptions = [
   { label: "Public", value: "public" },
@@ -133,6 +129,7 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
             value={form.name}
             onChange={handleChange}
             fullWidth
+            autoFocus
           />
           <TextField
             label="Description"
@@ -288,50 +285,17 @@ function ClubsScreen() {
       const isPrivate = visibility === "private";
       const emblem = getClubEmblem(club);
       return (
-        <Grid item xs={6} key={clubId || club.name}>
-          <Card variant="outlined" sx={{ height: "100%", borderRadius: 3 }}>
-            <CardActionArea onClick={() => clubId && navigate(`/clubs/${clubId}`)}>
-              {emblem ? (
-                <CardMedia component="img" height="120" image={emblem} alt={club.name} />
-              ) : (
-                <Box
-                  sx={{
-                    height: 120,
-                    bgcolor: "grey.200",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography variant="subtitle2" color="text.secondary">
-                    No emblem
-                  </Typography>
-                </Box>
-              )}
-              <CardContent sx={{ p: 2 }}>
-                <Stack spacing={1}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Typography variant="subtitle1" fontWeight={700} noWrap>
-                      {club.name || "Untitled Club"}
-                    </Typography>
-                    {isPrivate && <LockIcon fontSize="small" color="action" />}
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary" noWrap>
-                    {getClubShortDescription(club)}
-                  </Typography>
-                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                    <Chip label={visibility} size="small" />
-                    {getClubCadence(club) && (
-                      <Chip label={getClubCadence(club)} size="small" variant="outlined" />
-                    )}
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    {getClubMemberCount(club)} members
-                  </Typography>
-                </Stack>
-              </CardContent>
-            </CardActionArea>
-          </Card>
+        <Grid size={{ xs: 12, sm: 6 }} key={clubId || club.name}>
+          <ClubCard
+            name={club.name}
+            description={getClubShortDescription(club)}
+            visibility={visibility}
+            cadence={getClubCadence(club)}
+            memberCount={getClubMemberCount(club)}
+            emblem={emblem}
+            isPrivate={isPrivate}
+            onClick={() => clubId && navigate(`/clubs/${clubId}`)}
+          />
         </Grid>
       );
     });
@@ -362,16 +326,24 @@ function ClubsScreen() {
             background:
               "linear-gradient(135deg, rgba(16,106,82,0.98) 0%, rgba(46,156,122,0.94) 55%, rgba(98,196,154,0.92) 100%)",
             boxShadow: "0px 18px 32px -20px rgba(16, 106, 82, 0.7)",
+            minHeight: 220,
           }}
         >
-          <CardContent sx={{ p: 3 }}>
-            <Stack spacing={2}>
-              <Typography variant="h6" fontWeight={700}>
-                Create your own Courtside club
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Start a badminton community and schedule matches with players nearby.
-              </Typography>
+          <CardContent sx={{ px: 4, py: 4.5, height: "100%" }}>
+            <Stack
+              spacing={2.5}
+              sx={{ height: "100%" }}
+              justifyContent="center"
+              alignItems="flex-start"
+            >
+              <Stack spacing={2} sx={{ textAlign: "left" }}>
+                <Typography variant="h6" fontWeight={700}>
+                  Create your own Courtside club
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  Start a badminton community and schedule matches with players nearby.
+                </Typography>
+              </Stack>
               {canCreateClub && (
                 <Button
                   variant="contained"
@@ -381,8 +353,9 @@ function ClubsScreen() {
                     bgcolor: "common.white",
                     color: "success.dark",
                     fontWeight: 700,
-                    px: 3,
-                    py: 1,
+                    px: 4,
+                    py: 1.5,
+                    fontSize: "0.95rem",
                     borderRadius: 999,
                     "&:hover": {
                       bgcolor: "grey.100",
@@ -446,7 +419,7 @@ function ClubsScreen() {
             </Typography>
           )}
           {!listLoading && !listError && !listEmpty && (
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               {clubCards}
             </Grid>
           )}
