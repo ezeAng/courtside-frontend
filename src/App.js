@@ -18,6 +18,8 @@ import MatchDetailScreen from "./screens/Matches/MatchDetailScreen";
 import PendingMatchesScreen from "./screens/Matches/PendingMatchesScreen";
 import LeaderboardScreen from "./screens/Leaderboard/LeaderboardScreen";
 import ClubsScreen from "./screens/Clubs/ClubsScreen";
+import ClubDetailScreen from "./screens/Clubs/ClubDetailScreen";
+import MyClubsScreen from "./screens/Clubs/MyClubsScreen";
 import SettingsScreen from "./screens/Settings/SettingsScreen";
 import AppSettingsScreen from "./screens/Settings/AppSettingsScreen";
 import SplashScreen from "./screens/SplashScreen";
@@ -87,6 +89,8 @@ function App() {
           <Route path="/matches/pending" element={<PendingMatchesScreen />} />
           <Route path="/play" element={<PlayScreen />} />
           <Route path="/clubs" element={<ClubsScreen />} />
+          <Route path="/clubs/my" element={<MyClubsScreen />} />
+          <Route path="/clubs/:club_id" element={<ClubDetailScreen />} />
           <Route path="/competitions" element={<Navigate to="/play" replace />} />
           <Route path="/matches/:match_id" element={<MatchDetailScreen />} />
           <Route path="/leaderboard" element={<LeaderboardScreen />} />
