@@ -51,13 +51,24 @@ export async function fetchClubDetails(clubId, token) {
 }
 
 export async function createClub(payload, token) {
+  const rpcPayload = {
+    p_name: payload?.p_name ?? payload?.name ?? "",
+    p_description: payload?.p_description ?? payload?.description ?? "",
+    p_emblem_url: payload?.p_emblem_url ?? payload?.emblem_url ?? "",
+    p_visibility: payload?.p_visibility ?? payload?.visibility ?? "public",
+    p_max_members: payload?.p_max_members ?? payload?.max_members ?? null,
+    p_playing_cadence:
+      payload?.p_playing_cadence ?? payload?.playing_cadence ?? payload?.cadence ?? null,
+    p_usual_venues: payload?.p_usual_venues ?? payload?.usual_venues ?? null,
+    p_contact_info: payload?.p_contact_info ?? payload?.contact_info ?? null,
+  };
   const response = await fetch(`${base}/api/clubs`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...requireAuthHeader(token),
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(rpcPayload),
   });
   return handleResponse(response);
 }
