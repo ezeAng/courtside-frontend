@@ -56,11 +56,13 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
   const token = useSelector((state) => state.auth.accessToken);
   const [form, setForm] = useState({
     name: "",
-    short_description: "",
     description: "",
-    cadence: "",
+    playing_cadence: "",
     visibility: "public",
     emblem_url: "",
+    max_members: "",
+    usual_venues: "",
+    contact_info: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -69,11 +71,13 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
     if (!open) {
       setForm({
         name: "",
-        short_description: "",
         description: "",
-        cadence: "",
+        playing_cadence: "",
         visibility: "public",
         emblem_url: "",
+        max_members: "",
+        usual_venues: "",
+        contact_info: "",
       });
       setError("");
       setSubmitting(false);
@@ -89,13 +93,19 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
     setSubmitting(true);
     setError("");
     try {
+      const maxMembersValue =
+        form.max_members === "" ? null : Number.isNaN(Number(form.max_members))
+          ? null
+          : Number(form.max_members);
       const payload = {
-        name: form.name,
-        short_description: form.short_description,
-        description: form.description,
-        cadence: form.cadence,
-        visibility: form.visibility,
-        emblem_url: form.emblem_url,
+        p_name: form.name,
+        p_description: form.description,
+        p_emblem_url: form.emblem_url,
+        p_visibility: form.visibility,
+        p_max_members: maxMembersValue,
+        p_playing_cadence: form.playing_cadence,
+        p_usual_venues: form.usual_venues,
+        p_contact_info: form.contact_info,
       };
       const response = await createClub(payload, token);
       const clubId = response?.id || response?.club_id || response?.club?.id;
@@ -125,13 +135,6 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
             fullWidth
           />
           <TextField
-            label="Short description"
-            name="short_description"
-            value={form.short_description}
-            onChange={handleChange}
-            fullWidth
-          />
-          <TextField
             label="Description"
             name="description"
             value={form.description}
@@ -141,9 +144,9 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
             minRows={3}
           />
           <TextField
-            label="Cadence"
-            name="cadence"
-            value={form.cadence}
+            label="Playing cadence"
+            name="playing_cadence"
+            value={form.playing_cadence}
             onChange={handleChange}
             fullWidth
           />
@@ -165,6 +168,29 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
             label="Emblem URL"
             name="emblem_url"
             value={form.emblem_url}
+            onChange={handleChange}
+            fullWidth
+          />
+          <TextField
+            label="Max members"
+            name="max_members"
+            value={form.max_members}
+            onChange={handleChange}
+            fullWidth
+            type="number"
+            inputProps={{ min: 1 }}
+          />
+          <TextField
+            label="Usual venues"
+            name="usual_venues"
+            value={form.usual_venues}
+            onChange={handleChange}
+            fullWidth
+          />
+          <TextField
+            label="Contact info"
+            name="contact_info"
+            value={form.contact_info}
             onChange={handleChange}
             fullWidth
           />
