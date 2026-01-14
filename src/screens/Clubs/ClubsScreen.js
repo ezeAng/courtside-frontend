@@ -1,39 +1,322 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
 import SearchIcon from "@mui/icons-material/Search";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import LockIcon from "@mui/icons-material/Lock";
+import { createClub, fetchClubs, searchClubs } from "../../api/clubs";
 
-const clubs = [
-  {
-    id: "club-1",
-    name: "Shuttle Sprint Society",
-    location: "Singapore",
-    members: "1,284 Players",
-    type: "Badminton",
-    image: "https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: "club-2",
-    name: "Smash & Spin Crew",
-    location: "Johor, Malaysia",
-    members: "946 Players",
-    type: "Badminton",
-    image: "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&fit=crop&w=600&q=80",
-  },
+const visibilityOptions = [
+  { label: "Public", value: "public" },
+  { label: "Private", value: "private" },
 ];
 
+const getClubId = (club) => club?.id || club?.club_id;
+
+const getClubVisibility = (club) => {
+  if (club?.visibility) return club.visibility;
+  if (club?.is_private !== undefined) return club.is_private ? "private" : "public";
+  if (club?.is_public !== undefined) return club.is_public ? "public" : "private";
+  return "public";
+};
+
+const getClubEmblem = (club) =>
+  club?.emblem_url || club?.emblem || club?.logo_url || club?.image_url || "";
+
+const getClubMemberCount = (club) =>
+  club?.member_count ?? club?.members_count ?? club?.members?.length ?? 0;
+
+const getClubShortDescription = (club) =>
+  club?.short_description || club?.shortDescription || club?.description || "";
+
+const getClubCadence = (club) => club?.cadence || club?.meeting_cadence || "";
+
+const CreateClubModal = ({ open, onClose, onCreated }) => {
+  const token = useSelector((state) => state.auth.accessToken);
+  const [form, setForm] = useState({
+    name: "",
+    short_description: "",
+    description: "",
+    cadence: "",
+    visibility: "public",
+    emblem_url: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) {
+      setForm({
+        name: "",
+        short_description: "",
+        description: "",
+        cadence: "",
+        visibility: "public",
+        emblem_url: "",
+      });
+      setError("");
+      setSubmitting(false);
+    }
+  }, [open]);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setError("");
+    try {
+      const payload = {
+        name: form.name,
+        short_description: form.short_description,
+        description: form.description,
+        cadence: form.cadence,
+        visibility: form.visibility,
+        emblem_url: form.emblem_url,
+      };
+      const response = await createClub(payload, token);
+      const clubId = response?.id || response?.club_id || response?.club?.id;
+      if (clubId) {
+        onCreated(clubId);
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      setError(err.message || "Failed to create club");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Create Club</DialogTitle>
+      <DialogContent sx={{ pt: 2 }}>
+        <Stack spacing={2} sx={{ mt: 1 }}>
+          {error && <Alert severity="error">{error}</Alert>}
+          <TextField
+            label="Club name"
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            fullWidth
+          />
+          <TextField
+            label="Short description"
+            name="short_description"
+            value={form.short_description}
+            onChange={handleChange}
+            fullWidth
+          />
+          <TextField
+            label="Description"
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            fullWidth
+            multiline
+            minRows={3}
+          />
+          <TextField
+            label="Cadence"
+            name="cadence"
+            value={form.cadence}
+            onChange={handleChange}
+            fullWidth
+          />
+          <TextField
+            select
+            label="Visibility"
+            name="visibility"
+            value={form.visibility}
+            onChange={handleChange}
+            fullWidth
+          >
+            {visibilityOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label="Emblem URL"
+            name="emblem_url"
+            value={form.emblem_url}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose} disabled={submitting}>
+          Cancel
+        </Button>
+        <Button variant="contained" onClick={handleSubmit} disabled={submitting}>
+          {submitting ? "Creating..." : "Create Club"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 function ClubsScreen() {
+  const navigate = useNavigate();
+  const token = useSelector((state) => state.auth.accessToken);
+  const user = useSelector((state) => state.user.user);
+  const [clubs, setClubs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const canCreateClub =
+    user?.membership_tier === "pro" && user?.is_premium === true;
+
+  const loadClubs = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const payload = await fetchClubs(token);
+      const list = Array.isArray(payload) ? payload : payload?.clubs || payload?.items || [];
+      setClubs(list);
+    } catch (err) {
+      setError(err.message || "Failed to load clubs");
+      setClubs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  const runSearch = useCallback(
+    async (query) => {
+      if (!query) {
+        setSearchResults([]);
+        setSearchError("");
+        setSearchLoading(false);
+        return;
+      }
+      setSearchLoading(true);
+      setSearchError("");
+      try {
+        const payload = await searchClubs(query, token);
+        const list = Array.isArray(payload) ? payload : payload?.clubs || payload?.items || [];
+        setSearchResults(list);
+      } catch (err) {
+        setSearchError(err.message || "Failed to search clubs");
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    },
+    [token]
+  );
+
+  useEffect(() => {
+    loadClubs();
+  }, [loadClubs]);
+
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) {
+      setSearchResults([]);
+      setSearchError("");
+      return;
+    }
+    const timeout = setTimeout(() => {
+      runSearch(trimmed);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, runSearch]);
+
+  const clubCards = useMemo(() => {
+    const list = searchQuery.trim() ? searchResults : clubs;
+    return list.map((club) => {
+      const clubId = getClubId(club);
+      const visibility = getClubVisibility(club);
+      const isPrivate = visibility === "private";
+      const emblem = getClubEmblem(club);
+      return (
+        <Grid item xs={6} key={clubId || club.name}>
+          <Card variant="outlined" sx={{ height: "100%", borderRadius: 3 }}>
+            <CardActionArea onClick={() => clubId && navigate(`/clubs/${clubId}`)}>
+              {emblem ? (
+                <CardMedia component="img" height="120" image={emblem} alt={club.name} />
+              ) : (
+                <Box
+                  sx={{
+                    height: 120,
+                    bgcolor: "grey.200",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Typography variant="subtitle2" color="text.secondary">
+                    No emblem
+                  </Typography>
+                </Box>
+              )}
+              <CardContent sx={{ p: 2 }}>
+                <Stack spacing={1}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography variant="subtitle1" fontWeight={700} noWrap>
+                      {club.name || "Untitled Club"}
+                    </Typography>
+                    {isPrivate && <LockIcon fontSize="small" color="action" />}
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary" noWrap>
+                    {getClubShortDescription(club)}
+                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    <Chip label={visibility} size="small" />
+                    {getClubCadence(club) && (
+                      <Chip label={getClubCadence(club)} size="small" variant="outlined" />
+                    )}
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary">
+                    {getClubMemberCount(club)} members
+                  </Typography>
+                </Stack>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        </Grid>
+      );
+    });
+  }, [clubs, navigate, searchQuery, searchResults]);
+
+  const listLoading = searchQuery.trim() ? searchLoading : loading;
+  const listError = searchQuery.trim() ? searchError : error;
+  const listEmpty = searchQuery.trim()
+    ? !searchLoading && searchResults.length === 0 && !searchError
+    : !loading && clubs.length === 0 && !error;
+
   return (
     <Container maxWidth="sm" sx={{ pb: 12, pt: 2 }}>
       <Stack spacing={3}>
@@ -41,7 +324,9 @@ function ClubsScreen() {
           <Typography variant="h5" fontWeight={800}>
             Club
           </Typography>
-          <Box width={24} />
+          <Button size="small" onClick={() => navigate("/clubs/my")}>
+            My Clubs
+          </Button>
         </Stack>
 
         <Card
@@ -61,24 +346,27 @@ function ClubsScreen() {
               <Typography variant="body2" sx={{ opacity: 0.9 }}>
                 Start a badminton community and schedule matches with players nearby.
               </Typography>
-              <Button
-                variant="contained"
-                color="inherit"
-                sx={{
-                  alignSelf: "flex-start",
-                  bgcolor: "common.white",
-                  color: "success.dark",
-                  fontWeight: 700,
-                  px: 3,
-                  py: 1,
-                  borderRadius: 999,
-                  "&:hover": {
-                    bgcolor: "grey.100",
-                  },
-                }}
-              >
-                Create a Club
-              </Button>
+              {canCreateClub && (
+                <Button
+                  variant="contained"
+                  color="inherit"
+                  sx={{
+                    alignSelf: "flex-start",
+                    bgcolor: "common.white",
+                    color: "success.dark",
+                    fontWeight: 700,
+                    px: 3,
+                    py: 1,
+                    borderRadius: 999,
+                    "&:hover": {
+                      bgcolor: "grey.100",
+                    },
+                  }}
+                  onClick={() => setCreateOpen(true)}
+                >
+                  Create a Club
+                </Button>
+              )}
             </Stack>
           </CardContent>
         </Card>
@@ -87,12 +375,14 @@ function ClubsScreen() {
           <Stack direction="row" alignItems="center" spacing={1}>
             <EmojiEventsIcon />
             <Typography variant="h6" fontWeight={700}>
-              Popular Clubs Near You
+              {searchQuery.trim() ? "Search Results" : "Popular Clubs Near You"}
             </Typography>
           </Stack>
           <TextField
             placeholder="Search clubs near you"
             size="small"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -100,40 +390,50 @@ function ClubsScreen() {
                 </InputAdornment>
               ),
             }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                runSearch(searchQuery.trim());
+              }
+            }}
           />
           <Divider />
-          <Grid container spacing={2}>
-            {clubs.map((club) => (
-              <Grid item xs={6} key={club.id}>
-                <Card variant="outlined" sx={{ height: "100%", borderRadius: 3 }}>
-                  <CardMedia
-                    component="img"
-                    height="120"
-                    image={club.image}
-                    alt={club.name}
-                  />
-                  <CardContent sx={{ p: 2 }}>
-                    <Stack spacing={1}>
-                      <Typography variant="subtitle1" fontWeight={700}>
-                        {club.name}
-                      </Typography>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip label={club.type} size="small" />
-                        <Typography variant="body2" color="text.secondary">
-                          {club.location}
-                        </Typography>
-                      </Stack>
-                      <Typography variant="body2" color="text.secondary">
-                        {club.members}
-                      </Typography>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          {listLoading && (
+            <Stack alignItems="center" sx={{ py: 3 }}>
+              <CircularProgress size={28} />
+            </Stack>
+          )}
+          {listError && (
+            <Alert
+              severity="error"
+              action={
+                <Button color="inherit" size="small" onClick={loadClubs}>
+                  Retry
+                </Button>
+              }
+            >
+              {listError}
+            </Alert>
+          )}
+          {listEmpty && (
+            <Typography variant="body2" color="text.secondary">
+              No clubs yet
+            </Typography>
+          )}
+          {!listLoading && !listError && !listEmpty && (
+            <Grid container spacing={2}>
+              {clubCards}
+            </Grid>
+          )}
         </Stack>
       </Stack>
+      <CreateClubModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(clubId) => {
+          setCreateOpen(false);
+          navigate(`/clubs/${clubId}`);
+        }}
+      />
     </Container>
   );
 }
