@@ -39,6 +39,7 @@ import {
   approveClubMember,
   createClubSession,
   deleteClubSession,
+  deleteClub,
   fetchClubDetails,
   fetchClubLeague,
   fetchClubRequests,
@@ -663,6 +664,9 @@ function ClubDetailScreen() {
   const [editOpen, setEditOpen] = useState(false);
   const [createSessionOpen, setCreateSessionOpen] = useState(false);
   const [editSession, setEditSession] = useState(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [requests, setRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [requestsError, setRequestsError] = useState("");
@@ -912,6 +916,21 @@ function ClubDetailScreen() {
     [loadSessions, token]
   );
 
+  const handleDeleteClub = async () => {
+    if (!clubId) return;
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      await deleteClub(clubId, token);
+      setDeleteOpen(false);
+      navigate("/clubs");
+    } catch (err) {
+      setDeleteError(err.message || "Failed to delete club");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const sessionCards = useMemo(
     () =>
       sessions.map((session) => {
@@ -1085,6 +1104,7 @@ function ClubDetailScreen() {
     if (isAdmin) {
       baseTabs.push({ value: "requests", label: "Requests" });
       baseTabs.push({ value: "members", label: "Members" });
+      baseTabs.push({ value: "admin", label: "Admin" });
     }
     return baseTabs;
   }, [isAdmin]);
@@ -1169,9 +1189,6 @@ function ClubDetailScreen() {
                       </Button>
                       {isAdmin && (
                         <>
-                          <Button startIcon={<EditIcon />} onClick={() => setEditOpen(true)}>
-                            Edit Club
-                          </Button>
                           <Button
                             startIcon={<GroupIcon />}
                             onClick={() => setTab("members")}
@@ -1339,6 +1356,38 @@ function ClubDetailScreen() {
                 )}
               </Stack>
             )}
+
+            {tab === "admin" && isAdmin && (
+              <Stack spacing={2}>
+                <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                  <CardContent>
+                    <Stack spacing={2}>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        Club administration
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Edit club details or permanently delete the club.
+                      </Typography>
+                      <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                        <Button startIcon={<EditIcon />} onClick={() => setEditOpen(true)}>
+                          Edit Club
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          onClick={() => {
+                            setDeleteError("");
+                            setDeleteOpen(true);
+                          }}
+                        >
+                          Delete Club
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Stack>
+            )}
           </Stack>
         )}
       </Stack>
@@ -1381,6 +1430,30 @@ function ClubDetailScreen() {
             disabled={memberRemoveLoading}
           >
             {memberRemoveLoading ? "Removing..." : "Remove"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)}>
+        <DialogTitle>Delete club</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <Typography variant="body2" color="text.secondary">
+              This action permanently deletes the club and its details.
+            </Typography>
+            {deleteError && <Alert severity="error">{deleteError}</Alert>}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteOpen(false)} disabled={deleteLoading}>
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleDeleteClub}
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>

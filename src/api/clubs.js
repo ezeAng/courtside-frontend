@@ -86,6 +86,15 @@ export async function updateClub(clubId, payload, token) {
   return handleResponse(response);
 }
 
+export async function deleteClub(clubId, token) {
+  if (!clubId) throw new Error("Club ID is required");
+  const response = await fetch(`${base}/api/clubs/${clubId}`, {
+    method: "DELETE",
+    headers: requireAuthHeader(token),
+  });
+  return handleResponse(response);
+}
+
 export async function joinClub(clubId, token) {
   if (!clubId) throw new Error("Club ID is required");
   const response = await fetch(`${base}/api/clubs/${clubId}/join`, {
