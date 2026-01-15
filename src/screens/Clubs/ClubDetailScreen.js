@@ -35,7 +35,6 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
-import GroupIcon from "@mui/icons-material/Group";
 import AddIcon from "@mui/icons-material/Add";
 import {
   approveClubMember,
@@ -1140,7 +1139,70 @@ function ClubDetailScreen() {
         const subtitle = user?.region || user?.username || "";
         const role = getMemberRole(member);
         const memberAuthId = user?.auth_id || user?.id || null;
-        const isCoreAdmin = normalizeRole(role) === "core_admin";
+        const player = {
+          ...user,
+          auth_id: memberAuthId,
+          username: user?.username || user?.display_name || name,
+          profile_image_url: user?.profile_image_url || user?.avatar_url || "",
+          overall_elo: user?.overall_elo,
+          gender: user?.gender,
+          region: user?.region,
+        };
+        return (
+          <ListItem key={getMemberUserId(member) || name} divider disablePadding>
+            <ListItemButton onClick={() => setSelectedLeaguePlayer(player)}>
+              <ListItemAvatar>
+                <Avatar src={user?.avatar_url || user?.profile_image_url || ""}>
+                  {name?.charAt(0)}
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    <Typography variant="body1" fontWeight={600}>
+                      {name}
+                    </Typography>
+                    {role && <Chip label={role} size="small" color="primary" />}
+                  </Stack>
+                }
+                secondary={
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    {subtitle && (
+                      <Typography variant="body2" color="text.secondary">
+                        {subtitle}
+                      </Typography>
+                    )}
+                    {user?.overall_elo !== undefined && (
+                      <Typography variant="caption" color="text.secondary">
+                        Elo: {user.overall_elo}
+                      </Typography>
+                    )}
+                  </Stack>
+                }
+                primaryTypographyProps={{ component: "div" }}
+                secondaryTypographyProps={{ component: "div" }}
+              />
+            </ListItemButton>
+          </ListItem>
+        );
+      }),
+    [displayMembers]
+  );
+
+  const adminMemberRows = useMemo(
+    () =>
+      displayMembers.map((member) => {
+        const user = getMemberUser(member);
+        const name =
+          user?.name ||
+          user?.full_name ||
+          user?.display_name ||
+          user?.username ||
+          "Member";
+        const subtitle = user?.region || user?.username || "";
+        const role = getMemberRole(member);
+        const memberAuthId = user?.auth_id || user?.id || null;
+        const isCoreAdminMember = normalizeRole(role) === "core_admin";
         const isSelf = Boolean(currentAuthId && memberAuthId && currentAuthId === memberAuthId);
         const player = {
           ...user,
@@ -1156,16 +1218,14 @@ function ClubDetailScreen() {
             key={getMemberUserId(member) || name}
             divider
             secondaryAction={
-              isAdmin ? (
-                <Button
-                  size="small"
-                  color="error"
-                  onClick={() => setMemberToRemove(member)}
-                  disabled={isCoreAdmin || isSelf}
-                >
-                  Remove
-                </Button>
-              ) : null
+              <Button
+                size="small"
+                color="error"
+                onClick={() => setMemberToRemove(member)}
+                disabled={isCoreAdminMember || isSelf}
+              >
+                Remove
+              </Button>
             }
             disablePadding
           >
@@ -1205,7 +1265,7 @@ function ClubDetailScreen() {
           </ListItem>
         );
       }),
-    [currentAuthId, displayMembers, isAdmin]
+    [currentAuthId, displayMembers]
   );
 
   const tabs = useMemo(() => {
@@ -1307,20 +1367,13 @@ function ClubDetailScreen() {
                         Leave Club
                       </Button>
                       {isAdmin && (
-                        <>
-                          <Button
-                            startIcon={<GroupIcon />}
-                            onClick={() => setTab("members")}
-                            variant="outlined"
-                          >
-                            Manage Members
-                          </Button>
-                          <Button startIcon={<AddIcon />} onClick={() => setCreateSessionOpen(true)}
-                            variant="contained"
-                          >
-                            Create Session
-                          </Button>
-                        </>
+                        <Button
+                          startIcon={<AddIcon />}
+                          onClick={() => setCreateSessionOpen(true)}
+                          variant="contained"
+                        >
+                          Create Session
+                        </Button>
                       )}
                     </Stack>
                   )}
@@ -1593,6 +1646,32 @@ function ClubDetailScreen() {
                             Delete Club
                         </Button>
                       </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+                <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                  <CardContent>
+                    <Stack spacing={2}>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        Member management
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Remove members or tap a member to view their profile.
+                      </Typography>
+                      {membersError && <Alert severity="error">{membersError}</Alert>}
+                      {membersUnavailable && (
+                        <Typography variant="body2" color="text.secondary">
+                          Members list unavailable
+                        </Typography>
+                      )}
+                      {!membersUnavailable && displayMembers.length === 0 && (
+                        <Typography variant="body2" color="text.secondary">
+                          No members to show
+                        </Typography>
+                      )}
+                      {!membersUnavailable && displayMembers.length > 0 && (
+                        <List disablePadding>{adminMemberRows}</List>
+                      )}
                     </Stack>
                   </CardContent>
                 </Card>
