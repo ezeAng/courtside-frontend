@@ -1324,19 +1324,17 @@ function ClubDetailScreen() {
               </CardContent>
             </Card>
 
-            {(isMember || isAdmin) && (
-              <Tabs
-                value={tab}
-                onChange={(event, value) => setTab(value)}
-                variant="scrollable"
-                scrollButtons="auto"
-                allowScrollButtonsMobile
-              >
-                {tabs.map((item) => (
-                  <Tab key={item.value} label={item.label} value={item.value} />
-                ))}
-              </Tabs>
-            )}
+            <Tabs
+              value={tab}
+              onChange={(event, value) => setTab(value)}
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+            >
+              {tabs.map((item) => (
+                <Tab key={item.value} label={item.label} value={item.value} />
+              ))}
+            </Tabs>
 
             <Divider />
 
