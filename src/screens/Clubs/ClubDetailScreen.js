@@ -43,6 +43,7 @@ import {
   deleteClub,
   fetchClubDetails,
   fetchClubLeague,
+  fetchClubMembers,
   fetchClubRequests,
   fetchClubSessions,
   fetchMyClubs,
@@ -736,6 +737,7 @@ function ClubDetailScreen() {
   const [requests, setRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [requestsError, setRequestsError] = useState("");
+  const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState("");
   const [memberToRemove, setMemberToRemove] = useState(null);
   const [memberRemoveLoading, setMemberRemoveLoading] = useState(false);
@@ -790,6 +792,24 @@ function ClubDetailScreen() {
     }
   }, [clubId, token]);
 
+  const loadMembers = useCallback(async () => {
+    if (!clubId) return;
+    setMembersLoading(true);
+    setMembersError("");
+    try {
+      const payload = await fetchClubMembers(clubId, token);
+      const items = Array.isArray(payload)
+        ? payload
+        : payload?.members || payload?.items || payload?.data || [];
+      setMembers(items);
+    } catch (err) {
+      setMembersError(err.message || "Failed to load members");
+      setMembers([]);
+    } finally {
+      setMembersLoading(false);
+    }
+  }, [clubId, token]);
+
   const loadSessions = useCallback(async () => {
     if (!clubId) return;
     setSessionsLoading(true);
@@ -832,12 +852,18 @@ function ClubDetailScreen() {
 
   useEffect(() => {
     const list = getClubMembers(club);
-    setMembers(Array.isArray(list) ? list : []);
+    setMembers((prev) => {
+      if (prev.length > 0) return prev;
+      return Array.isArray(list) ? list : [];
+    });
   }, [club]);
 
   useEffect(() => {
     if (tab === "requests") {
       loadRequests();
+    }
+    if (tab === "members" || tab === "admin") {
+      loadMembers();
     }
     if (tab === "sessions") {
       loadSessions();
@@ -845,7 +871,7 @@ function ClubDetailScreen() {
     if (tab === "league") {
       loadLeague();
     }
-  }, [tab, loadRequests, loadSessions, loadLeague]);
+  }, [tab, loadRequests, loadMembers, loadSessions, loadLeague]);
 
   const activeMembers = useMemo(
     () =>
@@ -1655,6 +1681,11 @@ function ClubDetailScreen() {
 
             {tab === "members" && (
               <Stack spacing={2}>
+                {membersLoading && (
+                  <Stack alignItems="center" sx={{ py: 3 }}>
+                    <CircularProgress size={28} />
+                  </Stack>
+                )}
                 {membersError && <Alert severity="error">{membersError}</Alert>}
                 {membersUnavailable && (
                   <Typography variant="body2" color="text.secondary">
@@ -1711,6 +1742,11 @@ function ClubDetailScreen() {
                       <Typography variant="body2" color="text.secondary">
                         Remove members or tap a member to view their profile.
                       </Typography>
+                      {membersLoading && (
+                        <Stack alignItems="center" sx={{ py: 3 }}>
+                          <CircularProgress size={28} />
+                        </Stack>
+                      )}
                       {membersError && <Alert severity="error">{membersError}</Alert>}
                       {membersUnavailable && (
                         <Typography variant="body2" color="text.secondary">

@@ -148,6 +148,15 @@ export async function fetchClubRequests(clubId, token) {
   return handleResponse(response);
 }
 
+export async function fetchClubMembers(clubId, token) {
+  if (!clubId) throw new Error("Club ID is required");
+  const response = await fetch(`${base}/api/clubs/${clubId}/members`, {
+    method: "GET",
+    headers: requireAuthHeader(token),
+  });
+  return handleResponse(response);
+}
+
 export async function approveClubMember(clubId, userId, token) {
   if (!clubId || !userId) throw new Error("Club ID and user ID are required");
   const response = await fetch(`${base}/api/clubs/${clubId}/members/${userId}/approve`, {
