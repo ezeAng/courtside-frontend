@@ -1136,6 +1136,15 @@ function ClubDetailScreen() {
         const memberAuthId = user?.auth_id || user?.id || null;
         const isCoreAdmin = role === "core_admin";
         const isSelf = Boolean(currentAuthId && memberAuthId && currentAuthId === memberAuthId);
+        const player = {
+          ...user,
+          auth_id: memberAuthId,
+          username: user?.username || user?.display_name || name,
+          profile_image_url: user?.profile_image_url || user?.avatar_url || "",
+          overall_elo: user?.overall_elo,
+          gender: user?.gender,
+          region: user?.region,
+        };
         return (
           <ListItem
             key={getMemberUserId(member) || name}
@@ -1150,38 +1159,41 @@ function ClubDetailScreen() {
                 Remove
               </Button>
             }
+            disablePadding
           >
-            <ListItemAvatar>
-              <Avatar src={user?.avatar_url || user?.profile_image_url || ""}>
-                {name?.charAt(0)}
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary={
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                  <Typography variant="body1" fontWeight={600}>
-                    {name}
-                  </Typography>
-                  {role && <Chip label={role} size="small" color="primary" />}
-                </Stack>
-              }
-              secondary={
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                  {subtitle && (
-                    <Typography variant="body2" color="text.secondary">
-                      {subtitle}
+            <ListItemButton onClick={() => setSelectedLeaguePlayer(player)}>
+              <ListItemAvatar>
+                <Avatar src={user?.avatar_url || user?.profile_image_url || ""}>
+                  {name?.charAt(0)}
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    <Typography variant="body1" fontWeight={600}>
+                      {name}
                     </Typography>
-                  )}
-                  {user?.overall_elo !== undefined && (
-                    <Typography variant="caption" color="text.secondary">
-                      Elo: {user.overall_elo}
-                    </Typography>
-                  )}
-                </Stack>
-              }
-              primaryTypographyProps={{ component: "div" }}
-              secondaryTypographyProps={{ component: "div" }}
-            />
+                    {role && <Chip label={role} size="small" color="primary" />}
+                  </Stack>
+                }
+                secondary={
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    {subtitle && (
+                      <Typography variant="body2" color="text.secondary">
+                        {subtitle}
+                      </Typography>
+                    )}
+                    {user?.overall_elo !== undefined && (
+                      <Typography variant="caption" color="text.secondary">
+                        Elo: {user.overall_elo}
+                      </Typography>
+                    )}
+                  </Stack>
+                }
+                primaryTypographyProps={{ component: "div" }}
+                secondaryTypographyProps={{ component: "div" }}
+              />
+            </ListItemButton>
           </ListItem>
         );
       }),
@@ -1303,7 +1315,13 @@ function ClubDetailScreen() {
             </Card>
 
             {(isMember || isAdmin) && (
-              <Tabs value={tab} onChange={(event, value) => setTab(value)}>
+              <Tabs
+                value={tab}
+                onChange={(event, value) => setTab(value)}
+                variant="scrollable"
+                scrollButtons="auto"
+                allowScrollButtonsMobile
+              >
                 {tabs.map((item) => (
                   <Tab key={item.value} label={item.label} value={item.value} />
                 ))}
