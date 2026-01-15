@@ -200,12 +200,9 @@ function SignupScreen() {
 
   useEffect(() => {
     if (!signupMessage) return undefined;
-    const timer = setTimeout(() => {
-      dispatch(resetSignupStatus());
-      navigate("/login", { replace: true });
-    }, 1200);
-
-    return () => clearTimeout(timer);
+    dispatch(resetSignupStatus());
+    navigate("/login", { replace: true });
+    return undefined;
   }, [dispatch, navigate, signupMessage]);
 
   const handleOnboardingDismiss = useCallback(() => {
