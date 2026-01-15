@@ -22,7 +22,7 @@ import {
 import OnboardingModal from "../../components/OnboardingModal/OnboardingModal";
 import logo from "../../logo.svg";
 
-const clampElo = (value) => Math.min(1800, Math.max(800, Math.round(value)));
+const clampElo = (value) => Math.min(2000, Math.max(800, Math.round(value)));
 
 const calculateSeedElo = (answers) => {
   const baseElo = 1000;
@@ -48,6 +48,7 @@ const calculateSeedElo = (answers) => {
     social_league: 120,
     club: 200,
     tournament: 300,
+    international: 400,
   };
 
   const selfAssessmentWeights = {
@@ -109,6 +110,10 @@ const questionnaireSteps = [
       { value: "social_league", label: "Social league" },
       { value: "club", label: "Club matches" },
       { value: "tournament", label: "Tournaments" },
+      {
+        value: "international",
+        label: "International (current or former national team)",
+      },
     ],
   },
   {
