@@ -89,9 +89,13 @@ const getMembershipInfo = (club) =>
 
 const getMembershipStatus = (club) =>
   getMembershipInfo(club)?.status ||
+  (getMembershipInfo(club)?.is_active === true ? "active" : null) ||
+  (getMembershipInfo(club)?.is_active === false ? "inactive" : null) ||
   club?.member_status ||
   club?.membership_status ||
   club?.current_user_membership_status ||
+  (club?.is_active === true ? "active" : null) ||
+  (club?.is_active === false ? "inactive" : null) ||
   null;
 
 const getMembershipRole = (club) => {
@@ -128,6 +132,14 @@ const getMemberRole = (member) =>
 
 const getMemberUser = (member) =>
   member?.user || member?.users || member?.profile || member?.member || member;
+
+const getRequestUser = (request) =>
+  request?.users || request?.user || request?.member || request?.profile || request;
+
+const getRequestUserId = (request) => {
+  const user = getRequestUser(request);
+  return request?.user_id || user?.auth_id || user?.id || request?.member_id || null;
+};
 
 const getMemberUserId = (member) => {
   const user = getMemberUser(member);
@@ -925,8 +937,7 @@ function ClubDetailScreen() {
 
   const handleRequestAction = useCallback(
     async (request, action) => {
-      const requestUser = request?.user || request?.member || request?.profile || request;
-      const userId = requestUser?.id || request?.user_id || request?.member_id;
+      const userId = getRequestUserId(request);
       if (!userId || !clubId) return;
       setRequestsError("");
       try {
@@ -936,11 +947,7 @@ function ClubDetailScreen() {
           await rejectClubMember(clubId, userId, token);
         }
         setRequests((prev) =>
-          prev.filter((item) => {
-            const itemUser = item?.user || item?.member || item?.profile || item;
-            const itemId = itemUser?.id || item?.user_id || item?.member_id;
-            return itemId !== userId;
-          })
+          prev.filter((item) => getRequestUserId(item) !== userId)
         );
       } catch (err) {
         setRequestsError(err.message || "Failed to update request");
@@ -1118,17 +1125,18 @@ function ClubDetailScreen() {
   const requestsRows = useMemo(
     () =>
       requests.map((request) => {
-        const user = request?.user || request?.member || request?.profile || request;
+        const user = getRequestUser(request);
         const name =
           user?.name ||
           user?.full_name ||
           user?.display_name ||
           user?.username ||
           "Pending member";
-        const subtitle = user?.email || user?.username || "";
+        const subtitle = user?.email || user?.username || user?.region || "";
+        const elo = user?.overall_elo ?? user?.elo ?? user?.rating;
         return (
           <ListItem
-            key={user?.id || request?.user_id || request?.member_id || name}
+            key={getRequestUserId(request) || name}
             divider
             secondaryAction={
               <Stack direction="row" spacing={1}>
@@ -1142,11 +1150,29 @@ function ClubDetailScreen() {
             }
           >
             <ListItemAvatar>
-              <Avatar src={user?.avatar_url || user?.profile_image_url || ""}>
+              <Avatar src={user?.profile_image_url || user?.avatar_url || ""}>
                 {name?.charAt(0)}
               </Avatar>
             </ListItemAvatar>
-            <ListItemText primary={name} secondary={subtitle} />
+            <ListItemText
+              primary={name}
+              secondary={
+                <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+                  {subtitle && (
+                    <Typography variant="body2" color="text.secondary">
+                      {subtitle}
+                    </Typography>
+                  )}
+                  {elo !== undefined && (
+                    <Typography variant="caption" color="text.secondary">
+                      Elo: {elo}
+                    </Typography>
+                  )}
+                </Stack>
+              }
+              primaryTypographyProps={{ component: "div" }}
+              secondaryTypographyProps={{ component: "div" }}
+            />
           </ListItem>
         );
       }),
