@@ -160,7 +160,6 @@ const EditClubModal = ({ open, club, onClose, onUpdated }) => {
     description: "",
     cadence: "",
     visibility: "public",
-    emblem_url: "",
   });
   const [emblemFile, setEmblemFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -174,7 +173,6 @@ const EditClubModal = ({ open, club, onClose, onUpdated }) => {
         description: club?.description || "",
         cadence: club?.cadence || club?.meeting_cadence || "",
         visibility: getClubVisibility(club),
-        emblem_url: getClubEmblem(club),
       });
       setEmblemFile(null);
     }
@@ -196,7 +194,6 @@ const EditClubModal = ({ open, club, onClose, onUpdated }) => {
         description: form.description,
         cadence: form.cadence,
         visibility: form.visibility,
-        emblem_url: form.emblem_url,
         file: emblemFile,
       };
       await updateClub(club.id || club.club_id, payload, token);
@@ -258,13 +255,6 @@ const EditClubModal = ({ open, club, onClose, onUpdated }) => {
               </MenuItem>
             ))}
           </TextField>
-          <TextField
-            label="Emblem URL"
-            name="emblem_url"
-            value={form.emblem_url}
-            onChange={handleChange}
-            fullWidth
-          />
           <Stack spacing={1}>
             <Button variant="outlined" component="label">
               Upload emblem image

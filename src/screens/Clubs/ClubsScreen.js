@@ -55,7 +55,6 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
     description: "",
     playing_cadence: "",
     visibility: "public",
-    emblem_url: "",
     max_members: "",
     usual_venues: "",
     contact_info: "",
@@ -71,7 +70,6 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
         description: "",
         playing_cadence: "",
         visibility: "public",
-        emblem_url: "",
         max_members: "",
         usual_venues: "",
         contact_info: "",
@@ -98,7 +96,6 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
       const payload = {
         p_name: form.name,
         p_description: form.description,
-        p_emblem_url: form.emblem_url,
         p_visibility: form.visibility,
         p_max_members: maxMembersValue,
         p_playing_cadence: form.playing_cadence,
@@ -164,13 +161,6 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
               </MenuItem>
             ))}
           </TextField>
-          <TextField
-            label="Emblem URL"
-            name="emblem_url"
-            value={form.emblem_url}
-            onChange={handleChange}
-            fullWidth
-          />
           <Stack spacing={1}>
             <Button variant="outlined" component="label">
               Upload emblem image
