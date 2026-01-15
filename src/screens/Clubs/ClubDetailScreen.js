@@ -19,6 +19,7 @@ import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
+import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
@@ -29,6 +30,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
+import ProfileModal from "../Connections/components/ProfileModal";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
 import LockIcon from "@mui/icons-material/Lock";
@@ -682,6 +684,7 @@ function ClubDetailScreen() {
   const [league, setLeague] = useState([]);
   const [leagueLoading, setLeagueLoading] = useState(false);
   const [leagueError, setLeagueError] = useState("");
+  const [selectedLeaguePlayer, setSelectedLeaguePlayer] = useState(null);
 
   const loadClub = useCallback(async () => {
     if (!clubId) return;
@@ -979,14 +982,62 @@ function ClubDetailScreen() {
     () =>
       league.map((entry, index) => {
         const rank = entry?.rank ?? entry?.position ?? index + 1;
-        const name = entry?.player_name || entry?.name || entry?.user?.name || "Player";
-        const elo = entry?.elo ?? entry?.rating ?? "";
+        const user = entry?.user || entry?.profile || entry?.player || entry;
+        const name =
+          user?.username ||
+          user?.name ||
+          user?.display_name ||
+          user?.player_name ||
+          entry?.player_name ||
+          "Player";
+        const elo = user?.overall_elo ?? entry?.overall_elo ?? entry?.elo ?? entry?.rating ?? "";
+        const player = {
+          ...user,
+          auth_id: user?.auth_id || entry?.auth_id,
+          username: user?.username || entry?.username || name,
+          profile_image_url:
+            user?.profile_image_url || user?.avatar_url || entry?.profile_image_url || "",
+          overall_elo: user?.overall_elo ?? entry?.overall_elo ?? elo,
+          gender: user?.gender || entry?.gender,
+          region: user?.region || entry?.region,
+        };
         return (
-          <ListItem key={`${name}-${rank}`} divider>
-            <ListItemText
-              primary={`#${rank} ${name}`}
-              secondary={elo !== "" ? `Elo: ${elo}` : null}
-            />
+          <ListItem key={player.auth_id || `${name}-${rank}`} divider disablePadding>
+            <ListItemButton onClick={() => setSelectedLeaguePlayer(player)}>
+              <ListItemAvatar>
+                <Avatar src={player.profile_image_url}>
+                  {name?.charAt(0)}
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      #{rank}
+                    </Typography>
+                    <Typography variant="body1" fontWeight={600}>
+                      {name}
+                    </Typography>
+                  </Stack>
+                }
+                secondary={
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    {player.region && (
+                      <Typography variant="body2" color="text.secondary">
+                        {player.region}
+                      </Typography>
+                    )}
+                    {elo !== "" && (
+                      <Typography variant="caption" color="text.secondary">
+                        Elo: {elo}
+                      </Typography>
+                    )}
+                  </Stack>
+                }
+                primaryTypographyProps={{ component: "div" }}
+                secondaryTypographyProps={{ component: "div" }}
+              />
+            </ListItemButton>
           </ListItem>
         );
       }),
@@ -1460,6 +1511,11 @@ function ClubDetailScreen() {
           </Button>
         </DialogActions>
       </Dialog>
+      <ProfileModal
+        open={Boolean(selectedLeaguePlayer)}
+        onClose={() => setSelectedLeaguePlayer(null)}
+        player={selectedLeaguePlayer}
+      />
     </Container>
   );
 }
