@@ -59,7 +59,7 @@ const visibilityOptions = [
   { label: "Private", value: "private" },
 ];
 
-const adminRoles = ["core_admin", "admin", "owner", "club_admin"];
+const adminRoles = ["core_admin", "admin"];
 const normalizeRole = (role) => (role ? role.toString().toLowerCase() : "");
 
 const getClubVisibility = (club) => {
@@ -839,14 +839,8 @@ function ClubDetailScreen() {
   const isPending =
     ["requested", "pending"].includes(membershipStatus) || joinStatus === "requested";
   const isAdmin =
-    (normalizedMembershipRole ? adminRoles.includes(normalizedMembershipRole) : false) ||
-    club?.is_admin === true ||
-    club?.is_admin === 1 ||
-    club?.is_admin === "true" ||
-    club?.is_owner === true ||
-    club?.is_owner === 1 ||
-    club?.is_owner === "true" ||
-    isOwner;
+    membershipStatus === "active" &&
+    (normalizedMembershipRole ? adminRoles.includes(normalizedMembershipRole) : false);
   const displayRole = membershipRole || (isOwner ? "owner" : null);
   const fallbackAdminMember = useMemo(() => {
     if (!isAdmin || activeMembers.length > 0) return null;
