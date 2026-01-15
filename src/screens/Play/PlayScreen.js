@@ -53,6 +53,7 @@ import {
 } from "../../utils/sessionUtils";
 
 const PLAY_TAB_STORAGE_KEY = "play-tab-selection";
+const EDIT_FORMAT_OPTIONS = ["singles", "doubles", "mixed"];
 
 const CreateSessionModal = ({ open, onClose, onCreated }) => {
   const theme = useTheme();
@@ -357,7 +358,8 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
   const [form, setForm] = useState({
     title: "",
     description: "",
-    format: "any",
+    format: "singles",
+    session_type: "casual",
     capacity: "",
     session_date: "",
     session_time: "",
@@ -376,10 +378,14 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
   useEffect(() => {
     if (open && session) {
       const skillRange = getSkillRange(session);
+      const sessionFormat = EDIT_FORMAT_OPTIONS.includes(session?.format)
+        ? session?.format
+        : "singles";
       setForm({
         title: session?.title || "",
         description: session?.description || "",
-        format: session?.format || "any",
+        format: sessionFormat,
+        session_type: session?.session_type || "casual",
         capacity: session?.capacity ?? getCapacity(session) ?? "",
         session_date: getSessionDate(session) || "",
         session_time: getSessionTime(session) || "",
@@ -403,6 +409,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
   const validate = () => {
     const nextErrors = {};
     if (!form.format) nextErrors.format = "Format is required";
+    if (!form.session_type) nextErrors.session_type = "Session type is required";
     if (!form.capacity || Number(form.capacity) <= 0) {
       nextErrors.capacity = "Capacity must be greater than 0";
     }
@@ -437,6 +444,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
         title: form.title || undefined,
         description: form.description || null,
         format: form.format,
+        session_type: form.session_type,
         capacity: form.capacity ? Number(form.capacity) : undefined,
         session_date: form.session_date || undefined,
         session_time: form.session_time || undefined,
@@ -510,16 +518,28 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
           <TextField
             select
             required
-            label="Format"
+            label="Match format"
             value={form.format}
             onChange={handleChange("format")}
             error={Boolean(errors.format)}
             helperText={errors.format}
           >
-            <MenuItem value="any">Any</MenuItem>
             <MenuItem value="singles">Singles</MenuItem>
             <MenuItem value="doubles">Doubles</MenuItem>
             <MenuItem value="mixed">Mixed</MenuItem>
+          </TextField>
+          <TextField
+            select
+            required
+            label="Session type"
+            value={form.session_type}
+            onChange={handleChange("session_type")}
+            error={Boolean(errors.session_type)}
+            helperText={errors.session_type}
+          >
+            <MenuItem value="casual">Casual</MenuItem>
+            <MenuItem value="semi-competitive">Semi-competitive</MenuItem>
+            <MenuItem value="competitive">Competitive</MenuItem>
           </TextField>
           <TextField
             required

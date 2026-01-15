@@ -565,7 +565,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
     end_time: "",
     venue: "",
     capacity: "",
-    session_type: "",
+    session_type: "casual",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -578,7 +578,7 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
         end_time: toDateTimeLocal(session?.end_time || session?.ends_at),
         venue: session?.venue || "",
         capacity: session?.capacity || "",
-        session_type: session?.session_type || "",
+        session_type: session?.session_type || "casual",
       });
     }
   }, [open, session]);
@@ -649,10 +649,15 @@ const EditSessionModal = ({ open, session, onClose, onUpdated }) => {
           <TextField
             label="Session type"
             name="session_type"
+            select
             value={form.session_type}
             onChange={handleChange}
             fullWidth
-          />
+          >
+            <MenuItem value="casual">Casual</MenuItem>
+            <MenuItem value="semi-competitive">Semi-competitive</MenuItem>
+            <MenuItem value="competitive">Competitive</MenuItem>
+          </TextField>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
