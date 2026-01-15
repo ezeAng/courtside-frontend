@@ -95,8 +95,6 @@ const getMembershipStatus = (club) =>
   club?.member_status ||
   club?.membership_status ||
   club?.current_user_membership_status ||
-  (club?.is_active === true ? "active" : null) ||
-  (club?.is_active === false ? "inactive" : null) ||
   null;
 
 const getMembershipRole = (club) => {
@@ -719,6 +717,8 @@ function ClubDetailScreen() {
   const token = useSelector((state) => state.auth.accessToken);
   const currentUser = useSelector((state) => state.user.user);
   const [club, setClub] = useState(null);
+  const [clubMembershipStatus, setClubMembershipStatus] = useState(null);
+  const [clubMembershipRole, setClubMembershipRole] = useState(null);
   const [myClubEntry, setMyClubEntry] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -756,7 +756,20 @@ function ClubDetailScreen() {
     try {
       const payload = await fetchClubDetails(clubId, token);
       const detail = payload?.club || payload;
-      setClub(detail);
+      const membershipMeta =
+        payload && payload !== detail
+          ? {
+              membership_status: payload?.membership_status ?? detail?.membership_status ?? null,
+              membership_role: payload?.membership_role ?? detail?.membership_role ?? null,
+            }
+          : {};
+      setClub({ ...detail, ...membershipMeta });
+      setClubMembershipStatus(
+        payload?.membership_status ?? detail?.membership_status ?? null
+      );
+      setClubMembershipRole(
+        payload?.membership_role ?? detail?.membership_role ?? null
+      );
     } catch (err) {
       setError(err.message || "Failed to load club");
     } finally {
@@ -882,20 +895,50 @@ function ClubDetailScreen() {
     [members]
   );
 
-  const membershipStatus = getMembershipStatus(club) || getMembershipStatus(myClubEntry);
-  const membershipRole = getMembershipRole(club) || getMembershipRole(myClubEntry);
+  const membershipStatus =
+    getMembershipStatus(club) || clubMembershipStatus || getMembershipStatus(myClubEntry);
+  const membershipRole =
+    getMembershipRole(club) || clubMembershipRole || getMembershipRole(myClubEntry);
   const normalizedMembershipRole = normalizeRole(membershipRole);
+  const normalizedJoinStatus = joinStatus === "joined" ? "active" : joinStatus;
   const currentAuthId = currentUser?.auth_id || currentUser?.id || null;
   const ownerId = getClubOwnerId(club);
   const isCoreAdmin = normalizedMembershipRole.includes("core_admin");
-  const effectiveMembershipStatus = membershipStatus || (isCoreAdmin ? "active" : null);
+  const effectiveMembershipStatus =
+    membershipStatus || normalizedJoinStatus || (isCoreAdmin ? "active" : null);
   const isOwner =
     effectiveMembershipStatus === "active" &&
     (isCoreAdmin || Boolean(currentAuthId && ownerId && currentAuthId === ownerId));
   const isMember = effectiveMembershipStatus === "active" || isCoreAdmin;
   const isPending =
     ["requested", "pending"].includes(effectiveMembershipStatus) ||
-    joinStatus === "requested";
+    normalizedJoinStatus === "requested";
+
+  useEffect(() => {
+    console.log("ClubDetailScreen membership debug", {
+      club,
+      clubMembershipStatus,
+      clubMembershipRole,
+      membershipStatus,
+      membershipRole,
+      effectiveMembershipStatus,
+      isMember,
+      isOwner,
+      isPending,
+      joinStatus,
+    });
+  }, [
+    club,
+    clubMembershipStatus,
+    clubMembershipRole,
+    membershipStatus,
+    membershipRole,
+    effectiveMembershipStatus,
+    isMember,
+    isOwner,
+    isPending,
+    joinStatus,
+  ]);
   const isAdmin =
     effectiveMembershipStatus === "active" &&
     (normalizedMembershipRole ? isAdminRole(normalizedMembershipRole) : false);
@@ -933,9 +976,14 @@ function ClubDetailScreen() {
     setJoinError("");
     try {
       const response = await joinClub(clubId, token);
-      const status = response?.status || response?.membership_status || response?.result?.status;
+      const status =
+        (typeof response === "string" ? response : null) ||
+        response?.status ||
+        response?.membership_status ||
+        response?.result?.status ||
+        response?.result;
       setJoinStatus(status || "");
-      if (status === "joined" || status === "active") {
+      if (status === "joined" || status === "active" || status === "requested") {
         await loadClub();
         await loadMyClubEntry();
       }
@@ -1348,6 +1396,9 @@ function ClubDetailScreen() {
   );
 
   const tabs = useMemo(() => {
+    if (!isMember) {
+      return [{ value: "overview", label: "Overview" }];
+    }
     const baseTabs = [
       { value: "overview", label: "Overview" },
       { value: "sessions", label: "Sessions" },
@@ -1359,7 +1410,7 @@ function ClubDetailScreen() {
       baseTabs.push({ value: "admin", label: "Admin" });
     }
     return baseTabs;
-  }, [isAdmin]);
+  }, [isAdmin, isMember]);
 
   const clubName = club?.name || "Club";
   const deleteConfirmationMatch = deleteConfirmation.trim() === clubName;
@@ -1440,7 +1491,7 @@ function ClubDetailScreen() {
                       Pending approval
                     </Button>
                   )}
-                  {isMember && (
+                  {isMember && !isOwner && (
                     <Stack direction="row" spacing={1} flexWrap="wrap">
                       <Button variant="outlined" color="error" onClick={handleLeave} disabled={joinLoading}>
                         Leave Club
@@ -1559,6 +1610,22 @@ function ClubDetailScreen() {
 
             {tab === "sessions" && (
               <Stack spacing={2}>
+                {!isMember && (
+                  <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                    <CardContent>
+                      <Stack spacing={1.5}>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          Join to see sessions
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {isPending
+                            ? "Your request is pending approval."
+                            : "Become a member to view and join club sessions."}
+                        </Typography>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                )}
                 {isMember && (
                   <Button
                     variant="contained"
@@ -1585,7 +1652,9 @@ function ClubDetailScreen() {
                     {sessionsError}
                   </Alert>
                 )}
-                {!sessionsLoading && !sessionsError && sessions.length === 0 && (
+                {!isMember || (sessionsLoading || sessionsError)
+                  ? null
+                  : sessions.length === 0 && (
                   <Card variant="outlined" sx={{ borderRadius: 3 }}>
                     <CardContent>
                       <Stack spacing={2}>
@@ -1613,7 +1682,9 @@ function ClubDetailScreen() {
                     </CardContent>
                   </Card>
                 )}
-                {!sessionsLoading && !sessionsError && sessions.length > 0 && (
+                {!isMember || (sessionsLoading || sessionsError)
+                  ? null
+                  : sessions.length > 0 && (
                   <Stack spacing={2}>{sessionCards}</Stack>
                 )}
               </Stack>
@@ -1621,6 +1692,22 @@ function ClubDetailScreen() {
 
             {tab === "league" && (
               <Stack spacing={2}>
+                {!isMember && (
+                  <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                    <CardContent>
+                      <Stack spacing={1.5}>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          Join to see standings
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {isPending
+                            ? "Your request is pending approval."
+                            : "Become a member to view league results."}
+                        </Typography>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                )}
                 {leagueLoading && (
                   <Stack alignItems="center" sx={{ py: 3 }}>
                     <CircularProgress size={28} />
@@ -1638,12 +1725,16 @@ function ClubDetailScreen() {
                     {leagueError}
                   </Alert>
                 )}
-                {!leagueLoading && !leagueError && league.length === 0 && (
+                {!isMember || (leagueLoading || leagueError)
+                  ? null
+                  : league.length === 0 && (
                   <Typography variant="body2" color="text.secondary">
                     No league standings yet
                   </Typography>
                 )}
-                {!leagueLoading && !leagueError && league.length > 0 && (
+                {!isMember || (leagueLoading || leagueError)
+                  ? null
+                  : league.length > 0 && (
                   <List disablePadding>{leagueRows}</List>
                 )}
               </Stack>
@@ -1681,23 +1772,45 @@ function ClubDetailScreen() {
 
             {tab === "members" && (
               <Stack spacing={2}>
+                {!isMember && (
+                  <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                    <CardContent>
+                      <Stack spacing={1.5}>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          Join to see members
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {isPending
+                            ? "Your request is pending approval."
+                            : "Become a member to view the club roster."}
+                        </Typography>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                )}
                 {membersLoading && (
                   <Stack alignItems="center" sx={{ py: 3 }}>
                     <CircularProgress size={28} />
                   </Stack>
                 )}
                 {membersError && <Alert severity="error">{membersError}</Alert>}
-                {membersUnavailable && (
+                {!isMember
+                  ? null
+                  : membersUnavailable && (
                   <Typography variant="body2" color="text.secondary">
                     Members list unavailable
                   </Typography>
                 )}
-                {!membersUnavailable && displayMembers.length === 0 && (
+                {!isMember || membersUnavailable
+                  ? null
+                  : displayMembers.length === 0 && (
                   <Typography variant="body2" color="text.secondary">
                     No members to show
                   </Typography>
                 )}
-                {!membersUnavailable && displayMembers.length > 0 && (
+                {!isMember || membersUnavailable
+                  ? null
+                  : displayMembers.length > 0 && (
                   <List disablePadding>{memberRows}</List>
                 )}
               </Stack>

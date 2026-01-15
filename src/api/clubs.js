@@ -4,14 +4,22 @@ const base = process.env.REACT_APP_BACKEND_URL;
 
 async function handleResponse(response) {
   let payload = null;
+  const responseClone = response.clone();
   try {
     payload = await response.json();
   } catch (err) {
-    // ignore parse errors for non-JSON responses
+    try {
+      payload = await responseClone.text();
+    } catch (textError) {
+      // ignore parse errors for non-text responses
+    }
   }
 
   if (!response.ok) {
-    const message = payload?.message || payload?.error || "Failed to process request";
+    const message =
+      typeof payload === "string"
+        ? payload
+        : payload?.message || payload?.error || "Failed to process request";
     const error = new Error(message);
     error.code = payload?.code;
     error.status = response.status;
@@ -47,7 +55,10 @@ export async function fetchClubDetails(clubId, token) {
     method: "GET",
     headers: optionalAuthHeader(token),
   });
-  return handleResponse(response);
+  const payload = await handleResponse(response);
+  // Debug: club details includes membership_status and membership_role
+  console.log("fetchClubDetails response", payload);
+  return payload;
 }
 
 export async function createClub(payload, token) {
