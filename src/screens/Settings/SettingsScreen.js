@@ -17,8 +17,6 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -57,12 +55,6 @@ function SettingsScreen() {
   const [address, setAddress] = useState(user?.address || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [countryCode, setCountryCode] = useState(user?.country_code || null);
-  const [isProfilePrivate, setIsProfilePrivate] = useState(
-    Boolean(user?.is_profile_private)
-  );
-  const [shareContactWithConnection, setShareContactWithConnection] = useState(
-    Boolean(user?.share_contact_with_connections)
-  );
   const [successMessage, setSuccessMessage] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [showCard, setShowCard] = useState(false);
@@ -93,8 +85,6 @@ function SettingsScreen() {
       setBio(user.bio || "");
       setCountryCode(user.country_code || null);
       setModalCountryCode(user.country_code || null);
-      setIsProfilePrivate(Boolean(user.is_profile_private));
-      setShareContactWithConnection(Boolean(user.share_contact_with_connections));
       setPhoneNumber(user.phone_number || "");
       setContactEmail(user.contact_email || "");
     }
@@ -137,8 +127,8 @@ function SettingsScreen() {
       bio,
       phone_number: phoneNumber,
       contact_email: contactEmail,
-      is_profile_private: isProfilePrivate,
-      share_contact_with_connections: shareContactWithConnection,
+      is_profile_private: false,
+      share_contact_with_connections: true,
       profile_image_url: user?.profile_image_url || null,
       country_code: normalizedCountryCode,
     };
@@ -415,7 +405,7 @@ function SettingsScreen() {
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
               fullWidth
-              helperText="Visible to connections if sharing is enabled"
+              helperText="Visible to all users."
             />
 
             <TextField
@@ -423,7 +413,7 @@ function SettingsScreen() {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               fullWidth
-              helperText="Include country code if applicable"
+              helperText="Visible to all users. Include country code if applicable."
             />
 
 
@@ -450,37 +440,9 @@ function SettingsScreen() {
               </ListItemButton>
             </List>
 
-            <Stack spacing={1}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isProfilePrivate}
-                    onChange={(event) => setIsProfilePrivate(event.target.checked)}
-                  />
-                }
-                label="Make profile private"
-              />
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 5 }}>
-                When enabled, your profile visibility will be limited.
-              </Typography>
-            </Stack>
-
-            <Stack spacing={1}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={shareContactWithConnection}
-                    onChange={(event) =>
-                      setShareContactWithConnection(event.target.checked)
-                    }
-                  />
-                }
-                label="Share contact details with connections"
-              />
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 5 }}>
-                Allow your confirmed connections to view your contact info.
-              </Typography>
-            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              Profiles and contact details are public to all users.
+            </Typography>
 
             <Button
               type="submit"
