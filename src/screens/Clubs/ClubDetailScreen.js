@@ -60,6 +60,7 @@ const visibilityOptions = [
 ];
 
 const adminRoles = ["core_admin", "admin"];
+const normalizeRole = (role) => (role ? role.toString().toLowerCase() : "");
 
 const getClubVisibility = (club) => {
   if (club?.visibility) return club.visibility;
@@ -86,8 +87,18 @@ const getMembershipStatus = (club) =>
   club?.current_user_membership_status ||
   null;
 
-const getMembershipRole = (club) =>
-  getMembershipInfo(club)?.role || club?.role || club?.current_user_role || null;
+const getMembershipRole = (club) => {
+  const membership = getMembershipInfo(club);
+  return (
+    membership?.role ||
+    membership?.membership_role ||
+    membership?.member_role ||
+    club?.membership_role ||
+    club?.role ||
+    club?.current_user_role ||
+    null
+  );
+};
 
 const getClubOwnerId = (club) =>
   club?.owner_id || club?.owner?.auth_id || club?.created_by || club?.created_by_id || null;
@@ -820,6 +831,7 @@ function ClubDetailScreen() {
 
   const membershipStatus = getMembershipStatus(club);
   const membershipRole = getMembershipRole(club);
+  const normalizedMembershipRole = normalizeRole(membershipRole);
   const currentAuthId = currentUser?.auth_id || currentUser?.id || null;
   const ownerId = getClubOwnerId(club);
   const isOwner = Boolean(currentAuthId && ownerId && currentAuthId === ownerId);
@@ -827,10 +839,8 @@ function ClubDetailScreen() {
   const isPending =
     ["requested", "pending"].includes(membershipStatus) || joinStatus === "requested";
   const isAdmin =
-    (membershipRole ? adminRoles.includes(membershipRole) : false) ||
-    club?.is_admin === true ||
-    club?.is_owner === true ||
-    isOwner;
+    membershipStatus === "active" &&
+    (normalizedMembershipRole ? adminRoles.includes(normalizedMembershipRole) : false);
   const displayRole = membershipRole || (isOwner ? "owner" : null);
   const fallbackAdminMember = useMemo(() => {
     if (!isAdmin || activeMembers.length > 0) return null;
