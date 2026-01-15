@@ -151,6 +151,7 @@ const EditClubModal = ({ open, club, onClose, onUpdated }) => {
     visibility: "public",
     emblem_url: "",
   });
+  const [emblemFile, setEmblemFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -164,6 +165,7 @@ const EditClubModal = ({ open, club, onClose, onUpdated }) => {
         visibility: getClubVisibility(club),
         emblem_url: getClubEmblem(club),
       });
+      setEmblemFile(null);
     }
   }, [club, open]);
 
@@ -184,6 +186,7 @@ const EditClubModal = ({ open, club, onClose, onUpdated }) => {
         cadence: form.cadence,
         visibility: form.visibility,
         emblem_url: form.emblem_url,
+        file: emblemFile,
       };
       await updateClub(club.id || club.club_id, payload, token);
       onUpdated();
@@ -251,6 +254,23 @@ const EditClubModal = ({ open, club, onClose, onUpdated }) => {
             onChange={handleChange}
             fullWidth
           />
+          <Stack spacing={1}>
+            <Button variant="outlined" component="label">
+              Upload emblem image
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  setEmblemFile(file);
+                }}
+              />
+            </Button>
+            <Typography variant="caption" color="text.secondary">
+              {emblemFile ? `Selected: ${emblemFile.name}` : "Optional PNG/JPG emblem."}
+            </Typography>
+          </Stack>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>

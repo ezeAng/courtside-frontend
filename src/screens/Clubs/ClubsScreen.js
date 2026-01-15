@@ -60,6 +60,7 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
     usual_venues: "",
     contact_info: "",
   });
+  const [emblemFile, setEmblemFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -75,6 +76,7 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
         usual_venues: "",
         contact_info: "",
       });
+      setEmblemFile(null);
       setError("");
       setSubmitting(false);
     }
@@ -102,6 +104,7 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
         p_playing_cadence: form.playing_cadence,
         p_usual_venues: form.usual_venues,
         p_contact_info: form.contact_info,
+        file: emblemFile,
       };
       const response = await createClub(payload, token);
       const clubId = response?.id || response?.club_id || response?.club?.id;
@@ -168,6 +171,23 @@ const CreateClubModal = ({ open, onClose, onCreated }) => {
             onChange={handleChange}
             fullWidth
           />
+          <Stack spacing={1}>
+            <Button variant="outlined" component="label">
+              Upload emblem image
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  setEmblemFile(file);
+                }}
+              />
+            </Button>
+            <Typography variant="caption" color="text.secondary">
+              {emblemFile ? `Selected: ${emblemFile.name}` : "Optional PNG/JPG emblem."}
+            </Typography>
+          </Stack>
           <TextField
             label="Max members"
             name="max_members"

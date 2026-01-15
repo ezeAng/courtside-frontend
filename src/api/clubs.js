@@ -62,19 +62,45 @@ export async function createClub(payload, token) {
     p_usual_venues: payload?.p_usual_venues ?? payload?.usual_venues ?? null,
     p_contact_info: payload?.p_contact_info ?? payload?.contact_info ?? null,
   };
+  const body = payload instanceof FormData ? payload : new FormData();
+  if (!(payload instanceof FormData)) {
+    Object.entries(rpcPayload).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      body.append(key, value);
+    });
+    if (payload?.file) {
+      body.append("file", payload.file);
+    }
+  }
   const response = await fetch(`${base}/api/clubs`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...requireAuthHeader(token),
-    },
-    body: JSON.stringify(rpcPayload),
+    headers: requireAuthHeader(token),
+    body,
   });
   return handleResponse(response);
 }
 
 export async function updateClub(clubId, payload, token) {
   if (!clubId) throw new Error("Club ID is required");
+  if (payload?.file || payload instanceof FormData) {
+    const formData = payload instanceof FormData ? payload : new FormData();
+    if (!(payload instanceof FormData)) {
+      Object.entries(payload || {}).forEach(([key, value]) => {
+        if (key === "file") return;
+        if (value === undefined || value === null) return;
+        formData.append(key, value);
+      });
+      if (payload?.file) {
+        formData.append("file", payload.file);
+      }
+    }
+    const response = await fetch(`${base}/api/clubs/${clubId}`, {
+      method: "PUT",
+      headers: requireAuthHeader(token),
+      body: formData,
+    });
+    return handleResponse(response);
+  }
   const response = await fetch(`${base}/api/clubs/${clubId}`, {
     method: "PUT",
     headers: {
