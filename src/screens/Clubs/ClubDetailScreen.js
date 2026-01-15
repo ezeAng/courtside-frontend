@@ -35,7 +35,6 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
-import GroupIcon from "@mui/icons-material/Group";
 import AddIcon from "@mui/icons-material/Add";
 import {
   approveClubMember,
@@ -61,6 +60,10 @@ const visibilityOptions = [
 
 const adminRoles = ["core_admin", "admin"];
 const normalizeRole = (role) => (role ? role.toString().toLowerCase() : "");
+const isAdminRole = (role) => {
+  const normalized = normalizeRole(role);
+  return adminRoles.some((adminRole) => normalized.includes(adminRole));
+};
 
 const getClubVisibility = (club) => {
   if (club?.visibility) return club.visibility;
@@ -712,6 +715,7 @@ function ClubDetailScreen() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [requests, setRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [requestsError, setRequestsError] = useState("");
@@ -825,21 +829,22 @@ function ClubDetailScreen() {
   const currentAuthId = currentUser?.auth_id || currentUser?.id || null;
   const ownerId = getClubOwnerId(club);
   const isOwner = Boolean(currentAuthId && ownerId && currentAuthId === ownerId);
+  const isCoreAdmin = normalizedMembershipRole.includes("core_admin");
   const isMember = membershipStatus === "active";
   const isPending =
     ["requested", "pending"].includes(membershipStatus) || joinStatus === "requested";
   const isAdmin =
     membershipStatus === "active" &&
-    (normalizedMembershipRole ? adminRoles.includes(normalizedMembershipRole) : false);
+    ((normalizedMembershipRole ? isAdminRole(normalizedMembershipRole) : false) || isOwner);
   const displayRole = membershipRole || (isOwner ? "owner" : null);
-  const fallbackAdminMember = useMemo(() => {
-    if (!isAdmin || activeMembers.length > 0) return null;
+  const fallbackOwnerMember = useMemo(() => {
+    if (activeMembers.length > 0) return null;
     const fallbackUser =
-      currentUser ||
       club?.owner ||
       club?.owner_user ||
       club?.created_by ||
       club?.created_by_user ||
+      currentUser ||
       null;
     if (!fallbackUser) return null;
     return {
@@ -848,13 +853,13 @@ function ClubDetailScreen() {
       membership_role: "owner",
       status: "active",
     };
-  }, [activeMembers.length, club, currentUser, isAdmin]);
+  }, [activeMembers.length, club, currentUser]);
   const displayMembers = useMemo(() => {
     if (activeMembers.length > 0) return activeMembers;
-    if (fallbackAdminMember) return [fallbackAdminMember];
+    if (fallbackOwnerMember) return [fallbackOwnerMember];
     return activeMembers;
-  }, [activeMembers, fallbackAdminMember]);
-  const memberCount = Math.max(getClubMemberCount(club), displayMembers.length);
+  }, [activeMembers, fallbackOwnerMember]);
+  const memberCount = Math.max(1, getClubMemberCount(club), displayMembers.length);
   const membersUnavailable = displayMembers.length === 0 && getClubMemberCount(club) > 0;
   const visibility = getClubVisibility(club);
   const isPrivate = visibility === "private";
@@ -1134,7 +1139,70 @@ function ClubDetailScreen() {
         const subtitle = user?.region || user?.username || "";
         const role = getMemberRole(member);
         const memberAuthId = user?.auth_id || user?.id || null;
-        const isCoreAdmin = role === "core_admin";
+        const player = {
+          ...user,
+          auth_id: memberAuthId,
+          username: user?.username || user?.display_name || name,
+          profile_image_url: user?.profile_image_url || user?.avatar_url || "",
+          overall_elo: user?.overall_elo,
+          gender: user?.gender,
+          region: user?.region,
+        };
+        return (
+          <ListItem key={getMemberUserId(member) || name} divider disablePadding>
+            <ListItemButton onClick={() => setSelectedLeaguePlayer(player)}>
+              <ListItemAvatar>
+                <Avatar src={user?.avatar_url || user?.profile_image_url || ""}>
+                  {name?.charAt(0)}
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    <Typography variant="body1" fontWeight={600}>
+                      {name}
+                    </Typography>
+                    {role && <Chip label={role} size="small" color="primary" />}
+                  </Stack>
+                }
+                secondary={
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    {subtitle && (
+                      <Typography variant="body2" color="text.secondary">
+                        {subtitle}
+                      </Typography>
+                    )}
+                    {user?.overall_elo !== undefined && (
+                      <Typography variant="caption" color="text.secondary">
+                        Elo: {user.overall_elo}
+                      </Typography>
+                    )}
+                  </Stack>
+                }
+                primaryTypographyProps={{ component: "div" }}
+                secondaryTypographyProps={{ component: "div" }}
+              />
+            </ListItemButton>
+          </ListItem>
+        );
+      }),
+    [displayMembers]
+  );
+
+  const adminMemberRows = useMemo(
+    () =>
+      displayMembers.map((member) => {
+        const user = getMemberUser(member);
+        const name =
+          user?.name ||
+          user?.full_name ||
+          user?.display_name ||
+          user?.username ||
+          "Member";
+        const subtitle = user?.region || user?.username || "";
+        const role = getMemberRole(member);
+        const memberAuthId = user?.auth_id || user?.id || null;
+        const isCoreAdminMember = normalizeRole(role) === "core_admin";
         const isSelf = Boolean(currentAuthId && memberAuthId && currentAuthId === memberAuthId);
         const player = {
           ...user,
@@ -1154,7 +1222,7 @@ function ClubDetailScreen() {
                 size="small"
                 color="error"
                 onClick={() => setMemberToRemove(member)}
-                disabled={isCoreAdmin || isSelf}
+                disabled={isCoreAdminMember || isSelf}
               >
                 Remove
               </Button>
@@ -1205,14 +1273,18 @@ function ClubDetailScreen() {
       { value: "overview", label: "Overview" },
       { value: "sessions", label: "Sessions" },
       { value: "league", label: "League" },
+      { value: "members", label: "Members" },
     ];
     if (isAdmin) {
       baseTabs.push({ value: "requests", label: "Requests" });
-      baseTabs.push({ value: "members", label: "Members" });
       baseTabs.push({ value: "admin", label: "Admin" });
     }
     return baseTabs;
   }, [isAdmin]);
+
+  const clubName = club?.name || "Club";
+  const deleteConfirmationMatch = deleteConfirmation.trim() === clubName;
+  const isDeleteDisabled = deleteLoading || !deleteConfirmationMatch;
 
   return (
     <Container maxWidth="sm" sx={{ pb: 12, pt: 2 }}>
@@ -1268,6 +1340,8 @@ function ClubDetailScreen() {
                         <Chip label={visibility} size="small" />
                         {club?.cadence && <Chip label={club.cadence} size="small" />}
                         <Chip label={`${memberCount} members`} size="small" />
+                        <Chip label={isMember ? "Member" : "Not a member"} size="small" />
+                        {isCoreAdmin && <Chip label="Core admin" size="small" color="primary" />}
                         {displayRole && <Chip label={displayRole} size="small" color="primary" />}
                       </Stack>
                     </Stack>
@@ -1293,20 +1367,13 @@ function ClubDetailScreen() {
                         Leave Club
                       </Button>
                       {isAdmin && (
-                        <>
-                          <Button
-                            startIcon={<GroupIcon />}
-                            onClick={() => setTab("members")}
-                            variant="outlined"
-                          >
-                            Manage Members
-                          </Button>
-                          <Button startIcon={<AddIcon />} onClick={() => setCreateSessionOpen(true)}
-                            variant="contained"
-                          >
-                            Create Session
-                          </Button>
-                        </>
+                        <Button
+                          startIcon={<AddIcon />}
+                          onClick={() => setCreateSessionOpen(true)}
+                          variant="contained"
+                        >
+                          Create Session
+                        </Button>
                       )}
                     </Stack>
                   )}
@@ -1331,16 +1398,97 @@ function ClubDetailScreen() {
             {tab === "overview" && (
               <Stack spacing={2}>
                 <Typography variant="h6" fontWeight={700}>
-                  About
+                  Club details
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {club?.description || "No description yet."}
-                </Typography>
+                <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                  <CardContent>
+                    <Stack spacing={1.5}>
+                      <Stack spacing={0.5}>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Short description
+                        </Typography>
+                        <Typography variant="body2">
+                          {getClubShortDescription(club) || "No short description"}
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={0.5}>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Description
+                        </Typography>
+                        <Typography variant="body2">
+                          {club?.description || "No description yet."}
+                        </Typography>
+                      </Stack>
+                      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                        <Stack spacing={0.5} flex={1}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Cadence
+                          </Typography>
+                          <Typography variant="body2">
+                            {club?.cadence || club?.meeting_cadence || "Not set"}
+                          </Typography>
+                        </Stack>
+                        <Stack spacing={0.5} flex={1}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Visibility
+                          </Typography>
+                          <Typography variant="body2">{visibility}</Typography>
+                        </Stack>
+                      </Stack>
+                      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                        <Stack spacing={0.5} flex={1}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Members
+                          </Typography>
+                          <Typography variant="body2">{memberCount}</Typography>
+                        </Stack>
+                        <Stack spacing={0.5} flex={1}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Owner
+                          </Typography>
+                          <Typography variant="body2">
+                            {club?.owner?.name ||
+                              club?.owner_user?.name ||
+                              club?.created_by?.name ||
+                              club?.created_by_user?.name ||
+                              "Club owner"}
+                          </Typography>
+                        </Stack>
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+                <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                  <CardContent>
+                    <Stack spacing={1}>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        Your membership
+                      </Typography>
+                      <Stack direction="row" spacing={1} flexWrap="wrap">
+                        <Chip label={isMember ? "Member" : "Not a member"} size="small" />
+                        {membershipStatus && (
+                          <Chip label={`Status: ${membershipStatus}`} size="small" />
+                        )}
+                        {membershipRole && <Chip label={`Role: ${membershipRole}`} size="small" />}
+                        {isCoreAdmin && <Chip label="Core admin" size="small" color="primary" />}
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
               </Stack>
             )}
 
             {tab === "sessions" && (
               <Stack spacing={2}>
+                {isMember && (
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setCreateSessionOpen(true)}
+                  >
+                    Create session
+                  </Button>
+                )}
                 {sessionsLoading && (
                   <Stack alignItems="center" sx={{ py: 3 }}>
                     <CircularProgress size={28} />
@@ -1368,7 +1516,7 @@ function ClubDetailScreen() {
                         <Typography variant="body2" color="text.secondary">
                           Create the first session to kick off your club schedule.
                         </Typography>
-                        {isAdmin && (
+                        {isMember && (
                           <Button
                             variant="contained"
                             startIcon={<AddIcon />}
@@ -1376,6 +1524,11 @@ function ClubDetailScreen() {
                           >
                             Create session
                           </Button>
+                        )}
+                        {!isMember && (
+                          <Typography variant="caption" color="text.secondary">
+                            Join the club to create a session.
+                          </Typography>
                         )}
                       </Stack>
                     </CardContent>
@@ -1447,7 +1600,7 @@ function ClubDetailScreen() {
               </Stack>
             )}
 
-            {tab === "members" && isAdmin && (
+            {tab === "members" && (
               <Stack spacing={2}>
                 {membersError && <Alert severity="error">{membersError}</Alert>}
                 {membersUnavailable && (
@@ -1481,17 +1634,44 @@ function ClubDetailScreen() {
                         <Button startIcon={<EditIcon />} onClick={() => setEditOpen(true)}>
                           Edit Club
                         </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          onClick={() => {
-                            setDeleteError("");
-                            setDeleteOpen(true);
-                          }}
-                        >
-                          Delete Club
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            onClick={() => {
+                              setDeleteError("");
+                              setDeleteConfirmation("");
+                              setDeleteOpen(true);
+                            }}
+                          >
+                            Delete Club
                         </Button>
                       </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+                <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                  <CardContent>
+                    <Stack spacing={2}>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        Member management
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Remove members or tap a member to view their profile.
+                      </Typography>
+                      {membersError && <Alert severity="error">{membersError}</Alert>}
+                      {membersUnavailable && (
+                        <Typography variant="body2" color="text.secondary">
+                          Members list unavailable
+                        </Typography>
+                      )}
+                      {!membersUnavailable && displayMembers.length === 0 && (
+                        <Typography variant="body2" color="text.secondary">
+                          No members to show
+                        </Typography>
+                      )}
+                      {!membersUnavailable && displayMembers.length > 0 && (
+                        <List disablePadding>{adminMemberRows}</List>
+                      )}
                     </Stack>
                   </CardContent>
                 </Card>
@@ -1547,8 +1727,16 @@ function ClubDetailScreen() {
         <DialogContent>
           <Stack spacing={2}>
             <Typography variant="body2" color="text.secondary">
-              This action permanently deletes the club and its details.
+              This action permanently deletes the club and its details. Type the club name to
+              confirm.
             </Typography>
+            <TextField
+              label="Confirm club name"
+              value={deleteConfirmation}
+              onChange={(event) => setDeleteConfirmation(event.target.value)}
+              fullWidth
+              placeholder={clubName}
+            />
             {deleteError && <Alert severity="error">{deleteError}</Alert>}
           </Stack>
         </DialogContent>
@@ -1560,7 +1748,7 @@ function ClubDetailScreen() {
             color="error"
             variant="contained"
             onClick={handleDeleteClub}
-            disabled={deleteLoading}
+            disabled={isDeleteDisabled}
           >
             {deleteLoading ? "Deleting..." : "Delete"}
           </Button>
