@@ -45,6 +45,7 @@ import {
   fetchClubLeague,
   fetchClubRequests,
   fetchClubSessions,
+  fetchMyClubs,
   joinClub,
   leaveClub,
   removeClubMember,
@@ -72,6 +73,8 @@ const getClubVisibility = (club) => {
   return "public";
 };
 
+const getClubId = (club) => club?.id || club?.club_id;
+
 const getClubEmblem = (club) =>
   club?.emblem_url || club?.emblem || club?.logo_url || club?.image_url || "";
 
@@ -86,6 +89,7 @@ const getMembershipInfo = (club) =>
 
 const getMembershipStatus = (club) =>
   getMembershipInfo(club)?.status ||
+  club?.member_status ||
   club?.membership_status ||
   club?.current_user_membership_status ||
   null;
@@ -702,6 +706,7 @@ function ClubDetailScreen() {
   const token = useSelector((state) => state.auth.accessToken);
   const currentUser = useSelector((state) => state.user.user);
   const [club, setClub] = useState(null);
+  const [myClubEntry, setMyClubEntry] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -742,6 +747,18 @@ function ClubDetailScreen() {
       setError(err.message || "Failed to load club");
     } finally {
       setLoading(false);
+    }
+  }, [clubId, token]);
+
+  const loadMyClubEntry = useCallback(async () => {
+    if (!clubId) return;
+    try {
+      const payload = await fetchMyClubs(token);
+      const list = Array.isArray(payload) ? payload : payload?.clubs || payload?.items || [];
+      const match = list.find((item) => getClubId(item) === clubId) || null;
+      setMyClubEntry(match);
+    } catch (err) {
+      setMyClubEntry(null);
     }
   }, [clubId, token]);
 
@@ -798,6 +815,10 @@ function ClubDetailScreen() {
   }, [loadClub]);
 
   useEffect(() => {
+    loadMyClubEntry();
+  }, [loadMyClubEntry]);
+
+  useEffect(() => {
     const list = getClubMembers(club);
     setMembers(Array.isArray(list) ? list : []);
   }, [club]);
@@ -823,19 +844,23 @@ function ClubDetailScreen() {
     [members]
   );
 
-  const membershipStatus = getMembershipStatus(club);
-  const membershipRole = getMembershipRole(club);
+  const membershipStatus = getMembershipStatus(club) || getMembershipStatus(myClubEntry);
+  const membershipRole = getMembershipRole(club) || getMembershipRole(myClubEntry);
   const normalizedMembershipRole = normalizeRole(membershipRole);
   const currentAuthId = currentUser?.auth_id || currentUser?.id || null;
   const ownerId = getClubOwnerId(club);
-  const isOwner = Boolean(currentAuthId && ownerId && currentAuthId === ownerId);
   const isCoreAdmin = normalizedMembershipRole.includes("core_admin");
-  const isMember = membershipStatus === "active";
+  const effectiveMembershipStatus = membershipStatus || (isCoreAdmin ? "active" : null);
+  const isOwner =
+    effectiveMembershipStatus === "active" &&
+    (isCoreAdmin || Boolean(currentAuthId && ownerId && currentAuthId === ownerId));
+  const isMember = effectiveMembershipStatus === "active" || isCoreAdmin;
   const isPending =
-    ["requested", "pending"].includes(membershipStatus) || joinStatus === "requested";
+    ["requested", "pending"].includes(effectiveMembershipStatus) ||
+    joinStatus === "requested";
   const isAdmin =
-    membershipStatus === "active" &&
-    ((normalizedMembershipRole ? isAdminRole(normalizedMembershipRole) : false) || isOwner);
+    effectiveMembershipStatus === "active" &&
+    (normalizedMembershipRole ? isAdminRole(normalizedMembershipRole) : false);
   const displayRole = membershipRole || (isOwner ? "owner" : null);
   const fallbackOwnerMember = useMemo(() => {
     if (activeMembers.length > 0) return null;
@@ -874,6 +899,7 @@ function ClubDetailScreen() {
       setJoinStatus(status || "");
       if (status === "joined" || status === "active") {
         await loadClub();
+        await loadMyClubEntry();
       }
     } catch (err) {
       setJoinError(err.message || "Failed to join club");
@@ -889,6 +915,7 @@ function ClubDetailScreen() {
     try {
       await leaveClub(clubId, token);
       await loadClub();
+      await loadMyClubEntry();
     } catch (err) {
       setJoinError(err.message || "Failed to leave club");
     } finally {
@@ -1466,8 +1493,8 @@ function ClubDetailScreen() {
                       </Typography>
                       <Stack direction="row" spacing={1} flexWrap="wrap">
                         <Chip label={isMember ? "Member" : "Not a member"} size="small" />
-                        {membershipStatus && (
-                          <Chip label={`Status: ${membershipStatus}`} size="small" />
+                        {effectiveMembershipStatus && (
+                          <Chip label={`Status: ${effectiveMembershipStatus}`} size="small" />
                         )}
                         {membershipRole && <Chip label={`Role: ${membershipRole}`} size="small" />}
                         {isCoreAdmin && <Chip label="Core admin" size="small" color="primary" />}
