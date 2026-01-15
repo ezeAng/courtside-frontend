@@ -292,18 +292,23 @@ function ClubsScreen() {
     return list.map((club) => {
       const clubId = getClubId(club);
       const visibility = getClubVisibility(club);
-      const isPrivate = visibility === "private";
       const emblem = getClubEmblem(club);
+      const memberCount = getClubMemberCount(club);
+      const cadence = getClubCadence(club);
+      const chips = [
+        memberCount ? `${memberCount} members` : "",
+        cadence,
+        visibility === "private" ? "Private" : "Public",
+      ].filter(Boolean);
       return (
         <Grid size={{ xs: 12, sm: 6 }} key={clubId || club.name}>
           <ClubCard
+            variant="discovery"
             name={club.name}
             description={getClubShortDescription(club)}
-            visibility={visibility}
-            cadence={getClubCadence(club)}
-            memberCount={getClubMemberCount(club)}
-            emblem={emblem}
-            isPrivate={isPrivate}
+            chips={chips}
+            image={emblem}
+            actionLabel="View"
             onClick={() => clubId && navigate(`/clubs/${clubId}`)}
           />
         </Grid>
@@ -429,7 +434,7 @@ function ClubsScreen() {
             </Typography>
           )}
           {!listLoading && !listError && !listEmpty && (
-            <Grid container spacing={3}>
+            <Grid container columnSpacing={2} rowSpacing={3}>
               {clubCards}
             </Grid>
           )}
