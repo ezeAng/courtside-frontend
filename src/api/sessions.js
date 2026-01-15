@@ -129,13 +129,34 @@ export async function fetchSessionDetails(sessionId, token) {
 }
 
 export async function createSession(payload, token) {
+  const sessionPayload = {
+    title: payload?.title,
+    description: payload?.description,
+    format: payload?.format,
+    capacity: payload?.capacity,
+    session_date: payload?.session_date ?? payload?.date,
+    session_time: payload?.session_time ?? payload?.start_time,
+    session_end_time: payload?.session_end_time ?? payload?.end_time,
+    venue_name: payload?.venue_name,
+    hall: payload?.hall,
+    court_number: payload?.court_number,
+    min_elo: payload?.min_elo,
+    max_elo: payload?.max_elo,
+    is_public: payload?.is_public,
+    source: payload?.source,
+    session_type: payload?.session_type,
+    club_id: payload?.club_id,
+  };
+  const body = Object.fromEntries(
+    Object.entries(sessionPayload).filter(([, value]) => value !== undefined)
+  );
   const response = await fetch(`${base}/api/sessions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...requireAuthHeader(token),
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
   return handleResponse(response);
 }
