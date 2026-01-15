@@ -61,7 +61,8 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
   const [form, setForm] = useState({
     title: "",
     description: "",
-    format: "any",
+    format: "singles",
+    session_type: "casual",
     capacity: 4,
     session_date: today,
     session_time: "",
@@ -81,7 +82,8 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
     if (open) {
       setForm((prev) => ({
         ...prev,
-        format: prev.format || "any",
+        format: prev.format || "singles",
+        session_type: prev.session_type || "casual",
         session_date: today,
         session_end_time: "",
       }));
@@ -97,6 +99,7 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
   const validate = () => {
     const nextErrors = {};
     if (!form.format) nextErrors.format = "Format is required";
+    if (!form.session_type) nextErrors.session_type = "Session type is required";
     if (!form.capacity || Number(form.capacity) <= 0) {
       nextErrors.capacity = "Capacity must be greater than 0";
     }
@@ -129,6 +132,7 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
         title: form.title || undefined,
         description: form.description || undefined,
         format: form.format,
+        session_type: form.session_type,
         capacity: Number(form.capacity),
         session_date: form.session_date,
         session_time: form.session_time,
@@ -140,7 +144,6 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
         max_elo: form.max_elo === "" ? undefined : Number(form.max_elo),
         is_public: Boolean(form.is_public),
         source: "user_created",
-        session_type: null,
         club_id: null,
       };
       await createSession(payload, token);
@@ -202,16 +205,28 @@ const CreateSessionModal = ({ open, onClose, onCreated }) => {
           <TextField
             select
             required
-            label="Format"
+            label="Match format"
             value={form.format}
             onChange={handleChange("format")}
             error={Boolean(errors.format)}
             helperText={errors.format}
           >
-            <MenuItem value="any">Any</MenuItem>
             <MenuItem value="singles">Singles</MenuItem>
             <MenuItem value="doubles">Doubles</MenuItem>
             <MenuItem value="mixed">Mixed</MenuItem>
+          </TextField>
+          <TextField
+            select
+            required
+            label="Session type"
+            value={form.session_type}
+            onChange={handleChange("session_type")}
+            error={Boolean(errors.session_type)}
+            helperText={errors.session_type}
+          >
+            <MenuItem value="casual">Casual</MenuItem>
+            <MenuItem value="semi-competitive">Semi-competitive</MenuItem>
+            <MenuItem value="competitive">Competitive</MenuItem>
           </TextField>
           <TextField
             required
