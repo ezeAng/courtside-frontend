@@ -141,7 +141,10 @@ export default function MySessionsCalendar({ token, currentUser }) {
 
   const authToken = token || getStoredToken();
   const currentMonthKey = formatMonthKey(currentMonth);
-  const sessionsForMonth = monthSessions[currentMonthKey] || [];
+  const sessionsForMonth = useMemo(
+    () => monthSessions[currentMonthKey] || [],
+    [currentMonthKey, monthSessions]
+  );
   const hasMonthData = monthSessions[currentMonthKey] !== undefined;
 
   const loadSessionsForMonth = useCallback(
@@ -184,7 +187,10 @@ export default function MySessionsCalendar({ token, currentUser }) {
     return map;
   }, [sessionsForMonth]);
 
-  const selectedDaySessions = selectedDateKey ? calendarMap[selectedDateKey] || [] : [];
+  const selectedDaySessions = useMemo(
+    () => (selectedDateKey ? calendarMap[selectedDateKey] || [] : []),
+    [calendarMap, selectedDateKey]
+  );
 
   const sessionDetailsSource = useMemo(
     () =>

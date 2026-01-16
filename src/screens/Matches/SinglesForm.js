@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import PlayerSearchAutocomplete from "../../components/PlayerSearchAutocomplete";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import FormLabel from "@mui/material/FormLabel";
 import Alert from "@mui/material/Alert";
 import { recordMatch } from "../../features/matches/matchSlice";
@@ -20,7 +19,6 @@ function SinglesForm({
   onSubmit,
 }) {
   const dispatch = useDispatch();
-  const token = useSelector((state) => state.auth.accessToken);
   const currentUser = useSelector((state) => state.user.user);
   const [selectedOpponent, setSelectedOpponent] = useState(
     initialValues?.opponent || null

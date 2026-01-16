@@ -403,7 +403,7 @@ export async function getPlayerCardData(token, targetAuthId) {
   return handleResponse(response);
 }
 
-export default {
+const api = {
   signup,
   login,
   getCurrentUser,
@@ -438,3 +438,5 @@ export default {
   fetchConnections,
   fetchUserContact,
 };
+
+export default api;

@@ -122,13 +122,6 @@ export default function PendingMatchesScreen() {
     };
   };
 
-  const handleOpenEdit = (match) => {
-    const initialValues = buildInitialValues(match);
-    setEditingMatch(match);
-    setEditSinglesValues(initialValues.singles);
-    setEditDoublesValues(initialValues.doubles);
-  };
-
   const handleCloseEdit = () => {
     setEditingMatch(null);
     setEditSinglesValues(null);

@@ -13,7 +13,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { getH2H, getHomeStats, getRecentActivity } from "../../services/api";
+import { getH2H, getHomeStats } from "../../services/api";
 import { fetchCurrentUser } from "../../features/user/userSlice";
 import EloStockChart from "../../components/home/EloStockChart";
 import { normalizeProfileImage } from "../../utils/profileImage";
@@ -52,7 +52,6 @@ function HomeScreen() {
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.auth.accessToken);
   const eloMode = useSelector((state) => state.ui.eloMode || "overall");
-  const [recentMatches, setRecentMatches] = useState([]);
   const [rivals, setRivals] = useState([]);
   const [stats, setStats] = useState(null);
   const [overall, setOverall] = useState(null);
@@ -76,13 +75,10 @@ function HomeScreen() {
       try {
         setLoading(true);
         setError(null);
-        const [recent, rivalsData, statsData] = await Promise.all([
-          getRecentActivity(token),
+        const [rivalsData, statsData] = await Promise.all([
           getH2H(token),
           getHomeStats(token)
         ]);
-
-        setRecentMatches(recent?.matches || []);
         setRivals(rivalsData?.rivals || []);
         setStats(statsData?.stats || null);
         setOverall(statsData?.stats?.ranks?.overall || null);
@@ -367,7 +363,15 @@ function HomeScreen() {
         onClick: () => handleSelectEloMode("doubles"),
       },
     ],
-    [doublesEloValue, handleSelectEloMode, overallEloValue, overallRankValue, singlesEloValue]
+    [
+      doublesEloValue,
+      doublesRankValue,
+      handleSelectEloMode,
+      overallEloValue,
+      overallRankValue,
+      singlesEloValue,
+      singlesRankValue,
+    ]
   );
 
   return (

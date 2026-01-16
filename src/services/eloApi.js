@@ -28,6 +28,8 @@ export async function getEloSeries(
   return data;
 }
 
-export default {
+const eloApi = {
   getEloSeries,
 };
+
+export default eloApi;
