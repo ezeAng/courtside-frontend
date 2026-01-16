@@ -23,8 +23,6 @@ import PlayerProfileChip from "../../components/PlayerProfileChip";
 import EmptyState from "../../components/EmptyState";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import RecordMatchModal from "./RecordMatchModal";
-import { parseScoreToSets } from "./scoreFormatting";
-import { getPlayerAuthId } from "../../utils/matchPlayers";
 
 export default function PendingMatchesScreen() {
   const navigate = useNavigate();
@@ -54,72 +52,6 @@ export default function PendingMatchesScreen() {
   const getScoreLabel = (match) => {
     if (!match.score) return "Score pending";
     return `Score: ${match.score}`;
-  };
-
-  const determineUserTeam = (match) => {
-    const teamAPlayers = match.players_team_A || [];
-    const teamBPlayers = match.players_team_B || [];
-
-    const isInTeam = (players) =>
-      players.some((player) => String(getPlayerAuthId(player)) === String(currentUserId));
-
-    if (isInTeam(teamAPlayers)) return "A";
-    if (isInTeam(teamBPlayers)) return "B";
-    return "A";
-  };
-
-  const buildInitialValues = (match) => {
-    const userTeam = determineUserTeam(match);
-    const scoreSets = parseScoreToSets(match.score);
-    const orientedSets =
-      scoreSets.length > 0
-        ? scoreSets.map((set) =>
-            userTeam === "A"
-              ? { your: set.teamA, opponent: set.teamB }
-              : { your: set.teamB, opponent: set.teamA }
-          )
-        : [{ your: "", opponent: "" }];
-
-    const matchType = (match.match_type || "").toLowerCase();
-
-    if (matchType === "singles") {
-      const opponent =
-        userTeam === "A"
-          ? (match.players_team_B || [])[0]
-          : (match.players_team_A || [])[0];
-      return {
-        singles: {
-          opponent,
-          sets: orientedSets,
-        },
-        doubles: null,
-      };
-    }
-
-    if (matchType !== "doubles") {
-      return { singles: null, doubles: null };
-    }
-
-    const teamA = match.players_team_A || [];
-    const teamB = match.players_team_B || [];
-    const isUserOnTeamA = userTeam === "A";
-    const myTeam = isUserOnTeamA ? teamA : teamB;
-    const otherTeam = isUserOnTeamA ? teamB : teamA;
-
-    const partner = myTeam.find(
-      (player) => String(getPlayerAuthId(player)) !== String(currentUserId)
-    );
-    const [opponent1, opponent2] = otherTeam;
-
-    return {
-      singles: null,
-      doubles: {
-        partner: partner || null,
-        opponent1: opponent1 || null,
-        opponent2: opponent2 || null,
-        sets: orientedSets,
-      },
-    };
   };
 
   const handleCloseEdit = () => {
