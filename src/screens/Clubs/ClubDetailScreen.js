@@ -1412,6 +1412,14 @@ function ClubDetailScreen() {
     return baseTabs;
   }, [isAdmin, isMember]);
 
+  useEffect(() => {
+    if (tabs.length === 0) return;
+    const hasTab = tabs.some((item) => item.value === tab);
+    if (!hasTab) {
+      setTab(tabs[0].value);
+    }
+  }, [tab, tabs]);
+
   const clubName = club?.name || "Club";
   const deleteConfirmationMatch = deleteConfirmation.trim() === clubName;
   const isDeleteDisabled = deleteLoading || !deleteConfirmationMatch;
